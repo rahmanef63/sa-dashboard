@@ -4,6 +4,7 @@ interface LogEntry {
   timestamp: string;
   operation: string;
   details: any;
+  type: 'log' | 'request' | 'response';
 }
 
 export const DebugConsole: React.FC = () => {
@@ -13,6 +14,8 @@ export const DebugConsole: React.FC = () => {
   useEffect(() => {
     // Override console.log to capture database-related logs
     const originalLog = console.log;
+    const originalFetch = window.fetch;
+
     console.log = (...args) => {
       originalLog.apply(console, args);
       
@@ -24,14 +27,59 @@ export const DebugConsole: React.FC = () => {
           timestamp: new Date().toISOString(),
           operation: args[0],
           details: args.slice(1),
+          type: 'log'
         };
         setLogs(prev => [...prev, newLog]);
       }
     };
 
-    // Restore original console.log on cleanup
+    // Override fetch to capture API requests and responses
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      if (url.includes('/api/database')) {
+        // Log request
+        const newRequestLog: LogEntry = {
+          timestamp: new Date().toISOString(),
+          operation: `[API Request] ${init?.method || 'GET'} ${url}`,
+          details: { body: init?.body ? JSON.parse(init.body as string) : undefined },
+          type: 'request'
+        };
+        setLogs(prev => [...prev, newRequestLog]);
+
+        try {
+          const response = await originalFetch(input, init);
+          const clone = response.clone();
+          const responseData = await clone.json();
+
+          // Log response
+          const newResponseLog: LogEntry = {
+            timestamp: new Date().toISOString(),
+            operation: `[API Response] ${init?.method || 'GET'} ${url}`,
+            details: { status: response.status, data: responseData },
+            type: 'response'
+          };
+          setLogs(prev => [...prev, newResponseLog]);
+
+          return response;
+        } catch (error) {
+          // Log error
+          const newErrorLog: LogEntry = {
+            timestamp: new Date().toISOString(),
+            operation: `[API Error] ${init?.method || 'GET'} ${url}`,
+            details: { error },
+            type: 'response'
+          };
+          setLogs(prev => [...prev, newErrorLog]);
+          throw error;
+        }
+      }
+      return originalFetch(input, init);
+    };
+
+    // Restore original functions on cleanup
     return () => {
       console.log = originalLog;
+      window.fetch = originalFetch;
     };
   }, []);
 
@@ -70,11 +118,18 @@ export const DebugConsole: React.FC = () => {
           <div className="text-gray-500 text-center mt-4">No logs yet</div>
         ) : (
           logs.map((log, index) => (
-            <div key={index} className="mb-2 pb-2 border-b border-gray-200">
+            <div 
+              key={index} 
+              className={`mb-2 pb-2 border-b border-gray-200 ${
+                log.type === 'request' ? 'text-blue-600' :
+                log.type === 'response' ? 'text-green-600' :
+                'text-gray-600'
+              }`}
+            >
               <div className="text-xs text-gray-500">
                 {new Date(log.timestamp).toLocaleTimeString()}
               </div>
-              <div className="text-blue-600">{log.operation}</div>
+              <div>{log.operation}</div>
               <pre className="text-xs text-gray-700 mt-1 whitespace-pre-wrap">
                 {JSON.stringify(log.details, null, 2)}
               </pre>

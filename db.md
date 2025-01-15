@@ -13,6 +13,7 @@ sidebar/
 ├── shared/
 │   ├── components/
 │   │   ├── FormDialog.tsx        # Reusable dialog component
+│   │   ├── DebugConsole.tsx      # Debug console for monitoring API calls
 │   │   └── sidebar/
 │   │       └── app-sidebar.tsx   # Application sidebar with navigation
 │   └── types/
@@ -34,7 +35,6 @@ sidebar/
                 └── hooks/
                     ├── useDialogState.ts       # Dialog state management
                     └── useDatabaseOperations.ts # Database CRUD operations
-
 ```
 
 ## Component Architecture
@@ -65,6 +65,7 @@ sidebar/
    - Handles database creation and editing
    - Form validation
    - Success/error feedback
+   - Debug logging for form actions
 
 2. **DatabaseTableForm**
    - Table creation and modification
@@ -74,10 +75,16 @@ sidebar/
 ### Shared Components
 1. **FormDialog**
    - Reusable dialog component
-   - Handles form submission
-   - Provides consistent UI for all forms
+   - Clean form submission handling
+   - Consistent UI for all forms
 
-2. **AppSidebar**
+2. **DebugConsole**
+   - Real-time API request/response monitoring
+   - Network request tracking
+   - Error logging and debugging
+   - Color-coded log types (request, response, error)
+
+3. **AppSidebar**
    - Navigation component
    - Database management section
    - Consistent access to features
@@ -86,7 +93,7 @@ sidebar/
 - Uses React hooks for local state management
 - Custom hooks for specific functionalities:
   - `useDialogState`: Manages dialog visibility
-  - `useDatabaseOperations`: Handles API calls
+  - `useDatabaseOperations`: Handles API calls and database operations
 
 ## API Integration
 - RESTful API endpoints under `/api/database`
@@ -96,62 +103,46 @@ sidebar/
   - PUT /api/database/:name - Update database
   - DELETE /api/database/:name - Delete database
 
+## Database Connection
+- PostgreSQL connection via environment variables:
+  ```env
+  POSTGRES_USER=postgres
+  POSTGRES_HOST=your_host
+  POSTGRES_DB=postgres
+  POSTGRES_PASSWORD=your_password
+  POSTGRES_PORT=5432
+  ```
+
 ## Features
 - [x] Database Management
   - Create new databases
-  - Modify existing databases
+  - List existing databases
+  - Update database properties
   - Delete databases
-  - View database details
-
-- [x] Table Management
-  - Create database tables
-  - Define table structure
-  - Modify existing tables
-  - Delete tables
-
+- [x] Debug Tools
+  - Real-time API monitoring
+  - Request/Response tracking
+  - Error logging
 - [x] User Interface
   - Modern, responsive design
-  - Intuitive navigation
-  - Real-time feedback
-  - Error handling
+  - Form validation
+  - Success/Error feedback
+  - Loading states
 
-## Development Status
-{{ ... }}
+## Debugging
+The application includes comprehensive debugging tools:
+1. **Debug Console**
+   - Shows real-time API requests and responses
+   - Tracks form submissions
+   - Displays database operations
+   - Color-coded for different types of logs
 
-## Security Measures
-- [ ] Authentication required for all operations
-- [ ] Role-based access control
-- [ ] SQL injection prevention
-- [ ] Input validation
-- [ ] Secure connection handling
+2. **Server Logs**
+   - Database operation tracking
+   - Connection status monitoring
+   - Error reporting
 
-## Next Steps
-1. Implement table structure visualization
-2. Add data import/export functionality
-3. Implement query builder interface
-4. Add monitoring and metrics
-5. Implement backup and restore features
-
-## Getting Started
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Set up environment variables:
-   ```env
-   POSTGRES_HOST=localhost
-   POSTGRES_PORT=5432
-   POSTGRES_DB=your_database
-   POSTGRES_USER=your_username
-   POSTGRES_PASSWORD=your_password
-   ```
-
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Access the application at `http://localhost:3000/dashboard/database-manager`
-
-{{ ... }}
+3. **Form Validation**
+   - Input validation feedback
+   - Error state handling
+   - Success confirmation

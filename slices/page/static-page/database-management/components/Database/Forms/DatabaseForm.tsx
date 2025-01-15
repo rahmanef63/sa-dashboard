@@ -6,6 +6,11 @@ interface DatabaseFormProps {
   onSubmit: (data: DatabaseFormData) => Promise<void>;
 }
 
+// Debug logging function
+const logDebug = (operation: string, details: any) => {
+  console.log(`[Database Form] ${operation}:`, details);
+};
+
 export const DatabaseForm: React.FC<DatabaseFormProps> = ({
   initialData,
   onSubmit,
@@ -26,7 +31,14 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    logDebug('handleSubmit', { formData });
+    try {
+      await onSubmit(formData);
+      logDebug('handleSubmit - Success', { formData });
+    } catch (error) {
+      logDebug('handleSubmit - Error', { error, formData });
+      console.error('Failed to submit form:', error);
+    }
   };
 
   return (
@@ -43,9 +55,11 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({
           id="name"
           name="name"
           value={formData.name}
-          onChange={(e) =>
-            setFormData({ ...formData, name: e.target.value })
-          }
+          onChange={(e) => {
+            const newData = { ...formData, name: e.target.value };
+            setFormData(newData);
+            logDebug('nameChange', { newValue: e.target.value, formData: newData });
+          }}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
           required
         />
@@ -61,9 +75,11 @@ export const DatabaseForm: React.FC<DatabaseFormProps> = ({
           id="description"
           name="description"
           value={formData.description}
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
+          onChange={(e) => {
+            const newData = { ...formData, description: e.target.value };
+            setFormData(newData);
+            logDebug('descriptionChange', { newValue: e.target.value, formData: newData });
+          }}
           rows={3}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
         />

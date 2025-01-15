@@ -6,7 +6,6 @@ interface FormDialogProps {
   title: string;
   description: string;
   onClose: () => void;
-  onSubmit?: () => void;
   children: React.ReactNode;
   previewComponent?: React.ReactNode;
 }
@@ -16,7 +15,6 @@ export const FormDialog: React.FC<FormDialogProps> = ({
   title,
   description,
   onClose,
-  onSubmit,
   children,
   previewComponent,
 }) => {
@@ -64,12 +62,7 @@ export const FormDialog: React.FC<FormDialogProps> = ({
                 )}
 
                 <div className="mt-4">
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    onSubmit?.();
-                  }}>
-                    {children}
-                  </form>
+                  {children}
                 </div>
               </Dialog.Panel>
             </Transition.Child>
