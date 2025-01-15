@@ -18,6 +18,7 @@ const logDebug = (operation: string, details: any) => {
 };
 
 export async function GET() {
+  const client = await pool.connect();
   try {
     logDebug("GET - Fetching databases", { 
       env: {
@@ -38,16 +39,22 @@ export async function GET() {
       ORDER BY datname;
     `;
     
-    const result = await pool.query(query);
+    const result = await client.query(query);
     logDebug("GET - Query result", result.rows);
     
     return NextResponse.json(result.rows);
-  } catch (error) {
-    logDebug("GET - Error", error);
+  } catch (error: any) {
+    logDebug("GET - Error", {
+      message: error.message,
+      stack: error.stack,
+      code: error.code
+    });
     return NextResponse.json(
-      { error: "Failed to fetch databases", details: error },
+      { error: "Failed to fetch databases", details: error.message },
       { status: 500 }
     );
+  } finally {
+    client.release();
   }
 }
 
@@ -108,106 +115,10 @@ export async function POST(request: Request) {
       code: error.code
     });
     return NextResponse.json(
-      { 
-        error: "Failed to create database", 
-        details: error.message,
-        code: error.code
-      },
+      { error: "Failed to create database", details: error.message },
       { status: 500 }
     );
   } finally {
     client.release();
-  }
-}
-
-export async function PUT(request: Request) {
-  try {
-    const data: DatabaseFormData = await request.json();
-    const dbName = request.url.split("/").pop();
-    logDebug("PUT - Updating database", { 
-      name: dbName, 
-      data,
-      env: {
-        host: process.env.POSTGRES_HOST,
-        port: process.env.POSTGRES_PORT,
-        database: process.env.POSTGRES_DB,
-        user: process.env.POSTGRES_USER,
-      }
-    });
-
-    if (!dbName) {
-      return NextResponse.json(
-        { error: "Database name is required" },
-        { status: 400 }
-      );
-    }
-
-    // Update database comment
-    if (data.description) {
-      const query = `
-        COMMENT ON DATABASE "${dbName}" IS '${data.description}';
-      `;
-      await pool.query(query);
-    }
-
-    logDebug("PUT - Database updated successfully", dbName);
-    return NextResponse.json({ message: "Database updated successfully" });
-  } catch (error: any) {
-    logDebug("PUT - Error", {
-      message: error.message,
-      stack: error.stack,
-      code: error.code
-    });
-    return NextResponse.json(
-      { error: "Failed to update database", details: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(request: Request) {
-  try {
-    const dbName = request.url.split("/").pop();
-    logDebug("DELETE - Deleting database", { 
-      name: dbName,
-      env: {
-        host: process.env.POSTGRES_HOST,
-        port: process.env.POSTGRES_PORT,
-        database: process.env.POSTGRES_DB,
-        user: process.env.POSTGRES_USER,
-      }
-    });
-
-    if (!dbName) {
-      return NextResponse.json(
-        { error: "Database name is required" },
-        { status: 400 }
-      );
-    }
-
-    // First, terminate all connections to the database
-    const terminateQuery = `
-      SELECT pg_terminate_backend(pid)
-      FROM pg_stat_activity
-      WHERE datname = $1 AND pid <> pg_backend_pid();
-    `;
-    await pool.query(terminateQuery, [dbName]);
-
-    // Then drop the database
-    const dropQuery = `DROP DATABASE IF EXISTS "${dbName}";`;
-    await pool.query(dropQuery);
-
-    logDebug("DELETE - Database deleted successfully", dbName);
-    return NextResponse.json({ message: "Database deleted successfully" });
-  } catch (error: any) {
-    logDebug("DELETE - Error", {
-      message: error.message,
-      stack: error.stack,
-      code: error.code
-    });
-    return NextResponse.json(
-      { error: "Failed to delete database", details: error.message },
-      { status: 500 }
-    );
   }
 }
