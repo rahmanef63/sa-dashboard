@@ -75,11 +75,11 @@ export async function PUT(
 ) {
   const client = await pool.connect();
   try {
-    const dbName = params.name;
+    const oldName = params.name;
     const data = await request.json();
 
     logDebug("PUT - Updating database", {
-      name: dbName,
+      name: oldName,
       data,
       env: {
         host: process.env.POSTGRES_HOST,
@@ -89,26 +89,40 @@ export async function PUT(
       },
     });
 
-    if (!dbName) {
+    if (!oldName) {
       return NextResponse.json(
         { error: "Database name is required" },
         { status: 400 }
       );
     }
 
-    // Update the database comment (description)
-    if (data.description) {
+    // First terminate all connections to the database
+    const terminateQuery = `
+      SELECT pg_terminate_backend(pid)
+      FROM pg_stat_activity
+      WHERE datname = $1 AND pid <> pg_backend_pid();
+    `;
+    await client.query(terminateQuery, [oldName]);
+
+    // If name is being updated, rename the database
+    if (data.name && data.name !== oldName) {
+      const renameQuery = `ALTER DATABASE "${oldName}" RENAME TO "${data.name}";`;
+      await client.query(renameQuery);
+    }
+
+    // Update description if provided
+    if (data.description !== undefined) {
       const commentQuery = `
-        COMMENT ON DATABASE "${dbName}" IS '${data.description}';
+        COMMENT ON DATABASE "${data.name || oldName}" IS '${data.description}';
       `;
       await client.query(commentQuery);
     }
 
-    logDebug("PUT - Database updated successfully", { name: dbName, data });
+    logDebug("PUT - Database updated successfully", { name: oldName, data });
     return NextResponse.json({
       message: "Database updated successfully",
       database: {
-        name: dbName,
+        name: data.name || oldName,
         description: data.description,
       },
     });

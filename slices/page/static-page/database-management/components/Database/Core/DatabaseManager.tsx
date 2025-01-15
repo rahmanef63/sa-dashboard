@@ -67,7 +67,7 @@ export const DatabaseManager = () => {
             <DatabaseDetails
               database={selectedDatabase}
               onEditClick={(formData: DatabaseFormData) => handleUpdateDatabase(formData)}
-              onDeleteClick={handleDeleteDatabase}
+              onDeleteClick={() => handleDeleteDatabase(selectedDatabase)}
             />
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">

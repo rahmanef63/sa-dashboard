@@ -10,6 +10,7 @@ import { AppSidebar } from "shared/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "shared/components/ui/sidebar"
 import { MenuProvider } from "@/slices/menu/context/MenuContext"
 import { BreadcrumbProvider, BreadcrumbNav } from "shared/components/sidebar/breadcrumb-provider"
+import { Toaster } from '@/shared/components/ui/toaster'
 
 export default function RootLayout({
   children,
@@ -35,6 +36,7 @@ export default function RootLayout({
             </BreadcrumbProvider>
           </SidebarProvider>
         </MenuProvider>
+        <Toaster />
       </body>
     </html>
   )

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { DebugConsole } from '@/shared/components/DebugConsole'
+import { Toaster } from '@/shared/components/ui/toaster'
 
 export const metadata: Metadata = {
   title: 'v0 App',
@@ -13,7 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="min-h-screen">
+        <main>{children}</main>
+        <div id="debug-console">
+          <DebugConsole />
+        </div>
+        <Toaster />
+      </body>
     </html>
   )
 }

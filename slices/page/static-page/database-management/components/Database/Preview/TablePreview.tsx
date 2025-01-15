@@ -1,8 +1,8 @@
-import { DatabaseTable } from "shared/types/global";
-import DataTable from "shared/components/DataTable";
+import { DatabaseTable, PostgresDataType } from "@/shared/types/table";
+import DataTable, { Column } from "shared/components/DataTable";
 import { Button } from "shared/components/ui/button";
-import { Plus, Edit, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Edit, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "shared/components/ui/dialog";
 import { Input } from "shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "shared/components/ui/select";
@@ -10,80 +10,155 @@ import { showToast } from "shared/utils/toast";
 
 interface TablePreviewProps {
   table: DatabaseTable;
+  databaseName: string;
 }
 
-export const TablePreview = ({ table }: TablePreviewProps) => {
-  const [previewData, setPreviewData] = useState<any[]>([
-    { id: 1, ...generateSampleData(table.columns) },
-    { id: 2, ...generateSampleData(table.columns) },
-    { id: 3, ...generateSampleData(table.columns) },
-  ]);
+interface TableRow {
+  id: number | string;
+  [key: string]: any;
+}
+
+export const TablePreview = ({ table, databaseName }: TablePreviewProps) => {
+  const [previewData, setPreviewData] = useState<TableRow[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<any | null>(null);
+  const [selectedRow, setSelectedRow] = useState<TableRow | null>(null);
   const [editFormData, setEditFormData] = useState<Record<string, any>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const columns = table.columns.map((col) => ({
-    key: col.name as keyof any,
-    header: col.name,
-    render: (value: any) => {
-      if (col.type === "boolean") return value ? "Yes" : "No";
-      if (col.type === "date") return new Date(value).toLocaleDateString();
-      return String(value);
-    },
-  }));
-
-  const handleAddRow = () => {
-    const newRow = {
-      id: previewData.length + 1,
-      ...generateSampleData(table.columns),
+  useEffect(() => {
+    const fetchPreviewData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await fetch(`/api/database/${databaseName}/tables/${table.table_name}/preview`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setPreviewData(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Error fetching preview data:', error);
+        setError(error instanceof Error ? error.message : 'Failed to fetch data');
+        setPreviewData([]);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setPreviewData([...previewData, newRow]);
-    showToast.success("Row added successfully");
-  };
 
-  const handleEditClick = (row: any) => {
+    fetchPreviewData();
+  }, [table.table_name, databaseName]);
+
+  const handleEdit = (row: TableRow) => {
     setSelectedRow(row);
     setEditFormData(row);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeleteClick = (row: any) => {
-    setPreviewData(previewData.filter((item) => item.id !== row.id));
-    showToast.success("Row deleted successfully");
-  };
-
-  const handleEditSubmit = () => {
+  const handleSave = async () => {
     if (!selectedRow) return;
+    
+    try {
+      const response = await fetch(
+        `/api/database/${databaseName}/tables/${table.table_name}/rows/${selectedRow.id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(editFormData),
+        }
+      );
 
-    setPreviewData(
-      previewData.map((row) =>
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || 'Failed to update row');
+      }
+
+      // Refresh the data
+      const updatedData = previewData.map((row) =>
         row.id === selectedRow.id ? { ...row, ...editFormData } : row
-      )
-    );
-    setIsEditDialogOpen(false);
-    setSelectedRow(null);
-    setEditFormData({});
-    showToast.success("Row updated successfully");
+      );
+      setPreviewData(updatedData);
+      setIsEditDialogOpen(false);
+      showToast.success("Row updated successfully");
+    } catch (error) {
+      console.error('Error updating row:', error);
+      showToast.error(error instanceof Error ? error.message : 'Failed to update row');
+    }
   };
 
-  const handleFieldChange = (columnName: string, value: any) => {
-    setEditFormData({ ...editFormData, [columnName]: value });
+  const handleDelete = async (row: TableRow) => {
+    if (!confirm('Are you sure you want to delete this row?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/database/${databaseName}/tables/${table.table_name}/rows/${row.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || 'Failed to delete row');
+      }
+
+      // Remove the row from the local state
+      setPreviewData(previewData.filter((item) => item.id !== row.id));
+      showToast.success("Row deleted successfully");
+    } catch (error) {
+      console.error('Error deleting row:', error);
+      showToast.error(error instanceof Error ? error.message : 'Failed to delete row');
+    }
   };
+
+  if (isLoading) {
+    return <div className="p-4 text-center">Loading table data...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-600">
+        <p>Error loading table data:</p>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (previewData.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-600">
+        <p>No data available in this table.</p>
+        <p className="text-sm">Use the Query Editor to insert data into this table.</p>
+      </div>
+    );
+  }
+
+  const columns: Column<TableRow>[] = table.columns.map(col => ({
+    key: col.name,
+    header: col.name,
+    render: (value) => {
+      if (col.type === 'boolean') return value ? 'Yes' : 'No';
+      if (col.type === 'timestamp' || col.type === 'timestamp with time zone') {
+        return value ? new Date(value).toLocaleString() : '';
+      }
+      if (col.type === 'date') {
+        return value ? new Date(value).toLocaleDateString() : '';
+      }
+      return String(value ?? '');
+    }
+  }));
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium">{table.name} Preview</h3>
-        <Button size="sm" onClick={handleAddRow}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Sample Row
-        </Button>
-      </div>
+    <div>
       <DataTable
         data={previewData}
         columns={columns}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClick}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -91,42 +166,33 @@ export const TablePreview = ({ table }: TablePreviewProps) => {
           <DialogHeader>
             <DialogTitle>Edit Row</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            {table.columns.map((column) => (
-              <div key={column.name} className="space-y-2">
-                <label className="text-sm font-medium">{column.name}</label>
-                {column.type === "boolean" ? (
-                  <Select
-                    value={editFormData[column.name]?.toString()}
-                    onValueChange={(value) =>
-                      handleFieldChange(column.name, value === "true")
+          <div className="space-y-4">
+            {table.columns.map((col) => (
+              <div key={col.name} className="grid grid-cols-4 items-center gap-4">
+                <label className="text-right font-medium">{col.name}</label>
+                {isNumericType(col.type) ? (
+                  <Input
+                    type="number"
+                    value={editFormData[col.name] || ''}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, [col.name]: e.target.value })
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select value" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">Yes</SelectItem>
-                      <SelectItem value="false">No</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    className="col-span-3"
+                  />
                 ) : (
                   <Input
-                    value={editFormData[column.name] || ""}
+                    value={editFormData[col.name] || ''}
                     onChange={(e) =>
-                      handleFieldChange(column.name, e.target.value)
+                      setEditFormData({ ...editFormData, [col.name]: e.target.value })
                     }
-                    type={column.type === "number" ? "number" : "text"}
+                    className="col-span-3"
                   />
                 )}
               </div>
             ))}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleEditSubmit}>Save Changes</Button>
+            <Button onClick={handleSave}>Save changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -134,28 +200,13 @@ export const TablePreview = ({ table }: TablePreviewProps) => {
   );
 };
 
-const generateSampleData = (columns: DatabaseTable["columns"]) => {
-  const data: Record<string, any> = {};
-  columns.forEach((col) => {
-    switch (col.type) {
-      case "string":
-        data[col.name] = `Sample ${col.name}`;
-        break;
-      case "number":
-        data[col.name] = Math.floor(Math.random() * 100);
-        break;
-      case "boolean":
-        data[col.name] = Math.random() > 0.5;
-        break;
-      case "date":
-        data[col.name] = new Date().toISOString();
-        break;
-      case "reference":
-        data[col.name] = `REF-${Math.floor(Math.random() * 1000)}`;
-        break;
-      default:
-        data[col.name] = "Sample data";
-    }
-  });
-  return data;
-};
+function isNumericType(type: PostgresDataType): boolean {
+  return [
+    'integer',
+    'bigint',
+    'smallint',
+    'numeric',
+    'real',
+    'double precision'
+  ].includes(type);
+}

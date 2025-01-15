@@ -13,7 +13,32 @@ const dbConfig: PoolConfig = {
   connectionTimeoutMillis: 2000,
 };
 
-// Create a new pool instance
+// Pool cache to avoid creating multiple pools for the same database
+const poolCache = new Map<string, Pool>();
+
+// Get or create a pool for a specific database
+export const getPool = (dbName: string): Pool => {
+  if (poolCache.has(dbName)) {
+    return poolCache.get(dbName)!;
+  }
+
+  const config: PoolConfig = {
+    ...dbConfig,
+    database: dbName,
+  };
+
+  const newPool = new Pool(config);
+  poolCache.set(dbName, newPool);
+
+  // Add error handler
+  newPool.on('error', (err) => {
+    console.error(`Unexpected error on idle client for database ${dbName}:`, err);
+  });
+
+  return newPool;
+};
+
+// Create a new pool instance for the default database
 const pool = new Pool(dbConfig);
 
 // Test the connection

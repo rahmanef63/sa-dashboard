@@ -14,9 +14,18 @@ export function NavMain() {
     openDialog,
     closeDialog
   } = useNavMainDialog()
+  const [mounted, setMounted] = React.useState(false)
 
   // Cast the navData to our more specific type
   const navData = contextNavData as unknown as NavMainData
+
+  React.useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return null; // Return null on server-side and first client render
+  }
 
   if (!navData || navData.groups.length === 0) {
     return null;

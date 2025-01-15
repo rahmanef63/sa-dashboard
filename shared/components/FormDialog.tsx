@@ -6,6 +6,7 @@ interface FormDialogProps {
   title: string;
   description: string;
   onClose: () => void;
+  onSubmit?: () => void | Promise<void>;
   children: React.ReactNode;
   previewComponent?: React.ReactNode;
 }
@@ -15,6 +16,7 @@ export const FormDialog: React.FC<FormDialogProps> = ({
   title,
   description,
   onClose,
+  onSubmit,
   children,
   previewComponent,
 }) => {
