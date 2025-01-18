@@ -1,7 +1,7 @@
 "use client"
 
 import { Folder, Forward, MoreHorizontal, Trash2 } from 'lucide-react'
-import { MenuItem } from '../types'
+import { MenuItem } from 'shared/types/navigation-types'
 
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "shared/components/ui/sidebar"
+import Link from 'next/link'
 
 type NavProjectsProps = {
   projects: MenuItem[]
@@ -34,10 +35,10 @@ export function NavProjects({ projects }: NavProjectsProps) {
         {projects.map((item) => (
           <SidebarMenuItem key={item.id}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              <Link href={item.url}>
                 <item.icon />
                 <span>{item.title}</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

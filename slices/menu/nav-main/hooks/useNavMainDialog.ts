@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { GroupLabel, MenuItem, SubMenuItem } from '../types'
+import { GroupLabel, MenuItem, SubMenuItem } from 'shared/types/navigation-types'
 
 type DialogType = 'group' | 'menuItem' | 'subMenuItem' | null
 type DialogItem = GroupLabel | MenuItem | SubMenuItem | null

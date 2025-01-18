@@ -30,7 +30,7 @@ import { handleLogout, showKeyboardShortcuts } from "./profile/utils/userActions
 import { DynamicSheet } from "./profile/lib/DynamicSheet"
 import { DynamicDrawer } from "./profile/lib/DynamicDrawer"
 import { useEffect } from "react"
-import { User } from '../types'
+import { User } from 'shared/types/navigation-types'
 import { navUserConfig, user as defaultUser, logout } from './config'
 
 interface NavUserProps {

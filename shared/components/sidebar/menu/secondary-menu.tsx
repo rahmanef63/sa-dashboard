@@ -3,7 +3,7 @@
 import { PanelRightOpen } from "lucide-react"
 import { Button } from "shared/components/ui/button"
 import { cn } from "shared/lib/utils"
-import { SecondaryMenuProps } from "./types"
+import { SecondaryMenuProps } from "shared/types/navigation-types"
 
 export function SecondaryMenu({ item, isCollapsed = false, onItemClick, className }: SecondaryMenuProps) {
   if (!item.children || item.isCollapsible) return null

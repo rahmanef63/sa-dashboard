@@ -4,7 +4,7 @@ import React from 'react'
 import { useMenu } from '../context/MenuContext'
 import { useNavMainDialog } from './hooks/useNavMainDialog'
 import { SidebarGroupComponent } from './components/groups/MenuGroup'
-import { GroupLabel, MenuItem, SubMenuItem, NavMainData } from './types'
+import { GroupLabel, MenuItem, SubMenuItem, NavMainData } from 'shared/types/navigation-types'
 
 
 export function NavMain() {
@@ -19,12 +19,13 @@ export function NavMain() {
   // Cast the navData to our more specific type
   const navData = contextNavData as unknown as NavMainData
 
-  React.useLayoutEffect(() => {
+  React.useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Return a placeholder with the same structure during SSR
   if (!mounted) {
-    return null; // Return null on server-side and first client render
+    return <div className="nav-main-placeholder" />
   }
 
   if (!navData || navData.groups.length === 0) {

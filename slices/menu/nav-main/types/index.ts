@@ -16,14 +16,14 @@ export interface BaseItem {
 
 // Sub-menu item with simplified URL
 export interface SubMenuItem extends BaseItem {
-  url: string
+  url: NavUrl
   parentId?: string
 }
 
 // Main menu item with extended properties
 export interface MenuItem extends BaseItem {
   url: NavUrl
-  icon: string
+  icon: string | LucideIcon
   isActive?: boolean
   items?: SubMenuItem[]
   groupId?: string

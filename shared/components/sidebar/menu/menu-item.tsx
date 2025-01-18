@@ -2,7 +2,7 @@
 
 import { Button } from "shared/components/ui/button"
 import { cn } from "shared/lib/utils"
-import { MenuItemProps } from "./types"
+import { MenuItemProps } from "shared/types/navigation-types"
 
 export function MenuItem({ item, isCollapsed = false, className }: MenuItemProps) {
   if (item.children) return null

@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "shared/components/ui/sidebar"
-import { Team } from '../types'
+import { Team } from 'shared/types/navigation-types'
 
 type TeamSwitcherProps = {
   teams: Team[]

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { MenuItem, NavMainData, SubMenuItem, GroupLabel } from '../types'
+import { MenuItem, NavMainData, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
 
 type MenuContextType = {
   menuItems: MenuItem[]
@@ -11,6 +11,7 @@ type MenuContextType = {
   deleteMenuItem: (id: string) => void
   updateSubMenuItem: (groupId: string, parentId: string, subItem: SubMenuItem) => void
   deleteSubMenuItem: (groupId: string, parentId: string, subItemId: string) => void
+  updateItemCollapsible: (itemId: string, isCollapsible: boolean) => void
   navData: NavMainData
   updateNavData: (newNavData: NavMainData) => void
   handleChangeGroup: (itemId: string, newGroupId: string) => void
@@ -249,6 +250,27 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     updateNavData(updatedNavData)
   }
 
+  const updateItemCollapsible = (itemId: string, isCollapsible: boolean) => {
+    const updatedNavData = { ...navData };
+    let itemUpdated = false;
+
+    updatedNavData.groups = updatedNavData.groups.map(group => {
+      const updatedItems = group.items.map(item => {
+        if (item.id === itemId) {
+          itemUpdated = true;
+          return { ...item, isCollapsible };
+        }
+        return item;
+      });
+      return { ...group, items: updatedItems };
+    });
+
+    if (itemUpdated) {
+      setNavData(updatedNavData);
+      localStorage.setItem('navMainData', JSON.stringify(updatedNavData));
+    }
+  };
+
   const addGroupLabel = (label: GroupLabel) => {
     const updatedNavData = { ...navData };
     
@@ -318,12 +340,13 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       deleteMenuItem,
       updateSubMenuItem,
       deleteSubMenuItem,
+      updateItemCollapsible,
       navData,
       updateNavData,
       handleChangeGroup,
       addGroupLabel,
       updateGroupLabel,
-      deleteGroupLabel
+      deleteGroupLabel,
     }}>
       {children}
     </MenuContext.Provider>

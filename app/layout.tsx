@@ -15,8 +15,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
-        <main>{children}</main>
+      <body className="min-h-screen bg-background">
+        {children}
         <div id="debug-console">
           <DebugConsole />
         </div>

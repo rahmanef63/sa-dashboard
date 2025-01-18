@@ -2,7 +2,7 @@ import React from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "shared/components/ui/collapsible"
 import { Button } from "shared/components/ui/button"
 import { ChevronRight, Edit, Trash } from 'lucide-react'
-import { MenuItem } from '../../types'
+import { MenuItem } from 'shared/types/navigation-types'
 import { NavMenuItem } from './MenuItem'
 import { useMenu } from '@/slices/menu/context/MenuContext'
 
@@ -27,7 +27,11 @@ export function SidebarMenuItemComponent({
                   key={subItem.id} 
                   item={{ 
                     ...subItem, 
-                    url: { href: subItem.url },
+                    url: { 
+                      href: subItem.url.href,
+                      target: subItem.url.target || '_self',
+                      rel: subItem.url.rel
+                    },
                     icon: 'chevron-right' // default icon for sub-items
                   }} 
                 />

@@ -4,7 +4,7 @@ import { cn } from "shared/lib/utils"
 import { CollapsibleMenu } from "./collapsible-menu"
 import { SecondaryMenu } from "./secondary-menu"
 import { MenuItem } from "./menu-item"
-import { MenuSectionProps, MenuItemWithChildren } from "./types"
+import { MenuSectionProps, MenuItemWithChildren } from "shared/types/navigation-types"
 
 export function MenuSection({ 
   items, 

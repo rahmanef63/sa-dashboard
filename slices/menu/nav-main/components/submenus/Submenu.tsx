@@ -4,7 +4,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "shared/components/ui/sidebar"
-import { SubMenuItem, MenuItem } from '../../types'
+import { SubMenuItem, MenuItem } from 'shared/types/navigation-types'
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
 import { useSubmenuAvailability } from '../../hooks/'
@@ -34,7 +34,12 @@ export function SidebarMenuSub({
       {items.map((subItem) => (
         <SidebarMenuSubItem key={subItem.id} className="group">
           <SidebarMenuSubButton asChild>
-            <a href={subItem.url} className="flex items-center w-full">
+            <a 
+              href={subItem.url.href}
+              target={subItem.url.target}
+              rel={subItem.url.rel}
+              className="flex items-center w-full"
+            >
               <span className="truncate">{subItem.title}</span>
             </a>
           </SidebarMenuSubButton>

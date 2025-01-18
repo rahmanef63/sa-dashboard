@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from "shared/components/ui/button"
 import { Input } from "shared/components/ui/input"
 import { Label } from "shared/components/ui/label"
-import { SubMenuItemFormProps } from '../../types'
+import { SubMenuItemFormProps } from 'shared/types/navigation-types'
 import { createNewSubMenuItem } from '../../utils'
 
 export function SubMenuItemForm({ 
@@ -12,7 +12,7 @@ export function SubMenuItemForm({
   onCancel 
 }: SubMenuItemFormProps) {
   const [title, setTitle] = useState(item?.title || '')
-  const [url, setUrl] = useState(item?.url || '')
+  const [url, setUrl] = useState(item?.url.href || '')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,7 +21,10 @@ export function SubMenuItemForm({
       onSave({
         ...item,
         title,
-        url
+        url: {
+          href: url,
+          target: '_self'
+        }
       })
     } else {
       onSave(createNewSubMenuItem(title, url, parentId))

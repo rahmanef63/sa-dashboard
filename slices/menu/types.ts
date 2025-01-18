@@ -3,7 +3,11 @@ import { TypeIcon as type, LucideIcon } from 'lucide-react'
 export type SubMenuItem = {
   id: string
   title: string
-  url: string
+  url: {
+    href: string
+    target?: '_blank' | '_self' | '_parent' | '_top'
+    rel?: string
+  }
 }
 
 export type MenuItem = {
@@ -11,10 +15,10 @@ export type MenuItem = {
   title: string
   url: {
     href: string
-    target?: string
+    target?: '_blank' | '_self' | '_parent' | '_top'
     rel?: string
   }
-  icon: string
+  icon: string | LucideIcon
   isActive?: boolean
   items?: SubMenuItem[]
   groupId?: string

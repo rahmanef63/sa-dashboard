@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MenuItem } from '../types'
+import { MenuItem } from 'shared/types/navigation-types'
 
 export function useMenuItems() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])

@@ -3,13 +3,15 @@ import { Button } from "shared/components/ui/button"
 import { Input } from "shared/components/ui/input"
 import { Label } from "shared/components/ui/label"
 import { IconPicker } from '@/shared/components/icon-picker/components/IconPicker'
-import { MenuItemFormProps } from '../../types'
-import { createNewMenuItem } from '../../utils'
+import { MenuItemFormProps } from 'shared/types/navigation-types'
+import { createNewMenuItem, getIconComponent } from '../../utils'
 
 export function MenuItemForm({ item, onSave, onCancel }: MenuItemFormProps) {
   const [title, setTitle] = useState(item?.title || '')
   const [url, setUrl] = useState(item?.url.href || '')
-  const [icon, setIcon] = useState(item?.icon || 'FileText')
+  const [iconName, setIconName] = useState<string>(
+    typeof item?.icon === 'string' ? item.icon : 'FileText'
+  )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,10 +24,10 @@ export function MenuItemForm({ item, onSave, onCancel }: MenuItemFormProps) {
           ...item.url,
           href: url 
         },
-        icon,
+        icon: getIconComponent(iconName),
       })
     } else {
-      onSave(createNewMenuItem(title, url, icon))
+      onSave(createNewMenuItem(title, url, iconName))
     }
   }
 
@@ -54,8 +56,8 @@ export function MenuItemForm({ item, onSave, onCancel }: MenuItemFormProps) {
       <div>
         <Label htmlFor="icon">Icon</Label>
         <IconPicker
-          value={icon}
-          onChange={setIcon}
+          value={iconName}
+          onChange={setIconName}
         />
       </div>
       <div className="flex gap-2 justify-end">

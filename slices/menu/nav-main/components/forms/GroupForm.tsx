@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from "shared/components/ui/button"
 import { Input } from "shared/components/ui/input"
 import { Label } from "shared/components/ui/label"
-import { GroupLabelFormProps } from '../../types'
+import { GroupLabelFormProps } from 'shared/types/navigation-types'
 import { createNewGroupLabel } from '../../utils'
 
 export function GroupLabelForm({ label, onSave, onCancel }: GroupLabelFormProps) {

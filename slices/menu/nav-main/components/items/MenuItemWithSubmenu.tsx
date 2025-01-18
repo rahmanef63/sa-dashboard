@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronRight, Edit, Trash } from 'lucide-react'
+import { ChevronRight, Edit, Trash, FileText } from 'lucide-react'
 import Link from 'next/link'
 import {
   Collapsible,
@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
 } from "shared/components/ui/sidebar"
 import { Button } from "shared/components/ui/button"
-import { SidebarMenuItemProps } from '../../types'
+import { SidebarMenuItemProps } from 'shared/types/navigation-types'
 import { getIconComponent } from '../../utils'
 import { useSidebarMenuItem } from '../../hooks/useSidebarMenuItem'
 import { cn } from '@/shared/lib/utils'
@@ -23,7 +23,7 @@ export function SidebarMenuItem({
   className 
 }: SidebarMenuItemProps) {
   const { isOpen, toggleOpen, isActive } = useSidebarMenuItem({ item })
-  const Icon = getIconComponent(item.icon)
+  const IconComponent = getIconComponent(typeof item.icon === 'string' ? item.icon : 'FileText')
 
   return (
     <Collapsible
@@ -41,7 +41,7 @@ export function SidebarMenuItem({
                 isActive && "bg-accent text-accent-foreground"
               )}
             >
-              <Icon className="mr-2 h-4 w-4" aria-hidden="true" />
+              <IconComponent className="mr-2 h-4 w-4" aria-hidden="true" />
               <span className="truncate">{item.title}</span>
               {item.items && item.items.length > 0 && (
                 <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -84,7 +84,7 @@ export function SidebarMenuItem({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDelete(item.id)}
+                onClick={() => onDelete(item)}
               >
                 <Trash className="h-4 w-4" />
               </Button>

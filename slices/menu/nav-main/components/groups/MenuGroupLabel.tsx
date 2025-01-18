@@ -1,6 +1,6 @@
 import React from 'react'
 import { SidebarGroupLabel as UISidebarGroupLabel } from "shared/components/ui/sidebar"
-import { GroupLabel } from '../../types'
+import { GroupLabel } from 'shared/types/navigation-types'
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
 

@@ -19,7 +19,7 @@ import {
   Archive,
   Trash
 } from "lucide-react"
-import type { NavItem, TeamType, ProjectType, UserType } from "../types/dashboard"
+import type { NavItem, TeamType, ProjectType, UserType } from "shared/types/navigation-types"
 
 export const navigationItems: NavItem[] = [
   { 
@@ -44,6 +44,25 @@ export const navigationItems: NavItem[] = [
         title: 'Archived Projects',
         icon: <FileText className="h-4 w-4" />,
         href: '/dashboard/projects/archived'
+      }
+    ]
+  },
+  { 
+    id: 'team', 
+    title: 'Team',
+    icon: <Users className="h-4 w-4" />,
+    children: [
+      { 
+        id: 'team-members', 
+        title: 'Members',
+        icon: <UserCircle className="h-4 w-4" />,
+        href: '/dashboard/team/members'
+      },
+      { 
+        id: 'team-settings', 
+        title: 'Settings',
+        icon: <Settings className="h-4 w-4" />,
+        href: '/dashboard/team/settings'
       }
     ]
   },
@@ -76,25 +95,6 @@ export const navigationItems: NavItem[] = [
         title: 'Trash',
         icon: <Trash className="h-4 w-4" />,
         href: '/dashboard/mail/trash'
-      }
-    ]
-  },
-  { 
-    id: 'team', 
-    title: 'Team',
-    icon: <Users className="h-4 w-4" />,
-    children: [
-      { 
-        id: 'team-members', 
-        title: 'Members',
-        icon: <UserCircle className="h-4 w-4" />,
-        href: '/dashboard/team/members'
-      },
-      { 
-        id: 'team-settings', 
-        title: 'Settings',
-        icon: <Settings className="h-4 w-4" />,
-        href: '/dashboard/team/settings'
       }
     ]
   },

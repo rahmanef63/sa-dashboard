@@ -1,4 +1,4 @@
-import { GroupLabel, MenuItem, SubMenuItem, NavUrl } from '@/slices/menu/nav-main/types'
+import { GroupLabel, MenuItem, SubMenuItem, NavUrl } from 'shared/types/navigation-types'
 
 export type UserMenuItemsProps = {
   onRemoveItem: (id: string) => void
@@ -15,3 +15,11 @@ export type NavGroup = {
   label: GroupLabel
   items: MenuItem[]
 }
+
+
+
+export type MenuItemFormProps = {
+  item: MenuItem | null
+  onSave: (item: MenuItem) => void
+}
+

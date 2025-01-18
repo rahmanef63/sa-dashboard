@@ -1,6 +1,6 @@
 import * as Icons from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { MenuItem, SubMenuItem, GroupLabel } from '../types'
+import { MenuItem, SubMenuItem, GroupLabel, NavUrl } from 'shared/types/navigation-types'
 
 export function getIconComponent(iconName: string): LucideIcon {
   if (!iconName) return Icons.HelpCircle;
@@ -35,8 +35,9 @@ export function createNewMenuItem(
     title,
     url: {
       href: formatUrl(url),
+      target: '_self',
     },
-    icon,
+    icon: getIconComponent(icon),
     groupId,
     items: [],
     order: Date.now(),
@@ -51,7 +52,10 @@ export function createNewSubMenuItem(
   return {
     id: generateId(),
     title,
-    url: formatUrl(url),
+    url: {
+      href: formatUrl(url),
+      target: '_self',
+    },
     parentId,
     order: Date.now(),
   };

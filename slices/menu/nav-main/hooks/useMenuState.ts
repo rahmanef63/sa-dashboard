@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { NavMainData, MenuItem, SubMenuItem, GroupLabel } from '../types';
+import { NavMainData, MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types';
 import { generateId } from '../utils';
 
 const STORAGE_KEY = 'navMainData';

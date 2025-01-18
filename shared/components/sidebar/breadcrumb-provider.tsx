@@ -30,77 +30,97 @@ const BreadcrumbContext = createContext<BreadcrumbContextType | undefined>(undef
 export function useBreadcrumb() {
   const context = useContext(BreadcrumbContext)
   if (!context) {
-    throw new Error('useBreadcrumb must be used within a BreadcrumbProvider')
+    // Return a default value instead of throwing during SSR
+    return {
+      breadcrumbs: [],
+      setBreadcrumbs: () => {}
+    }
   }
   return context
 }
 
 export function BreadcrumbProvider({ children }: { children: React.ReactNode }) {
   const [breadcrumbs, setBreadcrumbs] = useState<{ href: string; label: string }[]>([])
+  const [mounted, setMounted] = useState(false)
   const pathname = usePathname()
   const params = useParams()
 
   useEffect(() => {
-    const pathSegments = pathname.split('/').filter(Boolean)
-    const newBreadcrumbs = pathSegments.map((segment, index) => {
-      const href = `/${pathSegments.slice(0, index + 1).join('/')}`
-      const label = segment.charAt(0).toUpperCase() + segment.slice(1)
-      return { href, label }
-    })
-    setBreadcrumbs(newBreadcrumbs)
-  }, [pathname, params])
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (mounted) {
+      const pathSegments = pathname.split('/').filter(Boolean)
+      const newBreadcrumbs = pathSegments.map((segment, index) => {
+        const href = `/${pathSegments.slice(0, index + 1).join('/')}`
+        const label = segment.charAt(0).toUpperCase() + segment.slice(1)
+        return { href, label }
+      })
+      setBreadcrumbs(newBreadcrumbs)
+    }
+  }, [pathname, params, mounted])
 
   return (
     <BreadcrumbContext.Provider value={{ breadcrumbs, setBreadcrumbs }}>
-      {children}
+      <div className="breadcrumb-wrapper" suppressHydrationWarning>
+        {children}
+      </div>
     </BreadcrumbContext.Provider>
   )
 }
 
 export function BreadcrumbNav() {
   const { breadcrumbs } = useBreadcrumb()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div className="breadcrumb-nav-placeholder" suppressHydrationWarning />
+  }
+
+  if (breadcrumbs.length === 0) {
+    return null
+  }
 
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/">Home</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        {breadcrumbs.length > 3 && (
-          <>
-            <BreadcrumbItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-1">
-                  <BreadcrumbEllipsis className="h-4 w-4" />
-                  <span className="sr-only">Toggle menu</span>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {breadcrumbs.slice(1, -2).map((crumb) => (
-                    <DropdownMenuItem key={crumb.href}>
-                      <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {breadcrumbs.map((breadcrumb, index) => {
+          const isLastItem = index === breadcrumbs.length - 1
+
+          if (isLastItem) {
+            return (
+              <BreadcrumbItem key={breadcrumb.href}>
+                <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
+              </BreadcrumbItem>
+            )
+          }
+
+          if (index > 2) {
+            if (index === 3) {
+              return (
+                <BreadcrumbItem key="ellipsis">
+                  <BreadcrumbEllipsis />
+                </BreadcrumbItem>
+              )
+            }
+            return null
+          }
+
+          return (
+            <BreadcrumbItem key={breadcrumb.href}>
+              <BreadcrumbLink href={breadcrumb.href}>
+                {breadcrumb.label}
+              </BreadcrumbLink>
+              <BreadcrumbSeparator />
             </BreadcrumbItem>
-            <BreadcrumbSeparator />
-          </>
-        )}
-        {breadcrumbs.slice(-2).map((crumb, index, array) => (
-          <React.Fragment key={crumb.href}>
-            <BreadcrumbItem>
-              {index === array.length - 1 ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
-            {index < array.length - 1 && <BreadcrumbSeparator />}
-          </React.Fragment>
-        ))}
+          )
+        })}
       </BreadcrumbList>
     </Breadcrumb>
   )
 }
-

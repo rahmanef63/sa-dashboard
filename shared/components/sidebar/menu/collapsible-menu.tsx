@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ChevronRight } from "lucide-react"
 import { Button } from "shared/components/ui/button"
 import { cn } from "shared/lib/utils"
-import { CollapsibleMenuProps } from "./types"
+import { CollapsibleMenuProps } from "shared/types/navigation-types"
 
 export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus }: CollapsibleMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false)

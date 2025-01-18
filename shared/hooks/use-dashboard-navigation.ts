@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { MenuItemWithChildren } from "shared/components/sidebar/menu/types"
-
+import type { MenuItemWithChildren } from "shared/types/navigation-types"
 
 export function useDashboardNavigation() {
   const [isMainOpen, setIsMainOpen] = useState(true)
