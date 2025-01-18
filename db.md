@@ -267,7 +267,7 @@ sidebar/
 5. Query Optimization (Performance improvement)
 6. Data Migration Tools (Feature enhancement)
 
-## API Routes
+## API Link
 
 ### Database Operations
 - `GET /api/database`

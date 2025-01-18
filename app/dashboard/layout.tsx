@@ -30,7 +30,7 @@ export default function RootLayout({
                     <SidebarTrigger className="-ml-1" />
                     <BreadcrumbNav />
                   </header>
-                  <main className="w-full p-4 sm:p-6 md:p-8 lg:p-10">{children}</main>
+                  <main className="p-4 sm:p-6 md:p-8 lg:p-10">{children}</main>
                 </SidebarInset>
               </div>
             </BreadcrumbProvider>
