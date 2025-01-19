@@ -39,6 +39,7 @@ import { teamSwitcherConfig } from "@/slices/menu/team-switcher/config"
 import type { MenuItemWithChildren } from "shared/types/navigation-types"
 
 import { MenuSection } from "./menu"
+import Link from "next/link"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [mounted, setMounted] = React.useState(false)
@@ -58,6 +59,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       id: 'database',
       title: 'Database Management',
       href: '/dashboard/database-manager',
+      icon: <Database className="mr-2" />,
+    },
+    {
+      id: 'social-media',
+      title: 'Social Media',
+      href: '/dashboard/social-media',
       icon: <Database className="mr-2" />,
     },
     { 
@@ -95,7 +102,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           id: 'team-members', 
           title: 'Members',
           icon: <UserCircle className="h-4 w-4" />,
-          href: '/dashboard/team/members'
+          isCollapsible: true,
+          children: [
+            { 
+              id: 'team-members-active', 
+              title: 'Active Members',
+              icon: <UserCircle className="h-4 w-4" />,
+              href: '/dashboard/team/members/active'
+            },
+            { 
+              id: 'team-members-inactive', 
+              title: 'Inactive Members',
+              icon: <UserCircle className="h-4 w-4" />,
+              href: '/dashboard/team/members/inactive'
+            }
+          ]
         },
         { 
           id: 'team-settings', 
@@ -198,8 +219,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <TeamSwitcher teams={teamSwitcherConfig} />
         </SidebarHeader>
         <SidebarContent>
-          <NavMain />
-          <NavProjects projects={navProjectsConfig} />
           <SidebarMenu>
             <MenuSection 
               items={navigationItems}
@@ -209,6 +228,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               title="Navigation"
             />
           </SidebarMenu>
+          <NavMain />
+          <NavProjects projects={navProjectsConfig} />
         </SidebarContent>
         <SidebarFooter>
           <NavUser />
@@ -221,13 +242,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               {secondaryItems.map((item) => (
                 <li key={item.id} className="flex items-center px-2 py-1">
-                  <a 
-                    href={item.href} 
+                  <Link
+                    href={item.href || '#'}
                     className="flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors duration-200"
                   >
                     {item.icon}
                     <span>{item.title}</span>
-                  </a>
+                  </Link>
                 </li>
               ))}
             </SidebarMenu>

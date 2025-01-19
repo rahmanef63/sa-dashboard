@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { MenuItem } from '../types'
+import { MenuItemWithIcon } from '@/shared/components/icon-picker/types'
 
 export function useAvailableMenuItems() {
-  const [availableMenuItems, setAvailableMenuItems] = useState<MenuItem[]>([])
+  const [availableMenuItems, setAvailableMenuItems] = useState<MenuItemWithIcon[]>([])
 
   useEffect(() => {
     setAvailableMenuItems([
@@ -19,4 +19,3 @@ export function useAvailableMenuItems() {
 
   return availableMenuItems
 }
-
