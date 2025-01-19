@@ -3,7 +3,9 @@
 import * as React from "react"
 import { 
   Archive,
+  BarChart,
   Bell,
+  Calendar,
   Database,
   FileText,
   FolderKanban,
@@ -64,8 +66,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     {
       id: 'social-media',
       title: 'Social Media',
-      href: '/dashboard/social-media',
       icon: <Database className="mr-2" />,
+      isCollapsible: true,
+      children: [
+        {
+          id: 'overview',
+          title: 'Overview',
+          icon: <LayoutDashboard className="h-4 w-4" />,
+          href: '/dashboard/social-media/overview'
+        },
+        {
+          id: 'posts',
+          title: 'Posts',
+          icon: <Inbox className="h-4 w-4" />,
+          href: '/dashboard/social-media/posts'
+        },
+        {
+          id: 'calendar',
+          title: 'Calendar',
+          icon: <Calendar className="h-4 w-4" />,
+          href: '/dashboard/social-media/calendar'
+        },
+        {
+          id: 'analytics',
+          title: 'Analytics',
+          icon: <BarChart className="h-4 w-4" />,
+          href: '/dashboard/social-media/analytics'
+        },
+        {
+          id: 'archived',
+          title: 'Archived',
+          icon: <Archive className="h-4 w-4" />,
+          href: '/dashboard/social-media/archived'
+        },
+        {
+          id: 'settings',
+          title: 'Settings',
+          icon: <Settings className="h-4 w-4" />,
+          href: '/dashboard/social-media/settings'
+        }
+      ]
     },
     { 
       id: 'dashboard', 

@@ -7,7 +7,7 @@ import { useAvailableMenuItems } from './hooks'
 import { AvailableMenuItems } from './components/AvailableMenuItems'
 import { UserMenuItems } from './components/UserMenuItems'
 import { CustomMenuItemForm } from './components/CustomMenuItemForm'
-import { MenuItem, GroupLabel, SubMenuItem } from '@/slices/menu/types'
+import { MenuItem, GroupLabel, SubMenuItem } from 'shared/types/navigation-types'
 import { MenuItemWithIcon } from '@/shared/components/icon-picker/types'
 import { getIconByName } from '@/shared/components/icon-picker/utils'
 import { Alert, AlertDescription } from "shared/components/ui/alert"

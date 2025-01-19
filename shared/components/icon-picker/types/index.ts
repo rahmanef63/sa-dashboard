@@ -12,7 +12,7 @@ export interface IconPickerProps {
 }
 
 // Extend the existing MenuItem type
-import { MenuItem as BaseMenuItem } from '@/slices/menu/types'
+import { MenuItem as BaseMenuItem } from 'shared/types/navigation-types'
 
 export interface MenuItemWithIcon extends BaseMenuItem {
   icon: string // This will store the icon name

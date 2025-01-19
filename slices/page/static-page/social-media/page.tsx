@@ -1,11 +1,10 @@
 import React from 'react';
-import Dashboard from './pages/Dashboard';
+import SocialMediaOverviewPage from './pages/SocialMedia-OverviewPage';
 
 
 export const SocialMedia = () => {
   return (
-    <Dashboard />
-
+    <SocialMediaOverviewPage />
   );
 };
 

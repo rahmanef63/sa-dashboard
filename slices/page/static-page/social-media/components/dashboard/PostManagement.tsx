@@ -1,5 +1,5 @@
-import { PostCreator } from "../components/dashboard/PostCreator";
-import { PostManager } from "../components/dashboard/PostManager";
+import { PostCreator } from "./PostCreator";
+import { PostManager } from "./PostManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "shared/components/ui/tabs";
 
 const PostManagement = () => {

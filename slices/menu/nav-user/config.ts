@@ -1,4 +1,4 @@
-import { User } from '../types'
+import { User } from 'shared/types/navigation-types'
 import { UserMenuType } from './profile/types'
 
 // User data with extended profile information
