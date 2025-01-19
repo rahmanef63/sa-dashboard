@@ -1,89 +1,20 @@
 import { useCallback, useRef, useEffect } from 'react'
-import { MenuItem, SubMenuItem, GroupLabel, NavUrl, NavGroup } from 'shared/types/navigation-types'
-import { MenuItem as NavMainMenuItem, SubMenuItem as NavMainSubMenuItem, NavUrl as NavMainUrl } from '@/slices/menu/nav-main/types'
+import { MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
+import { MenuItem as NavMainMenuItem, SubMenuItem as NavMainSubMenuItem } from '@/slices/menu/nav-main/types'
+import { NavGroup } from 'shared/types/navigation-types'
 import { useMenu } from '@/slices/menu/context/MenuContext'
 import { toast } from 'sonner'
-
-// Helper function to convert shared MenuItem to NavMainMenuItem
-const convertSharedToNavMain = (item: MenuItem): NavMainMenuItem => {
-  const navMainItem: NavMainMenuItem = {
-    id: item.id,
-    title: item.title,
-    icon: item.icon,
-    url: item.url,
-    isActive: item.isActive,
-    groupId: item.groupId,
-    order: item.order
-  };
-
-  if (item.items) {
-    navMainItem.items = item.items.map(subItem => ({
-      id: subItem.id,
-      title: subItem.title,
-      url: subItem.url,
-      parentId: subItem.parentId,
-      order: subItem.order
-    }));
-  }
-
-  return navMainItem;
-};
-
-// Helper function to convert NavMainMenuItem to shared MenuItem
-const convertNavMainToShared = (item: NavMainMenuItem): MenuItem => {
-  const sharedItem: MenuItem = {
-    id: item.id,
-    title: item.title,
-    icon: item.icon,
-    url: item.url,
-    isActive: item.isActive,
-    groupId: item.groupId,
-    order: item.order
-  };
-
-  if (item.items) {
-    sharedItem.items = item.items.map(subItem => ({
-      id: subItem.id,
-      title: subItem.title,
-      url: subItem.url,
-      parentId: subItem.parentId,
-      order: subItem.order
-    }));
-  }
-
-  return sharedItem;
-};
-
-// Helper function to convert NavMainSubMenuItem to SubMenuItem
-const convertNavMainSubToShared = (item: NavMainSubMenuItem): SubMenuItem => ({
-  id: item.id,
-  title: item.title,
-  url: item.url,
-  parentId: item.parentId,
-  order: item.order
-});
-
-// Helper function to convert SubMenuItem to NavMainSubMenuItem
-const convertSharedSubToNavMain = (item: SubMenuItem): NavMainSubMenuItem => ({
-  id: item.id,
-  title: item.title,
-  url: item.url,
-  parentId: item.parentId,
-  order: item.order
-});
-
-// Basic validation functions
-const validateMenuItem = (item: MenuItem): boolean => {
-  return Boolean(item.id && item.title && item.url && item.icon);
-};
-
-const validateGroupLabel = (label: GroupLabel): boolean => {
-  return Boolean(label.id && label.title);
-};
-
-const validateSubMenuItem = (item: SubMenuItem): boolean => {
-  return Boolean(item.id && item.title && item.url);
-};
+import { 
+  convertSharedToNavMain,
+  convertNavMainToShared,
+  convertNavMainSubToShared,
+  convertSharedSubToNavMain 
+} from '../../utils/converters'
+import { 
+  validateMenuItem,
+  validateGroupLabel,
+  validateSubMenuItem 
+} from '../../utils/validation'
 
 export function useUserMenu() {
   const context = useMenu();
@@ -146,7 +77,7 @@ export function useUserMenu() {
 
   const handleSaveLabel = useCallback((label: GroupLabel, isEdit: boolean, selectedLabelId: string | null) => {
     try {
-      if (!validateGroupLabel(label)) return;
+      if (!validateGroupLabel(label, navData.groups)) return;
       
       if (isEdit && selectedLabelId) {
         contextUpdateGroupLabel(selectedLabelId, label);
@@ -192,8 +123,8 @@ export function useUserMenu() {
         return;
       }
 
-      const navGroups = navData.groups as NavGroup[];
-      if (!validateSubMenuItem(subItem)) return;
+      const navGroups = navData.groups;
+      if (!validateSubMenuItem(subItem, selectedItemId)) return;
       
       onAddSubMenuItem(selectedItemId, subItem);
       toast.success("Sub-menu item added successfully");

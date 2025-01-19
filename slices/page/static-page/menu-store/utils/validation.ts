@@ -4,7 +4,25 @@ import { toast } from 'sonner'
 
 const VALID_TARGETS = ['_blank', '_self', '_parent', '_top'] as const;
 
+// Core validation functions
+const validateMenuItemStructure = (item: MenuItem): boolean => {
+  return !!(item.id && item.title && typeof item.isActive === 'boolean');
+};
+
+const validateGroupLabelStructure = (label: GroupLabel): boolean => {
+  return !!(label.id && label.title);
+};
+
+const validateSubMenuItemStructure = (item: SubMenuItem): boolean => {
+  return !!(item.id && item.title && item.parentId);
+};
+
+// UI validation functions with toast notifications
 export const validateMenuItem = (item: MenuItemWithStringTarget): boolean => {
+  if (!validateMenuItemStructure(item)) {
+    toast.error("Invalid menu item structure");
+    return false;
+  }
   if (!item.title.trim()) {
     toast.error("Menu item title cannot be empty");
     return false;
@@ -21,6 +39,10 @@ export const validateMenuItem = (item: MenuItemWithStringTarget): boolean => {
 };
 
 export const validateGroupLabel = (label: GroupLabel, existingGroups: NavGroup[]): boolean => {
+  if (!validateGroupLabelStructure(label)) {
+    toast.error("Invalid group label structure");
+    return false;
+  }
   if (!label.title.trim()) {
     toast.error("Group label title cannot be empty");
     return false;
@@ -32,22 +54,21 @@ export const validateGroupLabel = (label: GroupLabel, existingGroups: NavGroup[]
   return true;
 };
 
-export const validateSubMenuItem = (subItem: SubMenuItem, parentId: string, groups: NavGroup[]): boolean => {
+export const validateSubMenuItem = (subItem: SubMenuItem, parentId: string): boolean => {
+  if (!validateSubMenuItemStructure(subItem)) {
+    toast.error("Invalid sub-menu item structure");
+    return false;
+  }
   if (!subItem.title.trim()) {
     toast.error("Sub-menu item title cannot be empty");
     return false;
   }
-  if (!subItem.url.trim()) {
+  if (!subItem.url.href.trim()) {
     toast.error("Sub-menu item URL cannot be empty");
     return false;
   }
-  const parentItem = groups.flatMap(g => g.items).find(item => item.id === parentId);
-  if (!parentItem) {
-    toast.error("Parent menu item not found");
-    return false;
-  }
-  if (parentItem.items?.some(si => si.id !== subItem.id && si.title === subItem.title)) {
-    toast.error("A sub-menu item with this title already exists under this parent");
+  if (subItem.parentId !== parentId) {
+    toast.error("Invalid parent ID for sub-menu item");
     return false;
   }
   return true;

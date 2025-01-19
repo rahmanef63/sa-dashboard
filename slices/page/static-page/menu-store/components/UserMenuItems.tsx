@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Button } from "shared/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "shared/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "shared/components/ui/select"
@@ -7,11 +7,13 @@ import { Dialog, DialogContent } from "shared/components/ui/dialog"
 import { MenuItem, SubMenuItem, GroupLabel, NavGroup } from 'shared/types/navigation-types'
 import { UserMenuItemsProps } from '../types/userMenu.types'
 import { type LucideIcon, Edit, Trash, PlusCircle, File, AlertCircle } from 'lucide-react'
-import { useUserMenu } from '../hooks/useUserMenu'
 import { getIconByName } from 'shared/components/icon-picker/utils'
-import { useIconManagement } from '../hooks/useIconManagement'
-import { useMenuOperations } from '../hooks/useMenuOperations'
-import { createEmptySubMenuItem } from '../utils/menuItemOperations'
+import { 
+  useMenuOperations,
+  useIconManagement,
+  useUserMenu
+ } from '../hooks'
+import { createEmptySubMenuItem } from '../utils'
 import { MenuItemForm } from '@/slices/menu/nav-main/components/forms/MenuItemForm'
 import { GroupLabelForm } from '@/slices/menu/nav-main/components/forms/GroupForm'
 import { SubMenuItemForm } from '@/slices/menu/nav-main/components/forms/SubMenuItemForm'
@@ -57,10 +59,16 @@ export function UserMenuItems({
   } = useIconManagement();
 
   const {
-    handleEditWithValidation,
-    handleDeleteSubItem,
-    handleSaveSubMenuItemWrapper,
+    handleEditItem,
+    handleDeleteItem: handleDeleteSubItem,
+    handleAddSubMenuItem: handleSaveSubMenuItemWrapper,
   } = useMenuOperations(onEditItem, onRemoveItem, onAddSubMenuItem);
+
+  const handleSubItemDelete = useCallback((subItemId: string) => {
+    if (window.confirm('Are you sure you want to delete this sub-menu item?')) {
+      handleDeleteSubItem(subItemId);
+    }
+  }, [handleDeleteSubItem]);
 
   const { 
     navData, 
@@ -129,9 +137,9 @@ export function UserMenuItems({
       </CardHeader>
       <CardContent>
         {navData.groups.map((group: NavGroup) => (
-          <div key={group.label.id} className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">{group.label.title}</h3>
+          <div key={group.label.id}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-md font-medium">{group.label.title}</h3>
               {group.label.id !== 'default' && (
                 <div className="flex gap-2">
                   <Button
@@ -151,9 +159,9 @@ export function UserMenuItems({
                 </div>
               )}
             </div>
-            <div className="space-y-2">
+            <div>
               {group.items.map((item: MenuItem) => (
-                <div key={item.id} className="flex flex-col space-y-2 p-4 border rounded-lg">
+                <div key={item.id} className="flex flex-col space-y-1 p-2 border rounded-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       {renderIcon(item.icon)}
@@ -251,7 +259,7 @@ export function UserMenuItems({
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteSubItem(item.id, subItem.id, item)}
+                            onClick={() => handleSubItemDelete(subItem.id)}
                           >
                             <Trash className="h-4 w-4" />
                           </Button>
@@ -294,7 +302,7 @@ export function UserMenuItems({
         <DialogContent>
           <MenuItemForm 
             item={findMenuItem(selectedItemId || '') || null}
-            onSave={handleEditWithValidation}
+            onSave={handleEditItem}
             onCancel={() => setActiveDialog(null)}
           />
         </DialogContent>

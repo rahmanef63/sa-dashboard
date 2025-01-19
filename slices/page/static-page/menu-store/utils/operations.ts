@@ -1,19 +1,29 @@
 import { MenuItem, SubMenuItem } from 'shared/types/navigation-types';
 
+// Find operations
 export const findSubMenuItem = (parentItem: MenuItem | null, subItemId: string): SubMenuItem | null => {
   if (!parentItem?.items) return null;
   return parentItem.items.find(item => item.id === subItemId) || null;
 };
 
-export const validateMenuItem = (item: MenuItem): { isValid: boolean; error?: string } => {
-  if (!item.icon) {
-    return {
-      isValid: false,
-      error: "Menu item must have an icon. Please select an icon before proceeding."
-    };
+export const findParentMenuItem = (menuItems: MenuItem[], subItemId: string): MenuItem | null => {
+  for (const item of menuItems) {
+    if (item.items?.some(si => si.id === subItemId)) {
+      return item;
+    }
   }
-  return { isValid: true };
+  return null;
 };
+
+// Create operations
+export const createEmptyMenuItem = (): MenuItem => ({
+  id: '',
+  title: '',
+  icon: '',
+  url: { href: '' },
+  isActive: true,
+  items: []
+});
 
 export const createEmptySubMenuItem = (parentId: string): SubMenuItem => ({
   id: '',

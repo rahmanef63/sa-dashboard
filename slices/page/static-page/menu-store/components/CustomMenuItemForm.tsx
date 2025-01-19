@@ -5,7 +5,7 @@ import { Label } from "shared/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "shared/components/ui/card"
 import { MenuItemWithIcon } from '@/shared/components/icon-picker/types'
 import { IconPicker } from '@/shared/components/icon-picker/components/IconPicker'
-import { useMenuItemForm } from '../hooks/useMenuItemForm'
+import { useMenuItemForm } from '../hooks'
 
 type CustomMenuItemFormProps = {
   onAddItem: (item: MenuItemWithIcon) => void

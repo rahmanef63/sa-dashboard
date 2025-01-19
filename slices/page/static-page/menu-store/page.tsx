@@ -3,7 +3,7 @@
 import React from 'react'
 import { useMenu } from '@/slices/menu/context/MenuContext'
 import { useToast } from "shared/components/ui/use-toast"
-import { useAvailableMenuItems } from './hooks/useAvailableMenuItems'
+import { useAvailableMenuItems } from './hooks'
 import { AvailableMenuItems } from './components/AvailableMenuItems'
 import { UserMenuItems } from './components/UserMenuItems'
 import { CustomMenuItemForm } from './components/CustomMenuItemForm'
@@ -17,27 +17,20 @@ export default function MenuStorePage() {
   const { toast } = useToast()
   const availableMenuItems = useAvailableMenuItems()
 
-  const handleAddMenuItem = (item: MenuItem) => {
+  const handleAddMenuItem = (item: MenuItemWithIcon) => {
     try {
-      // Validate that the item has an icon
-      if (!item.icon) {
-        toast({
-          title: "Validation Error",
-          description: "Menu item must have an icon. Please select an icon before adding.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const existingItem = menuItems.find(menuItem => menuItem.title === item.title)
       if (existingItem) {
         throw new Error(`${item.title} is already in your menu.`);
       }
       
-      // Add the item with the default group
+      // Convert the icon string to a Lucide component
+      const IconComponent = getIconByName(item.icon)
+      
+      // Add the item with the default group and converted icon
       const itemWithGroup = {
         ...item,
-        icon: item.icon, // Keep the original icon
+        icon: item.icon || 'File', // Keep the original icon string or use default
         groupId: 'default'
       }
       
@@ -57,19 +50,10 @@ export default function MenuStorePage() {
 
   const handleEditMenuItem = (editedItem: MenuItem) => {
     try {
-      // Validate that the item has an icon
-      if (!editedItem.icon) {
-        toast({
-          title: "Validation Error",
-          description: "Menu item must have an icon. Please select an icon before saving.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      // Keep the icon as is, since MenuItem type accepts both string and LucideIcon
       const convertedItem = {
         ...editedItem,
-        icon: editedItem.icon
+        icon: editedItem.icon || 'File'
       }
       
       updateMenuItem(convertedItem)
