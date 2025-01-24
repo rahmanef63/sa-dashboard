@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown, Plus } from 'lucide-react'
-
+import { renderIcon } from "@/shared/icon-picker/utils"
+import { Dashboard } from 'shared/types/navigation-types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,18 +18,21 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "shared/components/ui/sidebar"
+import { ChevronsUpDown, Plus } from "lucide-react"
 
-export function TeamSwitcher({
-  teams,
-}: {
-  teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
-}) {
+type DashboardSwitcherProps = {
+  dashboards: Dashboard[]
+  onDashboardChange: (dashboard: Dashboard) => void
+}
+
+export function DashboardSwitcher({ dashboards, onDashboardChange }: DashboardSwitcherProps) {
   const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const [activeDashboard, setActiveDashboard] = React.useState(dashboards[0])
+
+  const handleDashboardChange = (dashboard: Dashboard) => {
+    setActiveDashboard(dashboard)
+    onDashboardChange(dashboard)
+  }
 
   return (
     <SidebarMenu>
@@ -37,17 +40,17 @@ export function TeamSwitcher({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="lg"
+              size="sm"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                {React.createElement(activeTeam.logo, { className: "size-4" })}
+                {renderIcon(activeDashboard.logo)}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {activeTeam.name}
+                  {activeDashboard.name}
                 </span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
+                <span className="truncate text-xs">{activeDashboard.plan}</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
@@ -59,18 +62,18 @@ export function TeamSwitcher({
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Teams
+              Dashboards
             </DropdownMenuLabel>
-            {teams.map((team, index) => (
+            {dashboards.map((dashboard, index) => (
               <DropdownMenuItem
-                key={team.name}
-                onClick={() => setActiveTeam(team)}
+                key={dashboard.name}
+                onClick={() => handleDashboardChange(dashboard)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
-                  {React.createElement(team.logo, { className: "size-4 shrink-0" })}
+                  {renderIcon(dashboard.logo)}
                 </div>
-                {team.name}
+                {dashboard.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>
             ))}
@@ -79,7 +82,7 @@ export function TeamSwitcher({
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add team</div>
+              <div className="font-medium text-muted-foreground">Add dashboard</div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -87,4 +90,3 @@ export function TeamSwitcher({
     </SidebarMenu>
   )
 }
-

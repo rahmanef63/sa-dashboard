@@ -1,361 +1,199 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { MenuItem, NavMainData, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
-
-type MenuContextType = {
-  menuItems: MenuItem[]
-  setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>
-  addMenuItem: (item: MenuItem) => void
-  updateMenuItem: (item: MenuItem) => void
-  deleteMenuItem: (id: string) => void
-  updateSubMenuItem: (groupId: string, parentId: string, subItem: SubMenuItem) => void
-  deleteSubMenuItem: (groupId: string, parentId: string, subItemId: string) => void
-  updateItemCollapsible: (itemId: string, isCollapsible: boolean) => void
-  navData: NavMainData
-  updateNavData: (newNavData: NavMainData) => void
-  handleChangeGroup: (itemId: string, newGroupId: string) => void
-  addGroupLabel: (label: GroupLabel) => void
-  updateGroupLabel: (labelId: string, updatedLabel: GroupLabel) => void
-  deleteGroupLabel: (labelId: string) => void
-}
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { MenuItem, MenuItemWithChildren, NavMainData, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
+import { MenuContextType } from './types/menu.types'
+import { useMenuActions } from './hooks/useMenuActions'
+import { loadMenuItems, loadNavData, getDefaultGroup, saveNavData, saveMenuItems, convertToMenuItem } from './utils/menu.utils'
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined)
 
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [navData, setNavData] = useState<NavMainData>({ groups: [] })
-  const timeStampRef = useRef<{ [key: string]: number }>({});
+  const timeStampRef = useRef<{ [key: string]: number }>({})
+
+  const {
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    handleChangeGroup
+  } = useMenuActions(menuItems, setMenuItems, navData, setNavData, timeStampRef)
 
   useEffect(() => {
-    const storedItems = localStorage.getItem('userMenuItems')
-    const storedNavData = localStorage.getItem('navMainData')
-    const defaultGroup = {
-      label: { id: 'default', title: 'Default Group' },
-      items: [] as MenuItem[]
-    }
+    const storedItems = loadMenuItems()
+    const storedNavData = loadNavData()
+    const defaultGroup = getDefaultGroup()
     
-    let initialNavData: NavMainData = { groups: [defaultGroup] };
+    let initialNavData: NavMainData = { groups: [defaultGroup] }
     
     if (storedNavData) {
       try {
-        const parsedNavData = JSON.parse(storedNavData) as NavMainData;
-        initialNavData = parsedNavData;
+        initialNavData = storedNavData
       } catch (error) {
-        console.error('Error parsing stored nav data:', error);
+        console.error('Error parsing stored nav data:', error)
       }
     }
     
     if (storedItems) {
-      const parsedItems = JSON.parse(storedItems) as MenuItem[];
-      setMenuItems(parsedItems);
+      setMenuItems(storedItems)
       
-      // Add stored items to their respective groups or default group
-      parsedItems.forEach((item: MenuItem) => {
+      storedItems.forEach((item: MenuItem) => {
         if (!item.groupId) {
-          initialNavData.groups[0].items.push(item);
+          initialNavData.groups[0].items.push(item)
         } else {
-          const groupIndex = initialNavData.groups.findIndex(group => group.label.id === item.groupId);
+          const groupIndex = initialNavData.groups.findIndex(group => group.label.id === item.groupId)
           if (groupIndex !== -1) {
-            initialNavData.groups[groupIndex].items.push(item);
+            initialNavData.groups[groupIndex].items.push(item)
           } else {
-            initialNavData.groups[0].items.push(item);
+            initialNavData.groups[0].items.push(item)
           }
         }
-      });
+      })
     }
     
-    setNavData(initialNavData);
+    setNavData(initialNavData)
   }, [])
 
-  const saveMenuItems = (items: MenuItem[]) => {
-    setMenuItems(items)
-    localStorage.setItem('userMenuItems', JSON.stringify(items))
-  }
-
-  const addMenuItem = (item: MenuItem) => {
-    const updatedNavData: NavMainData = JSON.parse(JSON.stringify(navData));
-    const defaultGroupIndex = updatedNavData.groups.findIndex(group => group.label.id === 'default');
-    
-    // Add the item to the default group if no group is specified
-    if (!item.groupId && defaultGroupIndex !== -1) {
-      updatedNavData.groups[defaultGroupIndex].items.push({
-        ...item,
-        groupId: 'default'
-      });
+  // Wrapper for setMenuItems that handles conversion
+  const handleSetMenuItems = useCallback((items: MenuItemWithChildren[] | ((prev: MenuItem[]) => MenuItem[])) => {
+    if (typeof items === 'function') {
+      setMenuItems(items)
     } else {
-      const groupIndex = updatedNavData.groups.findIndex(group => group.label.id === item.groupId);
-      if (groupIndex !== -1) {
-        updatedNavData.groups[groupIndex].items.push(item);
-      } else {
-        updatedNavData.groups[defaultGroupIndex].items.push({
-          ...item,
-          groupId: 'default'
-        });
-      }
+      setMenuItems(items.map(item => convertToMenuItem(item)))
     }
-    
-    setNavData(updatedNavData);
-    const newItems: MenuItem[] = [...menuItems, item];
-    setMenuItems(newItems);
-    localStorage.setItem('userMenuItems', JSON.stringify(newItems));
-  }
+  }, [])
 
-  const updateMenuItem = (updatedItem: MenuItem) => {
-    // Update the menuItems array
-    const newItems: MenuItem[] = menuItems.map((item) =>
-      item.id === updatedItem.id ? { ...updatedItem } : item
-    );
-    setMenuItems(newItems);
-    localStorage.setItem('userMenuItems', JSON.stringify(newItems));
-    
-    // Update the navData structure
+  const updateSubMenuItem = (groupId: string, parentId: string, subItem: SubMenuItem) => {
     const updatedNavData = {
       ...navData,
-      groups: navData.groups.map(group => ({
-        ...group,
-        items: group.items.map(item => 
-          item.id === updatedItem.id ? { ...updatedItem, groupId: group.label.id } : item
-        )
-      }))
-    };
-    
-    setNavData(updatedNavData);
-    localStorage.setItem('navMainData', JSON.stringify(updatedNavData));
-  }
-
-  const deleteMenuItem = (id: string) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.map(group => ({
-        ...group,
-        items: group.items.filter(item => item.id !== id)
-      }))
-    };
-    setNavData(updatedNavData);
-    localStorage.setItem('navData', JSON.stringify(updatedNavData));
-
-    const newItems = menuItems.filter((item) => item.id !== id);
-    setMenuItems(newItems);
-    localStorage.setItem('userMenuItems', JSON.stringify(newItems));
-
-    // Reset the timestamp for the deleted item
-    Object.keys(timeStampRef.current).forEach(key => {
-      if (key.includes(id)) {
-        delete timeStampRef.current[key];
-      }
-    });
-  }
-
-  const updateNavData = (newNavData: NavMainData) => {
-    // Remove duplicate items - ensure each item exists only in one group
-    const updatedNavData = {
-      groups: newNavData.groups.map((group, groupIndex) => ({
-        ...group,
-        items: group.items.filter(item => {
-          // Check if this item exists in any previous group
-          const existsInPreviousGroup = newNavData.groups
-            .slice(0, groupIndex)
-            .some(prevGroup => 
-              prevGroup.items.some(prevItem => prevItem.id === item.id)
-            );
-          return !existsInPreviousGroup;
-        }).map(item => ({
-          ...item,
-          groupId: group.label.id
-        }))
-      }))
-    };
-
-    setNavData(updatedNavData);
-    localStorage.setItem('navMainData', JSON.stringify(updatedNavData));
-    
-    // Update menuItems to stay in sync - flatten all groups into a single array
-    const allItems = updatedNavData.groups.flatMap(group => 
-      group.items.map(item => ({
-        ...item,
-        groupId: group.label.id
-      }))
-    );
-    setMenuItems(allItems);
-    localStorage.setItem('userMenuItems', JSON.stringify(allItems));
-  };
-
-  const handleChangeGroup = (itemId: string, newGroupId: string) => {
-    const updatedNavData = { ...navData };
-    let movedItem: MenuItem | undefined;
-
-    // Remove item from old group
-    updatedNavData.groups = updatedNavData.groups.map(group => ({
-      ...group,
-      items: group.items.filter(item => {
-        if (item.id === itemId) {
-          movedItem = item;
-          return false;
+      groups: navData.groups.map(group => {
+        if (group.label.id === groupId) {
+          return {
+            ...group,
+            items: group.items.map(item => {
+              if (item.id === parentId) {
+                return {
+                  ...item,
+                  items: item.items?.map((sub: SubMenuItem) =>
+                    sub.id === subItem.id ? subItem : sub
+                  ) || []
+                }
+              }
+              return item
+            })
+          }
         }
-        return true;
+        return group
       })
-    }));
-
-    // Add item to new group
-    if (movedItem) {
-      const targetGroupIndex = updatedNavData.groups.findIndex(g => g.label.id === newGroupId);
-      if (targetGroupIndex !== -1) {
-        movedItem.groupId = newGroupId;
-        updatedNavData.groups[targetGroupIndex].items.push(movedItem);
-      }
     }
 
-    updateNavData(updatedNavData);
-  };
-
-  const updateSubMenuItem = (groupId: string, parentId: string, updatedSubItem: SubMenuItem) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.map(group => 
-        group.label.id === groupId
-          ? {
-              ...group,
-              items: group.items.map(item => 
-                item.id === parentId
-                  ? {
-                      ...item,
-                      items: item.items?.map(subItem => 
-                        subItem.id === updatedSubItem.id ? updatedSubItem : subItem
-                      )
-                    }
-                  : item
-              )
-            }
-          : group
-      )
-    }
-    updateNavData(updatedNavData)
+    setNavData(updatedNavData)
+    saveNavData(updatedNavData)
   }
 
   const deleteSubMenuItem = (groupId: string, parentId: string, subItemId: string) => {
     const updatedNavData = {
       ...navData,
-      groups: navData.groups.map(group => 
-        group.label.id === groupId
-          ? {
-              ...group,
-              items: group.items.map(item => 
-                item.id === parentId
-                  ? {
-                      ...item,
-                      items: item.items?.filter(subItem => subItem.id !== subItemId)
-                    }
-                  : item
-              )
-            }
-          : group
-      )
+      groups: navData.groups.map(group => {
+        if (group.label.id === groupId) {
+          return {
+            ...group,
+            items: group.items.map(item => {
+              if (item.id === parentId) {
+                return {
+                  ...item,
+                  items: item.items?.filter((sub: SubMenuItem) => sub.id !== subItemId) || []
+                }
+              }
+              return item
+            })
+          }
+        }
+        return group
+      })
     }
-    updateNavData(updatedNavData)
+
+    setNavData(updatedNavData)
+    saveNavData(updatedNavData)
   }
 
   const updateItemCollapsible = (itemId: string, isCollapsible: boolean) => {
-    const updatedNavData = { ...navData };
-    let itemUpdated = false;
-
-    updatedNavData.groups = updatedNavData.groups.map(group => {
-      const updatedItems = group.items.map(item => {
-        if (item.id === itemId) {
-          itemUpdated = true;
-          return { ...item, isCollapsible };
-        }
-        return item;
-      });
-      return { ...group, items: updatedItems };
-    });
-
-    if (itemUpdated) {
-      setNavData(updatedNavData);
-      localStorage.setItem('navMainData', JSON.stringify(updatedNavData));
+    const updatedNavData = {
+      ...navData,
+      groups: navData.groups.map(group => ({
+        ...group,
+        items: group.items.map(item =>
+          item.id === itemId ? { ...item, isCollapsible } : item
+        )
+      }))
     }
-  };
+
+    setNavData(updatedNavData)
+    saveNavData(updatedNavData)
+  }
+
+  const updateNavData = (newNavData: NavMainData) => {
+    setNavData(newNavData)
+    saveNavData(newNavData)
+    
+    const allItems = newNavData.groups.flatMap(group => 
+      group.items.map(item => ({
+        ...item,
+        groupId: group.label.id
+      }))
+    )
+    setMenuItems(allItems)
+    saveMenuItems(allItems)
+  }
 
   const addGroupLabel = (label: GroupLabel) => {
-    const updatedNavData = { ...navData };
-    
-    // Validate label
-    if (updatedNavData.groups.some(g => g.label.title === label.title)) {
-      throw new Error('A group with this title already exists');
+    const updatedNavData = {
+      ...navData,
+      groups: [...navData.groups, { label, items: [] }]
     }
-    
-    // Add new group with empty items array
-    updatedNavData.groups.push({
-      label,
-      items: []
-    });
-    
-    updateNavData(updatedNavData);
-  };
+    setNavData(updatedNavData)
+    saveNavData(updatedNavData)
+  }
 
   const updateGroupLabel = (labelId: string, updatedLabel: GroupLabel) => {
-    const updatedNavData = { ...navData };
-    
-    // Validate updated label
-    if (updatedNavData.groups.some(g => g.label.id !== labelId && g.label.title === updatedLabel.title)) {
-      throw new Error('A group with this title already exists');
+    const updatedNavData = {
+      ...navData,
+      groups: navData.groups.map(group =>
+        group.label.id === labelId ? { ...group, label: updatedLabel } : group
+      )
     }
-    
-    // Update the label
-    updatedNavData.groups = updatedNavData.groups.map(group => 
-      group.label.id === labelId 
-        ? { ...group, label: updatedLabel }
-        : group
-    );
-    
-    updateNavData(updatedNavData);
-  };
+    setNavData(updatedNavData)
+    saveNavData(updatedNavData)
+  }
 
   const deleteGroupLabel = (labelId: string) => {
-    const updatedNavData = { ...navData };
-    
-    // Don't allow deleting the default group
-    if (labelId === 'default') {
-      throw new Error('Cannot delete the default group');
+    const updatedNavData = {
+      ...navData,
+      groups: navData.groups.filter(group => group.label.id !== labelId)
     }
-    
-    // Move items from deleted group to default group
-    const defaultGroup = updatedNavData.groups.find(g => g.label.id === 'default');
-    const groupToDelete = updatedNavData.groups.find(g => g.label.id === labelId);
-    
-    if (defaultGroup && groupToDelete) {
-      defaultGroup.items.push(...groupToDelete.items.map(item => ({
-        ...item,
-        groupId: 'default'
-      })));
-    }
-    
-    // Remove the group
-    updatedNavData.groups = updatedNavData.groups.filter(g => g.label.id !== labelId);
-    
-    updateNavData(updatedNavData);
-  };
+    setNavData(updatedNavData)
+    saveNavData(updatedNavData)
+  }
 
-  return (
-    <MenuContext.Provider value={{
-      menuItems,
-      setMenuItems,
-      addMenuItem,
-      updateMenuItem,
-      deleteMenuItem,
-      updateSubMenuItem,
-      deleteSubMenuItem,
-      updateItemCollapsible,
-      navData,
-      updateNavData,
-      handleChangeGroup,
-      addGroupLabel,
-      updateGroupLabel,
-      deleteGroupLabel,
-    }}>
-      {children}
-    </MenuContext.Provider>
-  )
+  const value = {
+    menuItems,
+    setMenuItems: handleSetMenuItems,
+    navData,
+    updateNavData,
+    addMenuItem,
+    updateMenuItem,
+    deleteMenuItem,
+    updateSubMenuItem,
+    deleteSubMenuItem,
+    updateItemCollapsible,
+    handleChangeGroup,
+    addGroupLabel,
+    updateGroupLabel,
+    deleteGroupLabel
+  }
+
+  return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>
 }
 
 export const useMenu = () => {

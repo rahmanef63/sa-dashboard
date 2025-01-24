@@ -1,13 +1,13 @@
 import React from 'react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "shared/components/ui/collapsible"
 import { Button } from "shared/components/ui/button"
-import { ChevronRight, Edit, Trash } from 'lucide-react'
-import { MenuItem } from 'shared/types/navigation-types'
-import { NavMenuItem } from './MenuItem'
+import { Edit, Trash } from 'lucide-react'
+import { MenuItem as MenuType } from 'shared/types/navigation-types'
+import { MenuItem } from './MenuItem'
 import { useMenu } from '@/slices/menu/context/MenuContext'
 
 interface SidebarMenuItemComponentProps {
-  item: MenuItem
+  item: MenuType
 }
 
 export function SidebarMenuItemComponent({
@@ -18,12 +18,12 @@ export function SidebarMenuItemComponent({
   return (
     <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
       <div>
-        <NavMenuItem item={item} />
+        <MenuItem item={item} />
         {item.items && item.items.length > 0 && (
           <CollapsibleContent>
             <div className="pl-4 mt-2">
               {item.items.map((subItem) => (
-                <NavMenuItem 
+                <MenuItem 
                   key={subItem.id} 
                   item={{ 
                     ...subItem, 

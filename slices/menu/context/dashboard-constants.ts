@@ -1,19 +1,81 @@
-import { type MenuItemWithChildren, type Team } from 'shared/types/navigation-types'
+import { type MenuItemWithChildren, type Dashboard } from 'shared/types/navigation-types'
 
-export const TEAMS: Team[] = [
+export const DASHBOARDS: Dashboard[] = [
   {
-    name: 'Acme Inc',
-    logo: 'Building2',
-    plan: 'Pro'
+    name: 'Home',
+    logo: 'home',
+    plan: 'Personal',
+    defaultMenuId: 'home'
   },
   {
-    name: 'Personal Account',
-    logo: 'User',
-    plan: 'Free'
+    name: 'Professional',
+    logo: 'briefcase',
+    plan: 'Professional',
+    defaultMenuId: 'professional'
+  },
+  {
+    name: 'Study',
+    logo: 'graduation-cap',
+    plan: 'Personal',
+    defaultMenuId: 'study'
+  },
+  {
+    name: 'Health',
+    logo: 'heart',
+    plan: 'Personal',
+    defaultMenuId: 'health'
+  },
+  {
+    name: 'Travel',
+    logo: 'plane',
+    plan: 'Personal',
+    defaultMenuId: 'travel'
+  },
+  {
+    name: 'Family',
+    logo: 'users',
+    plan: 'Personal',
+    defaultMenuId: 'family'
+  },
+  {
+    name: 'Finance',
+    logo: 'wallet',
+    plan: 'Professional',
+    defaultMenuId: 'finance'
+  },
+  {
+    name: 'Hobbies',
+    logo: 'gamepad-2',
+    plan: 'Personal',
+    defaultMenuId: 'hobbies'
+  },
+  {
+    name: 'Digital',
+    logo: 'building-2',
+    plan: 'Professional',
+    defaultMenuId: 'digital'
+  },
+  {
+    name: 'Personal',
+    logo: 'user',
+    plan: 'Personal',
+    defaultMenuId: 'personal'
+  },
+  {
+    name: 'Main',
+    logo: 'layout-dashboard',
+    plan: 'Personal',
+    defaultMenuId: 'main'
   }
 ]
 
 export const NAVIGATION_ITEMS: MenuItemWithChildren[] = [
+  { 
+    id: 'dashboard', 
+    title: 'Dashboard',
+    icon: 'LayoutDashboard',
+    url: { href: '/dashboard' }
+  },
   {
     id: 'store',
     title: 'Menu Store',
@@ -69,12 +131,6 @@ export const NAVIGATION_ITEMS: MenuItemWithChildren[] = [
         url: { href: '/dashboard/social-media/settings'}
       }
     ]
-  },
-  { 
-    id: 'dashboard', 
-    title: 'Dashboard',
-    icon: 'LayoutDashboard',
-    url: { href: '/dashboard' }
   },
   { 
     id: 'projects', 

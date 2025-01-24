@@ -4,8 +4,8 @@ import { useState } from "react"
 import { ChevronRight } from "lucide-react"
 import { Button } from "shared/components/ui/button"
 import { cn } from "shared/lib/utils"
-import { CollapsibleMenuProps } from "shared/types/navigation-types"
-import { MenuItem } from "./menu-item"
+import { CollapsibleMenuProps, MenuItemWithChildren } from "shared/types/navigation-types"
+import { MenuItem } from "./MenuItem"
 import { useIconRenderer } from "slices/menu/nav-main/hooks/items"
 
 export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus }: CollapsibleMenuProps) {
@@ -55,9 +55,9 @@ export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus 
         </div>
       </Button>
 
-      {!isCollapsed && isExpanded && (
+      {!isCollapsed && isExpanded && item.children && (
         <div className="pl-4">
-          {item.children.map((child) => (
+          {item.children.map((child: MenuItemWithChildren) => (
             <MenuItem
               key={child.id}
               item={child}

@@ -1,5 +1,5 @@
+// Export menu item components
 export * from './MenuItem'
-export * from './menu-item'
 export * from './MenuItemContainer'
 export * from './MenuItemWithSubmenu'
 export * from './collapsible-menu'

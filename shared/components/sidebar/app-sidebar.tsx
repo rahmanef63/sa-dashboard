@@ -7,12 +7,14 @@ import Link from "next/link"
 import { NavMain } from "@/slices/menu/nav-main/nav-main"
 import { NavProjects } from "@/slices/menu/nav-projects/nav-projects"
 import { NavUser } from "@/slices/menu/nav-user/nav-user"
-import { TeamSwitcher } from "@/slices/menu/team-switcher/team-switcher"
-import { NAVIGATION_ITEMS, TEAMS } from "@/slices/menu/context/constants"
+import { DashboardSwitcher } from "@/slices/menu/dashboard-switcher/dashboard-switcher"
+import { DASHBOARDS } from "@/slices/menu/context/dashboard-constants"
+import { menuConfigs } from "@/slices/menu/context/menu-configs"
 import { navProjectsConfig } from "@/slices/menu/nav-projects/config"
 import { type MenuItemWithChildren } from 'shared/types/navigation-types'
 import { getIconByName } from "@/shared/icon-picker/utils"
 import { cn } from "shared/lib/utils"
+import { useMenu } from '@/slices/menu/context/MenuContext'
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +43,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [isOpen, setIsOpen] = React.useState(true)
   const [isSecondaryOpen, setIsSecondaryOpen] = React.useState(false)
   const [secondaryItems, setSecondaryItems] = React.useState<MenuItemWithChildren[] | null>(null)
+  const [currentMenuId, setCurrentMenuId] = React.useState<string>(DASHBOARDS[0].defaultMenuId || 'main')
+  const { setMenuItems, menuItems } = useMenu()
+  const initialLoadRef = React.useRef(false)
+
+  // Function to load navigation based on dashboard
+  const loadDashboardNavigation = React.useCallback((menuId: string) => {
+    const navigationItems = menuConfigs[menuId] || menuConfigs.main
+    setMenuItems(navigationItems)
+  }, [setMenuItems])
+
+  // Load navigation when menuId changes
+  React.useEffect(() => {
+    loadDashboardNavigation(currentMenuId)
+  }, [currentMenuId, loadDashboardNavigation])
 
   const handleNavItemClick = (item: MenuItemWithChildren) => {
     if (item.children) {
@@ -66,12 +82,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <>
       <Sidebar collapsible="icon" {...props}>
         <SidebarHeader>
-          <TeamSwitcher teams={TEAMS} />
+          <DashboardSwitcher 
+            dashboards={DASHBOARDS} 
+            onDashboardChange={(dashboard) => loadDashboardNavigation(dashboard.defaultMenuId || 'main')}
+          />
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
             <MenuSection 
-              items={NAVIGATION_ITEMS}
+              items={menuItems}
               onSecondaryItemClick={handleNavItemClick}
               onFocus={() => setIsOpen(true)}
               title="Navigation"

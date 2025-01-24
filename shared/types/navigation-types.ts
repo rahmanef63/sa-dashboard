@@ -161,12 +161,20 @@ export interface User {
   name: string
   email: string
   avatar: string
+  dashboardList?: dashboardList[]
 }
 
-export interface Team {
+export interface Dashboard {
   name: string
   logo: string
   plan: string
+  dashboardId?: string
+  defaultMenuId?: string
+}
+
+export interface dashboardList {
+  dashboard: Dashboard
+  menu: MenuItem
 }
 
 // Props Types from userMenu.types.ts

@@ -1,7 +1,7 @@
 import { 
   Home, User, Settings, Mail, Calendar, FileText, Image, Music, Video, 
-  Folder, ShoppingCart, Heart, Star, Bell, Search, Map, Phone, Camera, 
-  Bookmark, Clock, Cloud, Coffee, Compass, Database, File, Edit, Trash, 
+  Folder, ShoppingCart, Bell, Search, Map, Phone, Camera, 
+  Clock,  Database, File, Edit, Trash, 
   PlusCircle, ChevronRight, ChevronDown, Menu, Layout, Users, 
   Building, Package, Boxes, Box, ShieldCheck, Lock, Key, Unlock, 
   FileCode, Code, Terminal, GitBranch, Github, 
@@ -33,7 +33,7 @@ import {
   Rocket, Sparkles, Lightbulb, Puzzle,
   Target as TargetIcon, Crosshair, Compass as CompassIcon,
   Bot, Brain, Cpu as CpuIcon, CircuitBoard,
-  Factory, Building2, Store as StoreIcon,
+  Factory, Building2,
   Blocks, AppWindow, Maximize
 } from 'lucide-react'
 import { type LucideIcon, type LucideProps } from 'lucide-react'
