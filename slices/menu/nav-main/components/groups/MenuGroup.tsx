@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronRight } from "lucide-react"
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu } from "shared/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "shared/components/ui/collapsible"
 import { GroupLabel, MenuItem } from 'shared/types/navigation-types'
@@ -41,7 +41,7 @@ export function SidebarGroupComponent({
           <div className="relative group">
             <SidebarGroupLabel className="flex items-center justify-between cursor-pointer hover:bg-accent/50">
               <span className="truncate">{group.label.title}</span>
-              <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
             </SidebarGroupLabel>
           </div>
         </CollapsibleTrigger>

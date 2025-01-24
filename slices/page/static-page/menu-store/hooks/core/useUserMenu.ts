@@ -1,7 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react'
 import { MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
-import { MenuItem as NavMainMenuItem, SubMenuItem as NavMainSubMenuItem } from '@/slices/menu/nav-main/types'
-import { NavGroup } from 'shared/types/navigation-types'
 import { useMenu } from '@/slices/menu/context/MenuContext'
 import { toast } from 'sonner'
 import { 
@@ -29,7 +27,8 @@ export function useUserMenu() {
     addGroupLabel: contextAddGroupLabel,
     updateGroupLabel: contextUpdateGroupLabel,
     deleteGroupLabel: contextDeleteGroupLabel,
-    updateItemCollapsible: contextUpdateItemCollapsible
+    updateItemCollapsible: contextUpdateItemCollapsible,
+    updateMenuItem: contextUpdateMenuItem
   } = context;
 
   const timeStampRef = useRef<{ [key: string]: number }>({});
@@ -37,14 +36,15 @@ export function useUserMenu() {
   const handleEditItem = useCallback((item: MenuItem, onEditItem: (item: MenuItem) => void) => {
     try {
       if (!validateMenuItem(item)) return;
+      
       const navMainItem = convertSharedToNavMain(item);
+      contextUpdateMenuItem(navMainItem);
       onEditItem(navMainItem);
-      toast.success("Menu item updated successfully");
     } catch (error) {
-      toast.error("Failed to update menu item");
       console.error("Error updating menu item:", error);
+      throw error;
     }
-  }, []);
+  }, [contextUpdateMenuItem]);
 
   const handleDeleteItem = useCallback((itemId: string, groupId: string, onRemoveItem: (id: string) => void) => {
     try {

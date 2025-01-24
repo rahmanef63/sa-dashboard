@@ -47,17 +47,18 @@ export function createNewMenuItem(
 export function createNewSubMenuItem(
   title: string,
   url: string,
-  parentId: string
+  parentId: string,
+  icon: string = 'FileText'
 ): SubMenuItem {
   return {
     id: generateId(),
     title,
     url: {
       href: formatUrl(url),
-      target: '_self',
+      target: '_self'
     },
     parentId,
-    order: Date.now(),
+    icon: getIconComponent(icon)
   };
 }
 

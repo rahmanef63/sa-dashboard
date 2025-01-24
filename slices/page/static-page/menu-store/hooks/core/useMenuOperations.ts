@@ -13,9 +13,19 @@ export const useMenuOperations = (
 
   const handleEditWithValidation = useCallback((item: MenuItem) => {
     if (!validateMenuItem(item)) {
+      toast.error("Invalid menu item");
       return;
     }
-    handleEditItem(item, () => onEditItem(item));
+
+    try {
+      handleEditItem(item, () => {
+        onEditItem(item);
+        toast.success("Menu item updated successfully");
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update menu item");
+      console.error("Error updating menu item:", error);
+    }
   }, [handleEditItem, onEditItem]);
 
   const handleDeleteWithConfirmation = useCallback((itemId: string) => {

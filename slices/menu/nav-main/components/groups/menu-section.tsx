@@ -1,9 +1,9 @@
 "use client"
 
 import { cn } from "shared/lib/utils"
-import { CollapsibleMenu } from "./collapsible-menu"
-import { SecondaryMenu } from "./secondary-menu"
-import { MenuItem } from "./menu-item"
+import { CollapsibleMenu } from "../items"
+import { SecondaryMenu } from "../submenus/secondary-menu"
+import { MenuItem } from "../items"
 import { MenuSectionProps, MenuItemWithChildren } from "shared/types/navigation-types"
 
 export function MenuSection({ 

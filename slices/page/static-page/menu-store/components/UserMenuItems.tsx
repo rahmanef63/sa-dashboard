@@ -7,7 +7,7 @@ import { Dialog, DialogContent } from "shared/components/ui/dialog"
 import { MenuItem, SubMenuItem, GroupLabel, NavGroup } from 'shared/types/navigation-types'
 import { UserMenuItemsProps } from '../types/userMenu.types'
 import { type LucideIcon, Edit, Trash, PlusCircle, File, AlertCircle } from 'lucide-react'
-import { getIconByName } from 'shared/components/icon-picker/utils'
+import { renderIcon as renderIconUtil } from '@/shared/icon-picker/utils'
 import { 
   useMenuOperations,
   useIconManagement,
@@ -20,24 +20,7 @@ import { SubMenuItemForm } from '@/slices/menu/nav-main/components/forms/SubMenu
 
 // Helper function to render icon component
 const renderIcon = (icon: string | LucideIcon | undefined): JSX.Element => {
-  if (!icon) {
-    return <File className="h-4 w-4" />;
-  }
-
-  if (typeof icon === 'string') {
-    const IconComponent = getIconByName(icon);
-    if (!IconComponent) {
-      return <File className="h-4 w-4" />;
-    }
-    return <IconComponent className="h-4 w-4" />;
-  }
-
-  if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null)) {
-    const IconComponent = icon;
-    return <IconComponent className="h-4 w-4" />;
-  }
-
-  return <File className="h-4 w-4" />;
+  return renderIconUtil(icon, { className: "h-4 w-4" }) || <File className="h-4 w-4" />;
 };
 
 export function UserMenuItems({ 
@@ -247,7 +230,10 @@ export function UserMenuItems({
                   <div className="ml-6 space-y-2">
                     {item.items?.map((subItem: SubMenuItem) => (
                       <div key={subItem.id} className="flex items-center justify-between p-2 border rounded-lg bg-gray-50">
-                        <span>{subItem.title}</span>
+                        <div className="flex items-center gap-2">
+                          {renderIcon(subItem.icon)}
+                          <span>{subItem.title}</span>
+                        </div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -302,7 +288,10 @@ export function UserMenuItems({
         <DialogContent>
           <MenuItemForm 
             item={findMenuItem(selectedItemId || '') || null}
-            onSave={handleEditItem}
+            onSave={(item) => {
+              handleEditItem(item);
+              setActiveDialog(null);
+            }}
             onCancel={() => setActiveDialog(null)}
           />
         </DialogContent>

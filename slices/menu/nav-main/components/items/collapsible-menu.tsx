@@ -5,9 +5,12 @@ import { ChevronRight } from "lucide-react"
 import { Button } from "shared/components/ui/button"
 import { cn } from "shared/lib/utils"
 import { CollapsibleMenuProps } from "shared/types/navigation-types"
+import { MenuItem } from "./menu-item"
+import { useIconRenderer } from "slices/menu/nav-main/hooks/items"
 
 export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus }: CollapsibleMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const renderIcon = useIconRenderer()
 
   if (!item.children || !item.isCollapsible) return null
 
@@ -34,7 +37,11 @@ export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus 
           !isCollapsed && "justify-between"
         )}>
           <span className="flex items-center">
-            {item.icon && <span className="h-4 w-4 shrink-0">{item.icon}</span>}
+            {item.icon && (
+              <span className="h-4 w-4 shrink-0">
+                {renderIcon(item.icon)}
+              </span>
+            )}
             {!isCollapsed && <span className="ml-2">{item.title}</span>}
           </span>
           {!isCollapsed && (
@@ -48,23 +55,14 @@ export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus 
         </div>
       </Button>
 
-      {!isCollapsed && (
-        <div className={cn(
-          "pl-4 space-y-1 overflow-hidden transition-all duration-200 ease-in-out",
-          isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        )}>
+      {!isCollapsed && isExpanded && (
+        <div className="pl-4">
           {item.children.map((child) => (
-            <Button
+            <MenuItem
               key={child.id}
-              variant="ghost"
-              className="w-full justify-between px-3 text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              onClick={() => child.href && (window.location.href = child.href)}
-            >
-              <span className="flex items-center">
-                {child.icon && <span className="h-4 w-4 shrink-0">{child.icon}</span>}
-                <span className="ml-2">{child.title}</span>
-              </span>
-            </Button>
+              item={child}
+              isCollapsed={isCollapsed}
+            />
           ))}
         </div>
       )}

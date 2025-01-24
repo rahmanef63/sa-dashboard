@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MenuItem } from 'shared/types/navigation-types';
-import { checkSubmenuAvailability } from '../utils';
+import { checkSubmenuAvailability } from '../../utils';
 
 interface UseSubmenuAvailabilityProps {
   item: MenuItem

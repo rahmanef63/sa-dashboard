@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useMenu } from '../context/MenuContext'
-import { useNavMainDialog } from './hooks/useNavMainDialog'
+import * as hooks from './hooks'
 import { SidebarGroupComponent } from './components/groups/MenuGroup'
 import { GroupLabel, MenuItem, SubMenuItem, NavMainData } from 'shared/types/navigation-types'
 
@@ -10,10 +10,12 @@ import { GroupLabel, MenuItem, SubMenuItem, NavMainData } from 'shared/types/nav
 export function NavMain() {
   const { navData: contextNavData, updateNavData } = useMenu()
   const {
+    isOpen,
+    dialogType,
     dialogState,
     openDialog,
     closeDialog
-  } = useNavMainDialog()
+  } = hooks.useNavMainDialog()
   const [mounted, setMounted] = React.useState(false)
 
   // Cast the navData to our more specific type
@@ -34,8 +36,8 @@ export function NavMain() {
 
   const handleSaveGroupLabel = (label: GroupLabel) => {
     const updatedNavData = { ...navData }
-    if (dialogState.type === 'group' && dialogState.item) {
-      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === label.id)
+    if (dialogState?.type === 'group' && dialogState.item) {
+      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === (dialogState.item as GroupLabel).id)
       if (groupIndex !== -1) {
         updatedNavData.groups[groupIndex].label = label
       }
@@ -56,14 +58,19 @@ export function NavMain() {
 
   const handleSaveMenuItem = (item: MenuItem) => {
     const updatedNavData = { ...navData }
-    if (dialogState.type === 'menuItem' && dialogState.item) {
-      updatedNavData.groups = updatedNavData.groups.map(group => ({
-        ...group,
-        items: group.items.map(i => i.id === item.id ? item : i)
-      }))
-    } else {
-      const lastGroup = updatedNavData.groups[updatedNavData.groups.length - 1]
-      lastGroup.items.push(item)
+    if (dialogState?.type === 'menuItem' && dialogState.item) {
+      const groupIndex = updatedNavData.groups.findIndex(g => g.items.some(i => i.id === (dialogState.item as MenuItem).id))
+      if (groupIndex !== -1) {
+        const itemIndex = updatedNavData.groups[groupIndex].items.findIndex(i => i.id === (dialogState.item as MenuItem).id)
+        if (itemIndex !== -1) {
+          updatedNavData.groups[groupIndex].items[itemIndex] = item
+        }
+      }
+    } else if (dialogState?.type === 'group') {
+      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === (dialogState.item as GroupLabel).id)
+      if (groupIndex !== -1) {
+        updatedNavData.groups[groupIndex].items.push(item)
+      }
     }
     updateNavData(updatedNavData)
     closeDialog()
@@ -81,26 +88,25 @@ export function NavMain() {
     updateNavData(updatedNavData)
   }
 
-  const handleSaveSubMenuItem = (groupId: string, parentId: string, subItem: SubMenuItem) => {
+  const handleSaveSubMenuItem = (item: SubMenuItem) => {
     const updatedNavData = { ...navData }
-    updatedNavData.groups = updatedNavData.groups.map(group => 
-      group.label.id === groupId
-        ? {
-            ...group,
-            items: group.items.map(item => {
-              if (item.id === parentId) {
-                return {
-                  ...item,
-                  items: dialogState.type === 'subMenuItem' && dialogState.item
-                    ? (item.items || []).map(si => si.id === subItem.id ? subItem : si)
-                    : [...(item.items || []), subItem]
-                }
-              }
-              return item
-            })
+    if (dialogState?.type === 'subMenuItem' && dialogState.item) {
+      const parentId = (dialogState.item as SubMenuItem).parentId
+      if (parentId) {
+        for (const group of updatedNavData.groups) {
+          const parentItem = group.items.find(i => i.id === parentId)
+          if (parentItem && parentItem.items) {
+            const itemIndex = parentItem.items.findIndex(i => i.id === item.id)
+            if (itemIndex !== -1) {
+              parentItem.items[itemIndex] = item
+            } else {
+              parentItem.items.push(item)
+            }
+            break
           }
-        : group
-    )
+        }
+      }
+    }
     updateNavData(updatedNavData)
     closeDialog()
   }

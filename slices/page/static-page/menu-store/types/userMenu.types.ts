@@ -1,4 +1,4 @@
-import { GroupLabel, MenuItem, SubMenuItem, NavUrl } from 'shared/types/navigation-types'
+import { GroupLabel, MenuItem, SubMenuItem } from 'shared/types/navigation-types'
 
 export type UserMenuItemsProps = {
   onRemoveItem: (id: string) => void

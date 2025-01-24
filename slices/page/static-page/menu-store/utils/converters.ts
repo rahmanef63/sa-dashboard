@@ -1,8 +1,8 @@
 import { MenuItem, SubMenuItem } from 'shared/types/navigation-types'
-import { MenuItem as NavMainMenuItem, SubMenuItem as NavMainSubMenuItem } from '@/slices/menu/nav-main/types'
 
-export const convertSharedToNavMain = (item: MenuItem): NavMainMenuItem => {
-  const navMainItem: NavMainMenuItem = {
+
+export const convertSharedToNavMain = (item: MenuItem): MenuItem => {
+  const navMainItem: MenuItem = {
     id: item.id,
     title: item.title,
     icon: item.icon,
@@ -25,7 +25,7 @@ export const convertSharedToNavMain = (item: MenuItem): NavMainMenuItem => {
   return navMainItem;
 };
 
-export const convertNavMainToShared = (item: NavMainMenuItem): MenuItem => {
+export const convertNavMainToShared = (item: MenuItem): MenuItem => {
   const sharedItem: MenuItem = {
     id: item.id,
     title: item.title,
@@ -49,7 +49,7 @@ export const convertNavMainToShared = (item: NavMainMenuItem): MenuItem => {
   return sharedItem;
 };
 
-export const convertNavMainSubToShared = (item: NavMainSubMenuItem): SubMenuItem => ({
+export const convertNavMainSubToShared = (item: SubMenuItem): SubMenuItem => ({
   id: item.id,
   title: item.title,
   url: item.url,
@@ -57,7 +57,7 @@ export const convertNavMainSubToShared = (item: NavMainSubMenuItem): SubMenuItem
   order: item.order
 });
 
-export const convertSharedSubToNavMain = (item: SubMenuItem): NavMainSubMenuItem => ({
+export const convertSharedSubToNavMain = (item: SubMenuItem): SubMenuItem => ({
   id: item.id,
   title: item.title,
   url: item.url,

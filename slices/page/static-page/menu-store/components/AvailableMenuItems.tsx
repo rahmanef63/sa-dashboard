@@ -1,8 +1,8 @@
 import React from 'react'
 import { Button } from "shared/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "shared/components/ui/card"
-import { MenuItemWithIcon } from '@/shared/components/icon-picker/types'
-import { getIconByName } from '@/shared/components/icon-picker/utils'
+import { MenuItemWithIcon } from '@/shared/icon-picker/types'
+import { getIconByName } from '@/shared/icon-picker/utils'
 
 type AvailableMenuItemsProps = {
   items: MenuItemWithIcon[]

@@ -1,5 +1,6 @@
-import { type LucideIcon, type LucideProps } from 'lucide-react'
-import { type ReactNode, type ElementType, type ComponentType } from 'react'
+import { type LucideIcon } from 'lucide-react'
+import { type ReactNode } from 'react'
+import { type WithIcon } from '@/shared/icon-picker/types'
 
 // Base URL type
 export interface NavUrl {
@@ -8,96 +9,73 @@ export interface NavUrl {
   rel?: string
 }
 
-// Base item interface for all menu items
+// Base Navigation Types
 export interface BaseNavigationItem {
   id: string
   title: string
   order?: number
-}
-
-// Dashboard Navigation Types
-export interface NavItem {
-  id: string
-  title: string
-  icon?: ReactNode
-  href?: string
+  icon?: LucideIcon | string
+  isActive?: boolean
   isCollapsible?: boolean
-  children?: NavItem[]
 }
 
-export interface TeamType {
-  id: string
-  name: string
-  logo: ElementType<LucideProps>
-  plan: string
-  members?: UserType[]
-}
-
-export interface ProjectType {
-  id: string
-  name: string
-  url: string
-  icon: ElementType<LucideProps>
-  status?: 'active' | 'archived'
-  description?: string
-  teamId?: string
-  members?: UserType[]
-}
-
-export interface UserType {
-  id: string
-  name: string
-  email: string
-  avatar: string
-  role?: string
-  teamId?: string
-}
-
-// Modern Types (New System)
+// Modern Navigation System
 export interface MenuItemWithChildren extends BaseNavigationItem {
-  icon?: ReactNode
+  url?: NavUrl
   children?: MenuItemWithChildren[]
-  isCollapsible?: boolean
-  href?: string
-  isActive?: boolean
 }
 
+// Legacy Navigation System
 export interface NavigationItem extends BaseNavigationItem {
-  url?: NavUrl | string
-  isActive?: boolean
+  url?: NavUrl
   children?: NavigationItem[]
-  isCollapsible?: boolean
   groupId?: string
 }
 
-// Legacy Types (For Backward Compatibility)
-export interface GroupLabel extends BaseNavigationItem {}
-
-export interface MenuItem extends BaseNavigationItem {
-  id: string
-  title: string
+export interface MenuItem extends NavigationItem {
   url: NavUrl
-  icon: string | LucideIcon
-  isActive?: boolean
-  isCollapsible?: boolean
   items?: SubMenuItem[]
-  groupId?: string
 }
 
-export interface SubMenuItem extends BaseNavigationItem {
+export interface SubMenuItem extends NavigationItem {
+  url: NavUrl
+  parentId: string
+}
+
+export interface GroupLabel extends BaseNavigationItem {
   id: string
   title: string
-  url: NavUrl
-  parentId?: string
+}
+
+export interface NavGroup {
+  label: GroupLabel
+  items: MenuItem[]
 }
 
 export interface NavMainData {
   groups: NavGroup[]
 }
 
-export interface NavGroup {
-  label: GroupLabel
-  items: MenuItem[]
+// Form Props Types
+export interface BaseFormProps<T extends NavigationItem> {
+  item?: T | null
+  onSave: (item: T) => void
+  onCancel?: () => void
+}
+
+export interface MenuItemFormProps extends BaseFormProps<MenuItem> {
+  item: MenuItem | null
+}
+
+export interface SubMenuItemFormProps extends BaseFormProps<SubMenuItem> {
+  item?: SubMenuItem | null
+  parentId: string
+}
+
+export interface GroupLabelFormProps {
+  label: GroupLabel | null
+  onSave: (label: GroupLabel) => void
+  onCancel?: () => void
 }
 
 // Menu Configuration Types
@@ -146,11 +124,11 @@ export interface MenuItemProps {
   config?: Partial<MenuConfig>
 }
 
-export interface CollapsibleMenuProps extends MenuItemProps {
+export interface CollapsibleMenuProps extends Omit<MenuItemProps, 'config'> {
   onFocus?: () => void
 }
 
-export interface SecondaryMenuProps extends MenuItemProps {
+export interface SecondaryMenuProps extends Omit<MenuItemProps, 'config'> {
   onItemClick: (item: MenuItemWithChildren) => void
 }
 
@@ -162,26 +140,7 @@ export interface MenuSectionProps {
   onFocus?: () => void
   className?: string
   config?: Partial<MenuConfig>
-}
-
-// Form Props Types
-export interface MenuItemFormProps {
-  item: MenuItem | null
-  onSave: (item: MenuItem) => void
-  onCancel?: () => void
-}
-
-export interface SubMenuItemFormProps {
-  item?: SubMenuItem | null
-  parentId: string
-  onSave: (item: SubMenuItem) => void
-  onCancel?: () => void
-}
-
-export interface GroupLabelFormProps {
-  label: GroupLabel | null
-  onSave: (label: GroupLabel) => void
-  onCancel?: () => void
+  renderIcon?: (icon: string | undefined) => JSX.Element | null
 }
 
 // Sidebar Menu Item Props
@@ -206,7 +165,7 @@ export interface User {
 
 export interface Team {
   name: string
-  logo: LucideIcon
+  logo: string
   plan: string
 }
 
@@ -221,6 +180,6 @@ export interface UserMenuItemsProps {
 }
 
 // Helper Types
-export type MenuItemType = MenuItemWithChildren
+export type MenuItemType = MenuItem
 export type SubMenuItemType = SubMenuItem
 export type BaseMenuItem = BaseNavigationItem

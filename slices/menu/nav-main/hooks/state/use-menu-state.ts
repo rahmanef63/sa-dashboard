@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { NavMainData, MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types';
-import { generateId } from '../utils';
+import { generateId } from '../../utils';
 
 const STORAGE_KEY = 'navMainData';
 
@@ -53,27 +53,19 @@ export function useMenuState(initialData?: NavMainData) {
     });
   }, []);
 
-  const updateSubMenuItem = useCallback((
-    groupId: string,
-    parentId: string,
-    updatedSubItem: SubMenuItem
-  ) => {
+  const addMenuItem = useCallback((groupId: string, newItem: Omit<MenuItem, 'id'>) => {
     setNavData(prev => {
       const newGroups = prev.groups.map(group => {
         if (group.label.id !== groupId) return group;
+        
+        const itemWithId: MenuItem = {
+          ...newItem,
+          id: generateId()
+        };
 
         return {
           ...group,
-          items: group.items.map(item => {
-            if (item.id !== parentId) return item;
-
-            return {
-              ...item,
-              items: (item.items || [])
-                .map(subItem => subItem.id === updatedSubItem.id ? updatedSubItem : subItem)
-                .sort((a, b) => (a.order || 0) - (b.order || 0))
-            };
-          })
+          items: [...group.items, itemWithId].sort((a, b) => (a.order || 0) - (b.order || 0))
         };
       });
 
@@ -83,25 +75,27 @@ export function useMenuState(initialData?: NavMainData) {
     });
   }, []);
 
-  const deleteSubMenuItem = useCallback((
-    groupId: string,
-    parentId: string,
-    subItemId: string
-  ) => {
+  const addSubMenuItem = useCallback((parentId: string, newItem: Omit<SubMenuItem, 'id'>) => {
     setNavData(prev => {
       const newGroups = prev.groups.map(group => {
-        if (group.label.id !== groupId) return group;
+        const parentItem = group.items.find(item => item.id === parentId);
+        if (!parentItem) return group;
+
+        const subItemWithId: SubMenuItem = {
+          ...newItem,
+          id: generateId()
+        };
+
+        const updatedParentItem = {
+          ...parentItem,
+          subItems: [...(parentItem.subItems || []), subItemWithId]
+        };
 
         return {
           ...group,
-          items: group.items.map(item => {
-            if (item.id !== parentId) return item;
-
-            return {
-              ...item,
-              items: (item.items || []).filter(subItem => subItem.id !== subItemId)
-            };
-          })
+          items: group.items.map(item => 
+            item.id === parentId ? updatedParentItem : item
+          )
         };
       });
 
@@ -111,26 +105,21 @@ export function useMenuState(initialData?: NavMainData) {
     });
   }, []);
 
-  const updateGroupLabel = useCallback((updatedLabel: GroupLabel) => {
+  const updateGroupLabel = useCallback((groupId: string, updatedLabel: Omit<GroupLabel, 'id'>) => {
     setNavData(prev => {
-      const newGroups = prev.groups.map(group =>
-        group.label.id === updatedLabel.id
-          ? { ...group, label: updatedLabel }
-          : group
-      ).sort((a, b) => ((a.label.order || 0) - (b.label.order || 0)));
+      const newGroups = prev.groups.map(group => {
+        if (group.label.id !== groupId) return group;
+        
+        return {
+          ...group,
+          label: {
+            ...updatedLabel,
+            id: groupId
+          }
+        };
+      });
 
       const newData = { ...prev, groups: newGroups };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
-      return newData;
-    });
-  }, []);
-
-  const deleteGroup = useCallback((groupId: string) => {
-    setNavData(prev => {
-      const newData = {
-        ...prev,
-        groups: prev.groups.filter(group => group.label.id !== groupId)
-      };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
       return newData;
     });
@@ -138,12 +127,11 @@ export function useMenuState(initialData?: NavMainData) {
 
   return {
     navData,
+    saveData,
     updateMenuItem,
     deleteMenuItem,
-    updateSubMenuItem,
-    deleteSubMenuItem,
-    updateGroupLabel,
-    deleteGroup,
-    saveData
+    addMenuItem,
+    addSubMenuItem,
+    updateGroupLabel
   };
 }

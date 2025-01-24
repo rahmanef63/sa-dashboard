@@ -12,15 +12,15 @@ interface NavMenuItemProps {
 
 export function NavMenuItem({ item, className }: NavMenuItemProps) {
   const IconComponent = getIconComponent(typeof item.icon === 'string' ? item.icon : 'FileText')
-  const href = `/dashboard${item.url.href}`
+  const href = item.url?.href ? (item.url.href.startsWith('/') ? item.url.href : `/dashboard${item.url.href}`) : '/dashboard'
 
   return (
     <SidebarMenuItem className={cn('relative group', className)}>
       <SidebarMenuButton asChild>
         <Link 
           href={href}
-          target={item.url.target} 
-          rel={item.url.rel}
+          target={item.url?.target} 
+          rel={item.url?.rel}
           className="flex items-center w-full"
         >
           <IconComponent className="mr-2 h-4 w-4" aria-hidden="true" />

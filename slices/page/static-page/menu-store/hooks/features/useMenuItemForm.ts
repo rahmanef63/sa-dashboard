@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { MenuItemWithIcon } from '@/shared/components/icon-picker/types'
+import { MenuItemWithIcon } from 'shared/icon-picker/types'
 
 type UseMenuItemFormProps = {
   initialValues?: MenuItemWithIcon
@@ -21,7 +21,7 @@ export const useMenuItemForm = ({ initialValues, onSubmit }: UseMenuItemFormProp
   }, [initialValues])
 
   const handleChange = (field: keyof MenuItemWithIcon, value: string) => {
-    setItem(prev => ({
+    setItem((prev: MenuItemWithIcon) => ({
       ...prev,
       [field]: field === 'url' ? { href: value } : value
     }))
@@ -42,4 +42,3 @@ export const useMenuItemForm = ({ initialValues, onSubmit }: UseMenuItemFormProp
     handleSubmit
   }
 }
-

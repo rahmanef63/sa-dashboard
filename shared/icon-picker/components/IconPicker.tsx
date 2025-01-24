@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { IconPickerProps } from '../types'
-import { iconOptions, getIconByName } from '../utils'
+import { iconOptions, renderIcon } from '../utils'
 import { Button } from "shared/components/ui/button"
 import { File } from 'lucide-react'
 import {
@@ -22,7 +22,6 @@ import { ScrollArea } from "shared/components/ui/scroll-area"
 
 export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, className }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const IconComponent = getIconByName(value) || File
 
   const handleSelectChange = (newValue: string) => {
     onChange(newValue)
@@ -36,9 +35,10 @@ export const IconPicker: React.FC<IconPickerProps> = ({ value, onChange, classNa
           variant="outline"
           role="combobox"
           aria-expanded={isOpen}
+          size="icon"
           className={`w-full justify-between ${className}`}
         >
-          <IconComponent className="mr-2 h-4 w-4" />
+          {renderIcon(value) || <File />}
           {value || "Select icon..."}
         </Button>
       </DialogTrigger>

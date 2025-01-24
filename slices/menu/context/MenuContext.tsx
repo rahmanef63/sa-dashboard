@@ -102,21 +102,26 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const updateMenuItem = (updatedItem: MenuItem) => {
+    // Update the menuItems array
     const newItems: MenuItem[] = menuItems.map((item) =>
-      item.id === updatedItem.id ? updatedItem : item
+      item.id === updatedItem.id ? { ...updatedItem } : item
     );
-    saveMenuItems(newItems);
+    setMenuItems(newItems);
+    localStorage.setItem('userMenuItems', JSON.stringify(newItems));
     
-    const updatedNavData: NavMainData = {
+    // Update the navData structure
+    const updatedNavData = {
       ...navData,
       groups: navData.groups.map(group => ({
         ...group,
         items: group.items.map(item => 
-          item.id === updatedItem.id ? updatedItem : item
+          item.id === updatedItem.id ? { ...updatedItem, groupId: group.label.id } : item
         )
       }))
     };
+    
     setNavData(updatedNavData);
+    localStorage.setItem('navMainData', JSON.stringify(updatedNavData));
   }
 
   const deleteMenuItem = (id: string) => {

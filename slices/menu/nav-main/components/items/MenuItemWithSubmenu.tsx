@@ -13,7 +13,7 @@ import {
 import { Button } from "shared/components/ui/button"
 import { SidebarMenuItemProps } from 'shared/types/navigation-types'
 import { getIconComponent } from '../../utils'
-import { useSidebarMenuItem } from '../../hooks/useSidebarMenuItem'
+import { useSidebarMenuItem } from '../../hooks/'
 import { cn } from '@/shared/lib/utils'
 
 export function SidebarMenuItem({ 

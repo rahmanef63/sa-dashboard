@@ -1,17 +1,11 @@
 // Forms
-export * from './forms/GroupForm'
-export * from './forms/MenuItemForm'
-export * from './forms/SubMenuItemForm'
-
-// Menu Items
-export * from './items/MenuItem'
-export * from './items/MenuItemWithSubmenu'
-export * from './items/MenuItemContainer'
+export * from './forms'
 
 // Groups
-export * from './groups/MenuGroup'
-export * from './groups/MenuGroupLabel'
+export * from './groups'
+
+// Menu Items
+export * from './items'
 
 // Submenus
-export * from './submenus/Submenu'
-export * from './submenus/SubmenuContainer'
+export * from './submenus'
