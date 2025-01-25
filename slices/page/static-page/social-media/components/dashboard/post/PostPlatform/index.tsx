@@ -7,8 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "s
 import { Avatar, AvatarFallback, AvatarImage } from "shared/components/ui/avatar";
 import { UserRound } from "lucide-react";
 import { Button } from "shared/components/ui/button";
-import { PLATFORMS } from "@/slices/page/dynamic-page/social-media/data/social-manager/platform-list";
-import { users } from "@/slices/page/dynamic-page/social-media/data/social-manager/user";
+import { PLATFORMS } from "slices/page/dynamic-page/social-media/data/social-manager/platform-list";
+import { users } from "slices/page/dynamic-page/social-media/data/social-manager/user";
 import type { PostPlatformProps } from "./types";
 
 export const PostPlatform: React.FC<PostPlatformProps> = ({ 

@@ -5,7 +5,7 @@ import { PostFilter } from "./PostManager/components/PostFilter";
 import { PostList } from "./PostManager/components/PostList";
 import { sortPosts } from "./PostManager/utils/sort";
 import { filterPosts } from "./PostManager/utils/filter";
-import { Post } from "@/slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
+import { Post } from "slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
 
 export const PostManager = () => {
   const [sortField, setSortField] = useState<keyof Post>("title");

@@ -1,4 +1,4 @@
-import { Post } from "@/slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
+import { Post } from "slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
 
 export const sortPosts = (posts: Post[], sortField: keyof Post, sortDirection: "asc" | "desc") => {
   return [...posts].sort((a, b) => {

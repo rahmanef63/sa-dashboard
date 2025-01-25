@@ -1,6 +1,6 @@
 'use client';
 
-import { DatabaseManager } from "@/slices/page/static-page/database-management/components/Database/Core/DatabaseManager";
+import { DatabaseManager } from "slices/page/static-page/database-management/components/Database/Core/DatabaseManager";
 import { DebugConsole } from "@/shared/components/DebugConsole";
 
 export default function DatabaseManagerPage() {

@@ -2,6 +2,12 @@ import { type MenuItemWithChildren, type Dashboard } from 'shared/types/navigati
 
 export const DASHBOARDS: Dashboard[] = [
   {
+    name: 'Main',
+    logo: 'layout-dashboard',
+    plan: 'Personal',
+    defaultMenuId: 'main'
+  },
+  {
     name: 'Home',
     logo: 'home',
     plan: 'Personal',
@@ -60,12 +66,6 @@ export const DASHBOARDS: Dashboard[] = [
     logo: 'user',
     plan: 'Personal',
     defaultMenuId: 'personal'
-  },
-  {
-    name: 'Main',
-    logo: 'layout-dashboard',
-    plan: 'Personal',
-    defaultMenuId: 'main'
   }
 ]
 

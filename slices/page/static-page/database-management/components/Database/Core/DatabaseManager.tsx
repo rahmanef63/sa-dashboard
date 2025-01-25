@@ -7,7 +7,7 @@ import { DatabaseTabs } from "./DatabaseTabs";
 import { DatabaseDetails } from "./DatabaseDetails";
 import { FormDialog } from "@/shared/components/FormDialog";
 import { DatabaseForm } from "../Forms/DatabaseForm";
-import { useDatabaseOperations } from "@/slices/page/static-page/database-management/hooks/useDatabaseOperations";
+import { useDatabaseOperations } from "slices/page/static-page/database-management/hooks/useDatabaseOperations";
 
 export const DatabaseManager = () => {
   const [selectedDatabase, setSelectedDatabase] = useState<Database | null>(null);

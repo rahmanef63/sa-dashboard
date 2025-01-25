@@ -12,25 +12,26 @@ export function useDashboardNavigation() {
     if (item.children) {
       setActiveSubmenu(item.children)
       setIsSecondaryOpen(true)
-      setIsMainOpen(false)
+      // Keep main menu visible only for submenu navigation
+      setIsMainOpen(true)
     } else {
-      // If clicking a main item without children, close secondary sidebar
       setIsSecondaryOpen(false)
       setActiveSubmenu(null)
-      setIsMainOpen(true)
+      // For dashboard navigation, hide main menu
+      setIsMainOpen(false)
     }
   }
 
   const handleBack = () => {
     setIsSecondaryOpen(false)
-    setIsMainOpen(true)
     setActiveSubmenu(null)
+    // Show main menu when going back
+    setIsMainOpen(true)
   }
 
   const handleMainSidebarToggle = (open: boolean) => {
     setIsMainOpen(open)
-    if (open && isSecondaryOpen) {
-      // When opening main sidebar, close secondary if it's open
+    if (!open) {
       setIsSecondaryOpen(false)
       setActiveSubmenu(null)
     }

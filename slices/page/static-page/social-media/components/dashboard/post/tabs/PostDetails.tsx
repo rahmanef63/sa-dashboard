@@ -1,6 +1,6 @@
 import React from "react";
 import { Badge } from "shared/components/ui/badge";
-import type { Post } from "@/slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
+import type { Post } from "slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
 
 interface PostDetailsProps {
   post?: Post;

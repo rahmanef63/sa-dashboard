@@ -1,4 +1,4 @@
-import { Post } from "@/slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
+import { Post } from "slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
 
 export const filterPosts = (posts: Post[], filterBy: string, searchQuery: string) => {
   if (filterBy === "none" || !searchQuery) return posts;

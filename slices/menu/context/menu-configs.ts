@@ -15,6 +15,7 @@ import {
 
 // Map dashboard IDs to their respective navigation items
 export const menuConfigs: Record<string, MenuItemWithChildren[]> = {
+  main: MAIN_NAV_ITEMS,
   home: HOME_NAV_ITEMS,
   professional: PROFESSIONAL_NAV_ITEMS,
   study: STUDY_NAV_ITEMS,
@@ -24,6 +25,5 @@ export const menuConfigs: Record<string, MenuItemWithChildren[]> = {
   finance: FINANCE_NAV_ITEMS,
   hobbies: HOBBIES_NAV_ITEMS,
   digital: DIGITAL_NAV_ITEMS,
-  main: MAIN_NAV_ITEMS,
   personal: PERSONAL_NAV_ITEMS
 } as const

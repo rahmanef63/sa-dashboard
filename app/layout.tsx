@@ -4,8 +4,8 @@ import { DebugConsole } from '@/shared/components/DebugConsole'
 import { Toaster } from '@/shared/components/ui/toaster'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Main Dashboard',
+  description: 'general dashboard',
 }
 
 export default function RootLayout({

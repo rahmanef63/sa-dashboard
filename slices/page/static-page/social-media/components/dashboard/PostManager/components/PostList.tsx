@@ -1,4 +1,4 @@
-import { Post } from "@/slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
+import { Post } from "slices/page/dynamic-page/social-media/data/social-manager/PostManager/dummydata";
 import { Button } from "shared/components/ui/button";
 import { Edit2, Trash2, Image } from "lucide-react";
 import { Badge } from "shared/components/ui/badge";
