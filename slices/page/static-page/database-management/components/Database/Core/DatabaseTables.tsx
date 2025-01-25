@@ -8,6 +8,7 @@ import { useToast } from '@/shared/components/ui/use-toast';
 import { TablePreview } from '../Preview/TablePreview';
 import { QueryEditor } from '@/slices/page/static-page/database-management/components/Query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { ScrollArea, ScrollBar } from '@/shared/components/ui/scroll-area';
 
 interface DatabaseTablesProps {
   databaseName: string;
@@ -221,14 +222,18 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
                 <TabsTrigger value="edit">Edit Structure</TabsTrigger>
               </TabsList>
               <TabsContent value="preview" className="mt-4">
-                <TablePreview table={selectedTable} databaseName={databaseName} />
+                <ScrollArea className="h-[80vh] w-[95vh] rounded-md border">
+                  <TablePreview table={selectedTable} databaseName={databaseName} />
+                  <ScrollBar orientation="horizontal" />
+                </ScrollArea>
               </TabsContent>
               <TabsContent value="edit" className="mt-4">
-                <TableForm
-                  initialData={{
-                    name: selectedTable.table_name,
-                    schema: selectedTable.table_schema,
-                    columns: selectedTable.columns,
+                <ScrollArea className="h-[80vh] w-full rounded-md border">
+                  <TableForm
+                    initialData={{
+                      name: selectedTable.table_name,
+                      schema: selectedTable.table_schema,
+                      columns: selectedTable.columns,
                     constraints: selectedTable.constraints,
                     description: selectedTable.description,
                   }}
@@ -253,6 +258,7 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
                   }}
                   onCancel={() => setIsPreviewOpen(false)}
                 />
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           </DialogContent>

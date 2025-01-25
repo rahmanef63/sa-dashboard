@@ -89,7 +89,7 @@ export function SidebarContentWrapper({
                 isCollapsed={!isOpen}
               />
               <NavMain />
-              <NavProjects projects={navProjectsConfig} />
+              <NavProjects projects={navProjectsConfig.projects} />
             </>
           ) : (
             menuItems.map((item) => (

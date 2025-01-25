@@ -23,6 +23,8 @@ export interface BaseNavigationItem {
 export interface MenuItemWithChildren extends BaseNavigationItem {
   url?: NavUrl
   children?: MenuItemWithChildren[]
+  parentId?: string
+  dashboardId?: string
 }
 
 // Legacy Navigation System
@@ -168,13 +170,18 @@ export interface Dashboard {
   name: string
   logo: string
   plan: string
-  dashboardId?: string
+  dashboardId: string
   defaultMenuId?: string
+  menu?: MenuItemWithChildren[]
 }
 
 export interface dashboardList {
   dashboard: Dashboard
-  menu: MenuItem
+  user: User
+}
+
+export type NavProjectsProps = {
+  projects: MenuItem[]
 }
 
 // Props Types from userMenu.types.ts

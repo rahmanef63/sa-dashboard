@@ -8,6 +8,12 @@ export const MAIN_NAV_ITEMS: MenuItemWithChildren[] = [
       url: { href: '/dashboard' }
     },
     {
+      id: 'analyze',
+      title: 'Analyze',
+      icon: 'BarChart2',
+      url: { href: '/dashboard/analyze' }
+    },
+    {
       id: 'store',
       title: 'Menu Store',
       url: { href: '/dashboard/menu-store' },
@@ -149,4 +155,3 @@ export const MAIN_NAV_ITEMS: MenuItemWithChildren[] = [
       ]
     }
   ]
-  

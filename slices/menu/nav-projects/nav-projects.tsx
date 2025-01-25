@@ -1,7 +1,7 @@
 "use client"
 
 import { Folder, Forward, MoreHorizontal, Trash2 } from 'lucide-react'
-import { MenuItem } from 'shared/types/navigation-types'
+import { NavProjectsProps } from 'shared/types/navigation-types'
 import { getIconComponent } from '../nav-main/utils'
 
 import {
@@ -22,9 +22,7 @@ import {
 } from "shared/components/ui/sidebar"
 import Link from 'next/link'
 
-type NavProjectsProps = {
-  projects: MenuItem[]
-}
+
 
 export function NavProjects({ projects }: NavProjectsProps) {
   const { isMobile } = useSidebar()

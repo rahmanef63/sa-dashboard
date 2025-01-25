@@ -115,28 +115,6 @@ export const TablePreview = ({ table, databaseName }: TablePreviewProps) => {
     }
   };
 
-  if (isLoading) {
-    return <div className="p-4 text-center">Loading table data...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 text-center text-red-600">
-        <p>Error loading table data:</p>
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  if (previewData.length === 0) {
-    return (
-      <div className="p-4 text-center text-gray-600">
-        <p>No data available in this table.</p>
-        <p className="text-sm">Use the Query Editor to insert data into this table.</p>
-      </div>
-    );
-  }
-
   const columns: Column<TableRow>[] = table.columns.map(col => ({
     key: col.name,
     header: col.name,
@@ -153,13 +131,23 @@ export const TablePreview = ({ table, databaseName }: TablePreviewProps) => {
   }));
 
   return (
-    <div>
-      <DataTable
-        data={previewData}
-        columns={columns}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+    <div className="space-y-4">
+        {isLoading ? (
+          <div className="flex items-center justify-center mx-auto h-full">
+            <p>Loading...</p>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-red-500">{error}</p>
+          </div>
+        ) : (
+          <DataTable
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            data={previewData}
+            columns={columns}
+          />
+        )}
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
@@ -196,7 +184,7 @@ export const TablePreview = ({ table, databaseName }: TablePreviewProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
   );
 };
 

@@ -1,205 +1,129 @@
-"use client"
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
-import { MenuItem, MenuItemWithChildren, NavMainData, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
-import { MenuContextType } from './types/menu.types'
-import { useMenuActions } from './hooks/useMenuActions'
-import { loadMenuItems, loadNavData, getDefaultGroup, saveNavData, saveMenuItems, convertToMenuItem } from './utils/menu.utils'
+interface MenuContextType {
+  menuItems: MenuItemWithChildren[];
+  setMenuItems: (items: MenuItemWithChildren[]) => void;
+  fetchMenuItems: (dashboardId: string) => Promise<MenuItemWithChildren[]>;
+  updateMenuItem: (item: MenuItemWithChildren) => Promise<void>;
+  deleteMenuItem: (itemId: string) => Promise<void>;
+}
 
-const MenuContext = createContext<MenuContextType | undefined>(undefined)
+const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
-export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [navData, setNavData] = useState<NavMainData>({ groups: [] })
-  const timeStampRef = useRef<{ [key: string]: number }>({})
+export function MenuProvider({ children }: { children: React.ReactNode }) {
+  const [menuItems, setMenuItems] = useState<MenuItemWithChildren[]>([]);
+  const [currentDashboardId, setCurrentDashboardId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const {
-    addMenuItem,
-    updateMenuItem,
-    deleteMenuItem,
-    handleChangeGroup
-  } = useMenuActions(menuItems, setMenuItems, navData, setNavData, timeStampRef)
+  // Helper function to build menu tree
+  const buildMenuTree = (items: MenuItemWithChildren[]): MenuItemWithChildren[] => {
+    const itemMap = new Map<string, MenuItemWithChildren>();
+    const roots: MenuItemWithChildren[] = [];
+
+    // First pass: create map of items
+    items.forEach(item => {
+      itemMap.set(item.id, { ...item, children: [] });
+    });
+
+    // Second pass: build tree structure
+    items.forEach(item => {
+      const mappedItem = itemMap.get(item.id);
+      if (!mappedItem) return;
+
+      if (item.parentId) {
+        const parent = itemMap.get(item.parentId);
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(mappedItem);
+        }
+      } else {
+        roots.push(mappedItem);
+      }
+    });
+
+    return roots;
+  };
+
+  const fetchMenuItems = useCallback(async (dashboardId: string) => {
+    try {
+      const response = await fetch(`/api/admin/menu?dashboardId=${dashboardId}`);
+      const data = await response.json();
+      if (data.success) {
+        const hierarchicalMenu = buildMenuTree(data.data);
+        setMenuItems(hierarchicalMenu);
+        setLoading(false);
+        return hierarchicalMenu;
+      }
+      throw new Error(data.message || 'Failed to fetch menu items');
+    } catch (error) {
+      console.error('Error fetching menu items:', error);
+      throw error;
+    }
+  }, []);
+
+  const updateMenuItem = useCallback(async (item: MenuItemWithChildren) => {
+    try {
+      const response = await fetch('/api/admin/menu', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update menu item');
+      }
+      // Refresh menu items after successful update
+      const items = await fetchMenuItems(item.dashboardId || 'main');
+      setMenuItems(items);
+    } catch (error) {
+      console.error('Error updating menu item:', error);
+      throw error;
+    }
+  }, [fetchMenuItems]);
+
+  const deleteMenuItem = useCallback(async (itemId: string) => {
+    try {
+      const response = await fetch(`/api/admin/menu?id=${itemId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to delete menu item');
+      }
+      // Update local state after successful deletion
+      setMenuItems(prev => prev.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Error deleting menu item:', error);
+      throw error;
+    }
+  }, []);
 
   useEffect(() => {
-    const storedItems = loadMenuItems()
-    const storedNavData = loadNavData()
-    const defaultGroup = getDefaultGroup()
-    
-    let initialNavData: NavMainData = { groups: [defaultGroup] }
-    
-    if (storedNavData) {
-      try {
-        initialNavData = storedNavData
-      } catch (error) {
-        console.error('Error parsing stored nav data:', error)
-      }
+    if (currentDashboardId) {
+      fetchMenuItems(currentDashboardId);
     }
-    
-    if (storedItems) {
-      setMenuItems(storedItems)
-      
-      storedItems.forEach((item: MenuItem) => {
-        if (!item.groupId) {
-          initialNavData.groups[0].items.push(item)
-        } else {
-          const groupIndex = initialNavData.groups.findIndex(group => group.label.id === item.groupId)
-          if (groupIndex !== -1) {
-            initialNavData.groups[groupIndex].items.push(item)
-          } else {
-            initialNavData.groups[0].items.push(item)
-          }
-        }
-      })
-    }
-    
-    setNavData(initialNavData)
-  }, [])
-
-  // Wrapper for setMenuItems that handles conversion
-  const handleSetMenuItems = useCallback((items: MenuItemWithChildren[] | ((prev: MenuItem[]) => MenuItem[])) => {
-    if (typeof items === 'function') {
-      setMenuItems(items)
-    } else {
-      setMenuItems(items.map(item => convertToMenuItem(item)))
-    }
-  }, [])
-
-  const updateSubMenuItem = (groupId: string, parentId: string, subItem: SubMenuItem) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.map(group => {
-        if (group.label.id === groupId) {
-          return {
-            ...group,
-            items: group.items.map(item => {
-              if (item.id === parentId) {
-                return {
-                  ...item,
-                  items: item.items?.map((sub: SubMenuItem) =>
-                    sub.id === subItem.id ? subItem : sub
-                  ) || []
-                }
-              }
-              return item
-            })
-          }
-        }
-        return group
-      })
-    }
-
-    setNavData(updatedNavData)
-    saveNavData(updatedNavData)
-  }
-
-  const deleteSubMenuItem = (groupId: string, parentId: string, subItemId: string) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.map(group => {
-        if (group.label.id === groupId) {
-          return {
-            ...group,
-            items: group.items.map(item => {
-              if (item.id === parentId) {
-                return {
-                  ...item,
-                  items: item.items?.filter((sub: SubMenuItem) => sub.id !== subItemId) || []
-                }
-              }
-              return item
-            })
-          }
-        }
-        return group
-      })
-    }
-
-    setNavData(updatedNavData)
-    saveNavData(updatedNavData)
-  }
-
-  const updateItemCollapsible = (itemId: string, isCollapsible: boolean) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.map(group => ({
-        ...group,
-        items: group.items.map(item =>
-          item.id === itemId ? { ...item, isCollapsible } : item
-        )
-      }))
-    }
-
-    setNavData(updatedNavData)
-    saveNavData(updatedNavData)
-  }
-
-  const updateNavData = (newNavData: NavMainData) => {
-    setNavData(newNavData)
-    saveNavData(newNavData)
-    
-    const allItems = newNavData.groups.flatMap(group => 
-      group.items.map(item => ({
-        ...item,
-        groupId: group.label.id
-      }))
-    )
-    setMenuItems(allItems)
-    saveMenuItems(allItems)
-  }
-
-  const addGroupLabel = (label: GroupLabel) => {
-    const updatedNavData = {
-      ...navData,
-      groups: [...navData.groups, { label, items: [] }]
-    }
-    setNavData(updatedNavData)
-    saveNavData(updatedNavData)
-  }
-
-  const updateGroupLabel = (labelId: string, updatedLabel: GroupLabel) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.map(group =>
-        group.label.id === labelId ? { ...group, label: updatedLabel } : group
-      )
-    }
-    setNavData(updatedNavData)
-    saveNavData(updatedNavData)
-  }
-
-  const deleteGroupLabel = (labelId: string) => {
-    const updatedNavData = {
-      ...navData,
-      groups: navData.groups.filter(group => group.label.id !== labelId)
-    }
-    setNavData(updatedNavData)
-    saveNavData(updatedNavData)
-  }
+  }, [currentDashboardId]);
 
   const value = {
     menuItems,
-    setMenuItems: handleSetMenuItems,
-    navData,
-    updateNavData,
-    addMenuItem,
+    setMenuItems,
+    fetchMenuItems,
     updateMenuItem,
-    deleteMenuItem,
-    updateSubMenuItem,
-    deleteSubMenuItem,
-    updateItemCollapsible,
-    handleChangeGroup,
-    addGroupLabel,
-    updateGroupLabel,
-    deleteGroupLabel
-  }
+    deleteMenuItem
+  };
 
-  return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>
+  return (
+    <MenuContext.Provider value={value}>
+      {children}
+    </MenuContext.Provider>
+  );
 }
 
-export const useMenu = () => {
-  const context = useContext(MenuContext)
-  if (context === undefined) {
-    throw new Error('useMenu must be used within a MenuProvider')
+export function useMenu() {
+  const context = useContext(MenuContext);
+  if (!context) {
+    throw new Error('useMenu must be used within a MenuProvider');
   }
-  return context
+  return context;
 }

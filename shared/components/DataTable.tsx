@@ -35,23 +35,16 @@ const DataTable = <T extends { id: string | number }>({
         <Table>
           <TableHeader>
             <TableRow>
+              {(onEdit || onDelete) && <TableHead>Actions</TableHead>}
               {columns.map((column) => (
                 <TableHead key={String(column.key)}>{column.header}</TableHead>
               ))}
-              {(onEdit || onDelete) && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.map((item) => (
               <TableRow key={item.id}>
-                {columns.map((column) => (
-                  <TableCell key={`${item.id}-${String(column.key)}`}>
-                    {column.render
-                      ? column.render(item[column.key], item)
-                      : String(item[column.key])}
-                  </TableCell>
-                ))}
-                {(onEdit || onDelete) && (
+                                {(onEdit || onDelete) && (
                   <TableCell>
                     <div className="flex gap-2">
                       {onEdit && (
@@ -75,6 +68,13 @@ const DataTable = <T extends { id: string | number }>({
                     </div>
                   </TableCell>
                 )}
+                {columns.map((column) => (
+                  <TableCell key={`${item.id}-${String(column.key)}`}>
+                    {column.render
+                      ? column.render(item[column.key], item)
+                      : String(item[column.key])}
+                  </TableCell>
+                ))}
               </TableRow>
             ))}
           </TableBody>
