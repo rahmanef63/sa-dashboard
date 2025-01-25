@@ -5,6 +5,7 @@ import { DatabaseForm } from "../Forms/DatabaseForm";
 import { Pencil, Trash2, Table, Database as DatabaseIcon } from "lucide-react";
 import { DatabaseTables } from "./DatabaseTables";
 import { DatabaseBackup } from "./DatabaseBackup";
+import { DatabaseRestore } from "./DatabaseRestore";
 import { Button } from "shared/components/ui/button";
 
 interface DatabaseDetailsProps {
@@ -111,8 +112,9 @@ export function DatabaseDetails({
               </dl>
             </div>
           </div>
-          <div>
+          <div className="space-y-6">
             <DatabaseBackup databaseName={database.name} />
+            <DatabaseRestore databaseName={database.name} />
           </div>
         </div>
       ) : (

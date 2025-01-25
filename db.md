@@ -128,11 +128,11 @@ sidebar/
   - [x] Compression support for large databases
   - [x] Progress indicator for large exports
   
-- [ ] Database Import Feature
-  - [ ] Import from SQL file with validation
-  - [ ] Transaction support for safe imports
-  - [ ] Error handling and rollback capability
-  - [ ] Progress tracking for large imports
+- [x] Database Import Feature
+  - [x] Import from SQL file with validation
+  - [x] Transaction support for safe imports
+  - [x] Error handling and rollback capability
+  - [x] Progress tracking for large imports
 
 - [ ] Automated Backup System
   - [ ] Configurable backup schedules
