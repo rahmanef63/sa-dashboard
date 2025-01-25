@@ -17,6 +17,19 @@ export interface DatabaseHeaderProps {
   onCreateClick: () => void;
 }
 
+export interface BackupOptions {
+  type: "structure" | "full";
+  compression: boolean;
+}
+
+export interface BackupResponse {
+  success: boolean;
+  message: string;
+  file?: string;
+  error?: string;
+  details?: string;
+}
+
 export interface DatabaseTabsProps {
   databases: Database[];
   selectedDatabase: Database | null;

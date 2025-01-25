@@ -120,13 +120,13 @@ sidebar/
 - Table partitioning management
 
 ## Task List
-
+<!-- dong delete or create new task, keep the order -->
 ### 1. Backup & Restore System
-- [ ] Database Export Feature
-  - [ ] Export database structure to SQL file
-  - [ ] Export data with/without structure option
-  - [ ] Compression support for large databases
-  - [ ] Progress indicator for large exports
+- [x] Database Export Feature
+  - [x] Export database structure to SQL file
+  - [x] Export data with/without structure option
+  - [x] Compression support for large databases
+  - [x] Progress indicator for large exports
   
 - [ ] Database Import Feature
   - [ ] Import from SQL file with validation

@@ -4,6 +4,7 @@ import { FormDialog } from "@/shared/components/FormDialog";
 import { DatabaseForm } from "../Forms/DatabaseForm";
 import { Pencil, Trash2, Table, Database as DatabaseIcon } from "lucide-react";
 import { DatabaseTables } from "./DatabaseTables";
+import { DatabaseBackup } from "./DatabaseBackup";
 import { Button } from "shared/components/ui/button";
 
 interface DatabaseDetailsProps {
@@ -49,9 +50,10 @@ export function DatabaseDetails({
             Edit
           </Button>
           <Button
-            variant="destructive"
+            variant="outline"
             size="sm"
             onClick={() => setIsDeleteDialogOpen(true)}
+            className="text-red-500 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4 mr-2" />
             Delete
@@ -61,63 +63,61 @@ export function DatabaseDetails({
 
       {/* Tabs */}
       <div className="border-b">
-        <div className="flex space-x-4">
+        <nav className="-mb-px flex space-x-8">
           <button
-            className={`py-2 px-4 border-b-2 ${
+            onClick={() => setActiveTab('overview')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'overview'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent hover:border-gray-300'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
-            onClick={() => setActiveTab('overview')}
           >
-            <DatabaseIcon className="h-4 w-4 inline-block mr-2" />
+            <DatabaseIcon className="h-4 w-4 inline mr-2" />
             Overview
           </button>
           <button
-            className={`py-2 px-4 border-b-2 ${
+            onClick={() => setActiveTab('tables')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'tables'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent hover:border-gray-300'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
-            onClick={() => setActiveTab('tables')}
           >
-            <Table className="h-4 w-4 inline-block mr-2" />
+            <Table className="h-4 w-4 inline mr-2" />
             Tables
           </button>
-        </div>
+        </nav>
       </div>
 
       {/* Content */}
-      <div>
-        {activeTab === 'overview' ? (
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-medium mb-4">Details</h3>
-              <dl className="space-y-2">
+      {activeTab === 'overview' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-medium">Database Info</h3>
+              <dl className="mt-4 space-y-4">
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Name</dt>
-                  <dd className="mt-1">{database.name}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Owner</dt>
-                  <dd className="mt-1">{database.owner || 'N/A'}</dd>
+                  <dd className="mt-1 text-sm text-gray-900">{database.name}</dd>
                 </div>
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Size</dt>
-                  <dd className="mt-1">{database.size || 'N/A'}</dd>
+                  <dd className="mt-1 text-sm text-gray-900">{database.size}</dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Description</dt>
-                  <dd className="mt-1">{database.description || 'N/A'}</dd>
+                  <dt className="text-sm font-medium text-gray-500">Owner</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{database.owner}</dd>
                 </div>
               </dl>
             </div>
           </div>
-        ) : (
-          <DatabaseTables databaseName={database.name} />
-        )}
-      </div>
-
+          <div>
+            <DatabaseBackup databaseName={database.name} />
+          </div>
+        </div>
+      ) : (
+        <DatabaseTables databaseName={database.name} />
+      )}
       {/* Edit Dialog */}
       <FormDialog
         isOpen={isEditDialogOpen}
