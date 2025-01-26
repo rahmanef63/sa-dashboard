@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Database, DatabaseFormData } from "@/shared/types/database";
 import { FormDialog } from "@/shared/components/FormDialog";
 import { DatabaseForm } from "../Forms/DatabaseForm";
-import { Pencil, Trash2, Table, Database as DatabaseIcon } from "lucide-react";
+import { Pencil, Trash2, Table, Database as DatabaseIcon, FileCode } from "lucide-react";
 import { DatabaseTables } from "./DatabaseTables";
 import { DatabaseBackup } from "./DatabaseBackup";
 import { DatabaseRestore } from "./DatabaseRestore";
 import { Button } from "shared/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
+import { QueryEditor } from '@/slices/page/static-page/database-management/components/Query';
 
 interface DatabaseDetailsProps {
   database: Database;
@@ -19,7 +21,6 @@ export function DatabaseDetails({
   onEditClick,
   onDeleteClick,
 }: DatabaseDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'tables'>('overview');
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -63,63 +64,59 @@ export function DatabaseDetails({
       </div>
 
       {/* Tabs */}
-      <div className="border-b">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'overview'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className=" flex justify-evenly mb-4 w-full">
+          <TabsTrigger value="overview">
             <DatabaseIcon className="h-4 w-4 inline mr-2" />
             Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('tables')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'tables'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
+          </TabsTrigger>
+          <TabsTrigger value="tables">
             <Table className="h-4 w-4 inline mr-2" />
             Tables
-          </button>
-        </nav>
-      </div>
+          </TabsTrigger>
+          <TabsTrigger value="query">
+            <FileCode className="h-4 w-4 inline mr-2" />
+            Query Editor
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Content */}
-      {activeTab === 'overview' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h3 className="text-lg font-medium">Database Info</h3>
-              <dl className="mt-4 space-y-4">
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Name</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{database.name}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Size</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{database.size}</dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Owner</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{database.owner}</dd>
-                </div>
-              </dl>
+        <TabsContent value="overview">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <h3 className="text-lg font-medium">Database Info</h3>
+                <dl className="mt-4 space-y-4">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Name</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{database.name}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Size</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{database.size}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Owner</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{database.owner}</dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <DatabaseBackup databaseName={database.name} />
+              <DatabaseRestore databaseName={database.name} />
             </div>
           </div>
-          <div className="space-y-6">
-            <DatabaseBackup databaseName={database.name} />
-            <DatabaseRestore databaseName={database.name} />
-          </div>
-        </div>
-      ) : (
-        <DatabaseTables databaseName={database.name} />
-      )}
+        </TabsContent>
+
+        <TabsContent value="tables">
+          <DatabaseTables databaseName={database.name} />
+        </TabsContent>
+
+        <TabsContent value="query">
+          <QueryEditor databaseName={database.name} />
+        </TabsContent>
+      </Tabs>
+
       {/* Edit Dialog */}
       <FormDialog
         isOpen={isEditDialogOpen}

@@ -6,9 +6,8 @@ import { useTableOperations } from '../../../hooks/useTableOperations';
 import { DatabaseTable, TableFormData } from '@/shared/types/table';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { TablePreview } from '../Preview/TablePreview';
-import { QueryEditor } from '@/slices/page/static-page/database-management/components/Query';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { ScrollArea, ScrollBar } from '@/shared/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 
 interface DatabaseTablesProps {
   databaseName: string;
@@ -136,60 +135,47 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="tables">
-        <TabsList>
-          <TabsTrigger value="tables">Tables</TabsTrigger>
-          <TabsTrigger value="query">Query Editor</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="tables" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Tables</h3>
-            <Button onClick={() => setIsTableFormOpen(true)}>
-              Create Table
-            </Button>
-          </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Tables</h3>
+        <Button onClick={() => setIsTableFormOpen(true)}>
+          Create Table
+        </Button>
+      </div>
 
-          {tables.length === 0 ? (
-            <div className="text-center py-12 border rounded-lg bg-gray-50">
-              <div className="text-gray-500 mb-2">No tables found</div>
-              <div className="text-sm text-gray-400">
-                Click the "Create Table" button to create your first table
+      {tables.length === 0 ? (
+        <div className="text-center py-12 border rounded-lg bg-gray-50">
+          <div className="text-gray-500 mb-2">No tables found</div>
+          <div className="text-sm text-gray-400">
+            Click the "Create Table" button to create your first table
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {tables.map((table) => (
+            <div key={table.table_name} className="p-4 border rounded-lg">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h4 className="font-medium">{table.table_name}</h4>
+                </div>
+                <div className="space-x-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleViewData(table)}
+                  >
+                    View Data
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleDeleteTable(table.table_name)}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {tables.map((table) => (
-                <div key={table.table_name} className="p-4 border rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-medium">{table.table_name}</h4>
-                    </div>
-                    <div className="space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleViewData(table)}
-                      >
-                        View Data
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleDeleteTable(table.table_name)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="query">
-          <QueryEditor databaseName={databaseName} />
-        </TabsContent>
-      </Tabs>
+          ))}
+        </div>
+      )}
 
       <Dialog open={isTableFormOpen} onOpenChange={setIsTableFormOpen}>
         <DialogContent>
@@ -210,7 +196,7 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
           }
           setIsPreviewOpen(open);
         }}>
-          <DialogContent className="max-w-4xl">
+           <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>
                 Table: {selectedTable.table_name}
