@@ -2,20 +2,24 @@ import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Textarea } from '@/shared/components/ui/textarea';
 import DataTable from '@/shared/components/DataTable';
-import { PlayIcon, BookOpenIcon } from 'lucide-react';
+import { PlayIcon, BookOpenIcon, CodeIcon } from 'lucide-react';
 import { QueryDialog } from './QueryDialog';
+import { QueryGeneratorDialog } from './QueryGeneratorDialog';
+import { QueryItem } from '../constants/types';
 
 interface QueryEditorProps {
   databaseName: string;
+  readQueries: QueryItem[];
 }
 
-export function QueryEditor({ databaseName }: QueryEditorProps) {
+export function QueryEditor({ databaseName, readQueries }: QueryEditorProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [columns, setColumns] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSamplesOpen, setIsSamplesOpen] = useState(false);
+  const [isQueryGeneratorOpen, setIsQueryGeneratorOpen] = useState(false);
 
   const executeQuery = async () => {
     if (!query.trim()) return;
@@ -61,15 +65,28 @@ export function QueryEditor({ databaseName }: QueryEditorProps) {
     }
   };
 
+  const handleQuerySelect = (selectedQuery: string) => {
+    const selectedItem = readQueries.find(q => q.name === selectedQuery);
+    if (selectedItem) {
+      setQuery(selectedItem.query);
+    }
+  };
+
+  const handleQueryGenerated = (generatedQuery: string) => {
+    setQuery(generatedQuery);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-start gap-4">
-        <Textarea
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter your SQL query here..."
-          className="font-mono min-h-[120px]"
-        />
+        <div className="w-full">
+          <Textarea
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Enter your SQL query here..."
+            className="min-h-[200px] font-mono"
+          />
+        </div>
         <div className="flex flex-col gap-2">
           <Button
             onClick={executeQuery}
@@ -86,6 +103,15 @@ export function QueryEditor({ databaseName }: QueryEditorProps) {
           >
             <BookOpenIcon className="h-4 w-4 mr-2" />
             Sample Queries
+          </Button>
+          {/*quuery generator using existing data from database */}
+          <Button
+            variant="outline"
+            onClick={() => setIsQueryGeneratorOpen(true)}
+            className="flex-shrink-0"
+          >
+            <CodeIcon className="h-4 w-4 mr-2" />
+            Query Generator
           </Button>
         </div>
       </div>
@@ -116,6 +142,13 @@ export function QueryEditor({ databaseName }: QueryEditorProps) {
           No results
         </div>
       )}
+
+      <QueryGeneratorDialog
+        isOpen={isQueryGeneratorOpen}
+        onClose={() => setIsQueryGeneratorOpen(false)}
+        onQueryGenerated={handleQueryGenerated}
+        databaseName={databaseName}
+      />
 
       <QueryDialog 
         open={isSamplesOpen}

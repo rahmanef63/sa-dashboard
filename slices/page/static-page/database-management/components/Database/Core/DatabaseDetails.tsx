@@ -9,6 +9,7 @@ import { DatabaseRestore } from "./DatabaseRestore";
 import { Button } from "shared/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/components/ui/tabs";
 import { QueryEditor } from '@/slices/page/static-page/database-management/components/Query';
+import { readQueries } from "../../Query/constants/read-queries";
 
 interface DatabaseDetailsProps {
   database: Database;
@@ -113,7 +114,7 @@ export function DatabaseDetails({
         </TabsContent>
 
         <TabsContent value="query">
-          <QueryEditor databaseName={database.name} />
+          <QueryEditor databaseName={database.name} readQueries={readQueries} />
         </TabsContent>
       </Tabs>
 
