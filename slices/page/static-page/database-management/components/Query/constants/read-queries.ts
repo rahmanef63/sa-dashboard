@@ -2,6 +2,15 @@ import { QueryItem } from './types';
 
 export const readQueries: QueryItem[] = [
   {
+    name: "View all tables",
+    query: `SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+AND table_type = 'BASE TABLE'
+ORDER BY table_name;`,
+    description: 'View all tables in the database'
+  },
+  {
     name: "View Products",
     query: `SELECT 
   id,

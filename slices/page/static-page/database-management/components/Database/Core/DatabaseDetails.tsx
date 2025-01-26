@@ -66,15 +66,15 @@ export function DatabaseDetails({
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className=" flex justify-evenly mb-4 w-full">
-          <TabsTrigger value="overview">
+          <TabsTrigger value="overview" className="w-full">
             <DatabaseIcon className="h-4 w-4 inline mr-2" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="tables">
+          <TabsTrigger value="tables" className="w-full">
             <Table className="h-4 w-4 inline mr-2" />
             Tables
           </TabsTrigger>
-          <TabsTrigger value="query">
+          <TabsTrigger value="query" className="w-full">
             <FileCode className="h-4 w-4 inline mr-2" />
             Query Editor
           </TabsTrigger>

@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { TableForm } from '../Forms/TableForm';
 import { useTableOperations } from '../../../hooks/useTableOperations';
 import { DatabaseTable, TableFormData } from '@/shared/types/table';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { TablePreview } from '../Preview/TablePreview';
-import { ScrollArea, ScrollBar } from '@/shared/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
+import { ViewDataTables } from './ViewDataTables';
 
 interface DatabaseTablesProps {
   databaseName: string;
@@ -17,7 +15,11 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
   const { toast } = useToast();
   const [isTableFormOpen, setIsTableFormOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [selectedTable, setSelectedTable] = useState<DatabaseTable | null>(null);
+  const [selectedTable, setSelectedTable] = useState<{
+    table_name: string;
+    table_schema: string;
+    description?: string;
+  } | null>(null);
   const [mounted, setMounted] = React.useState(false);
   
   const { 
@@ -26,8 +28,7 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
     error, 
     createTable,
     deleteTable,
-    updateTable,
-    refetchTables 
+    fetchTables 
   } = useTableOperations(databaseName);
 
   React.useLayoutEffect(() => {
@@ -35,7 +36,7 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
   }, []);
 
   if (!mounted) {
-    return null; // Return null during server-side rendering and initial client render
+    return null;
   }
 
   if (isLoading) {
@@ -72,16 +73,13 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
 
   const handleCreateTable = async (formData: TableFormData) => {
     try {
-      // Log form data for debugging
-      (window as any).debugConsole?.form('Creating table', formData);
-      
       await createTable(formData);
       setIsTableFormOpen(false);
       toast({
         title: "Success",
         description: `Table ${formData.name} has been created successfully.`
       });
-      await refetchTables();
+      await fetchTables();
     } catch (error) {
       console.error('Failed to create table:', error);
       toast({
@@ -99,7 +97,7 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
         title: "Success",
         description: `Table ${tableName} has been deleted.`
       });
-      await refetchTables();
+      await fetchTables();
     } catch (error) {
       console.error('Failed to delete table:', error);
       toast({
@@ -110,27 +108,9 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
     }
   };
 
-  const handleViewData = (table: DatabaseTable) => {
-    try {
-      console.log('Viewing table data:', table);
-      if (!table) {
-        toast({
-          title: "Error",
-          description: "No table selected",
-          variant: "destructive"
-        });
-        return;
-      }
-      setSelectedTable(table);
-      setIsPreviewOpen(true);
-    } catch (error) {
-      console.error('Error viewing table data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to view table data",
-        variant: "destructive"
-      });
-    }
+  const handleViewData = (table: typeof tables[0]) => {
+    setSelectedTable(table);
+    setIsPreviewOpen(true);
   };
 
   return (
@@ -156,6 +136,12 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
               <div className="flex justify-between items-start">
                 <div>
                   <h4 className="font-medium">{table.table_name}</h4>
+                  {table.description && (
+                    <p className="text-sm text-gray-500">{table.description}</p>
+                  )}
+                  {table.total_size && (
+                    <p className="text-xs text-gray-400">Size: {table.total_size}</p>
+                  )}
                 </div>
                 <div className="space-x-2">
                   <Button
@@ -189,67 +175,18 @@ export function DatabaseTables({ databaseName }: DatabaseTablesProps) {
         </DialogContent>
       </Dialog>
 
-      {selectedTable && (
-        <Dialog open={isPreviewOpen} onOpenChange={(open) => {
+      <ViewDataTables
+        isOpen={isPreviewOpen}
+        onOpenChange={(open) => {
           if (!open) {
             setSelectedTable(null);
           }
           setIsPreviewOpen(open);
-        }}>
-           <DialogContent className="max-w-4xl">
-            <DialogHeader>
-              <DialogTitle>
-                Table: {selectedTable.table_name}
-              </DialogTitle>
-            </DialogHeader>
-            <Tabs defaultValue="preview">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="preview">Preview Data</TabsTrigger>
-                <TabsTrigger value="edit">Edit Structure</TabsTrigger>
-              </TabsList>
-              <TabsContent value="preview" className="mt-4">
-                <ScrollArea className="h-[80vh] w-[95vh] rounded-md border">
-                  <TablePreview table={selectedTable} databaseName={databaseName} />
-                  <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-              </TabsContent>
-              <TabsContent value="edit" className="mt-4">
-                <ScrollArea className="h-[80vh] w-full rounded-md border">
-                  <TableForm
-                    initialData={{
-                      name: selectedTable.table_name,
-                      schema: selectedTable.table_schema,
-                      columns: selectedTable.columns,
-                    constraints: selectedTable.constraints,
-                    description: selectedTable.description,
-                  }}
-                  onSubmit={async (data) => {
-                    try {
-                      // TODO: Implement table update
-                      await updateTable(selectedTable.table_name, data);
-                      toast({
-                        title: "Success",
-                        description: `Table ${selectedTable.table_name} has been updated.`
-                      });
-                      setIsPreviewOpen(false);
-                      await refetchTables();
-                    } catch (error) {
-                      console.error('Failed to update table:', error);
-                      toast({
-                        title: "Error",
-                        description: error instanceof Error ? error.message : "Failed to update table",
-                        variant: "destructive"
-                      });
-                    }
-                  }}
-                  onCancel={() => setIsPreviewOpen(false)}
-                />
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
-      )}
+        }}
+        selectedTable={selectedTable}
+        databaseName={databaseName}
+        onTableUpdate={fetchTables}
+      />
     </div>
   );
 }
