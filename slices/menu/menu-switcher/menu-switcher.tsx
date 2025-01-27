@@ -41,14 +41,14 @@ export function MenuSwitcher({ menus, onMenuChange, className }: MenuSwitcherPro
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="sm"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-hover transition-colors duration-200"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground transition-transform duration-200 hover:scale-105">
                 {renderIcon(activeMenu.icon)}
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">
+              <div className="grid flex-1 text-left text-sm leading-tight transition-opacity duration-200">
+                <span className="truncate font-semibold hover:text-sidebar-accent-foreground">
                   {activeMenu.title}
                 </span>
               </div>

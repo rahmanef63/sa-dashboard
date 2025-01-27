@@ -56,6 +56,13 @@ export interface MenuSwitcherItem extends BaseMenuItem {
   menuList: MenuItemWithChildren[]
 }
 
+export interface MenuSwitcher extends BaseMenuItem {
+  menus?: MenuSwitcherItem[]
+  dashboardId: string
+  menuType: MenuCategory
+  children?: MenuItemWithChildren[]
+}
+
 export interface Menu extends BaseMenuItem {
   id: string
   title: string
@@ -65,13 +72,6 @@ export interface Menu extends BaseMenuItem {
   menuList: MenuItemWithChildren[]
   isDefault?: boolean
   isActive?: boolean
-}
-
-export interface MenuSwitcher extends BaseMenuItem {
-  menus?: MenuSwitcherItem[]
-  dashboardId: string
-  menuType: MenuCategory
-  children?: MenuItemWithChildren[]
 }
 
 // Menu Collections
@@ -92,6 +92,7 @@ export interface DashboardMenu {
   id: string
   name: string
   icon?: string
+  logo?: string // Added for dashboard icons
   items: MenuItemWithChildren[]
   menuType: MenuCategory
   isDefault?: boolean

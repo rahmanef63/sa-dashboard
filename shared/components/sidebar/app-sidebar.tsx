@@ -7,19 +7,20 @@ import { useMenu } from '@/slices/menu/context/MenuContext'
 import { Sidebar } from "shared/components/ui/sidebar"
 import { useSidebar } from '@/shared/hooks/useSidebar'
 import { SidebarContentWrapper } from './sidebar-content'
+import { cn } from "@/shared/lib/utils"
 
 // Helper component for rendering icons
-function Icon({ icon }: { icon?: string | LucideIcon }) {
+function Icon({ icon, className }: { icon?: string | LucideIcon, className?: string }) {
   if (!icon) return null
   if (typeof icon === 'string') {
     const IconComponent = getIconByName(icon)
-    return IconComponent ? <IconComponent className="h-4 w-4" /> : null
+    return IconComponent ? <IconComponent className={cn("h-4 w-4", className)} /> : null
   }
   const IconComponent = icon
-  return <IconComponent className="h-4 w-4" />
+  return <IconComponent className={cn("h-4 w-4", className)} />
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ className, ...props }: React.ComponentProps<typeof Sidebar>) {
   const { menuItems } = useMenu()
   const {
     mounted,
@@ -36,11 +37,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return <div className="sidebar-placeholder" style={{ width: '240px' }} />
   }
 
-  const renderIcon = (icon: string | undefined): JSX.Element | null => {
-    if (!icon) return null
-    return <Icon icon={icon} />
-  }
-
   return (
     <>
       <SidebarContentWrapper
@@ -49,8 +45,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         isOpen={isOpen}
         onDashboardChange={(dashboard) => loadDashboardNavigation(dashboard.defaultMenuId || 'main')}
         onMenuChange={handleNavItemClick}
+        renderIcon={(icon) => icon ? <Icon icon={icon} className={cn(!isOpen && "w-6 h-6")} /> : null}
         onFocus={() => setIsOpen(true)}
-        renderIcon={renderIcon}
+        className={cn(
+          'transition-all duration-200',
+          '[&_[data-sidebar=menu-button]>div:first-child]:!flex [&_[data-sidebar=menu-button]>div:first-child]:!items-center [&_[data-sidebar=menu-button]>div:first-child]:!justify-center',
+          !isOpen && "w-[50px]",
+          { '[&_[data-sidebar=menu-button]>div:last-child]:hidden': !isOpen },
+          className
+        )}
         sidebarProps={props}
       />
     </>

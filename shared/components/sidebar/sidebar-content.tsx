@@ -13,9 +13,11 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
+  SidebarMenuSkeleton,
   SidebarRail,
   SidebarSeparator,
 } from "shared/components/ui/sidebar"
@@ -60,10 +62,7 @@ export function SidebarContentWrapper({
   }
 
   return (
-    <Sidebar 
-      className={cn(className, { 'menu-switcher-sidebar': type !== 'default' })}
-      {...sidebarProps}
-    >
+    <Sidebar collapsible="icon" {...sidebarProps}>
       <SidebarHeader>
         <DashboardSwitcher
           dashboards={DASHBOARDS}
@@ -73,11 +72,11 @@ export function SidebarContentWrapper({
       <SidebarSeparator />
       <SidebarContent>
         <SidebarMenu>
+        <SidebarGroup>
           {menuSwitcher?.menus && (
             <MenuSwitcher 
               menus={menuSwitcher.menus}
               onMenuChange={handleMenuChange}
-              className={cn('menu-switcher', className)}
             />
           )}
           {selectedMenu && (
@@ -88,6 +87,7 @@ export function SidebarContentWrapper({
               renderIcon={renderIcon}
             />
           )}
+        </SidebarGroup>
           <MenuSection 
             items={regularMenus as MenuItemWithChildren[]}
             onSecondaryItemClick={onMenuChange}
