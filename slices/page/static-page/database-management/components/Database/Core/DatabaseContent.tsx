@@ -52,11 +52,7 @@ export const DatabaseContent = ({
 
       <div className="space-y-6">
         <DatabaseTables
-          tables={database.tables}
-          onAddTable={onAddTable}
-          onUpdateTable={onUpdateTable}
-          onDeleteTable={onDeleteTable}
-          availableTables={availableTables}
+          databaseName={database.name}
         />
       </div>
     </Card>

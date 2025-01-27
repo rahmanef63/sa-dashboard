@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog';
 import { TableForm } from '../Forms/TableForm';
 import { useTableOperations } from '../../../hooks/useTableOperations';
-import { DatabaseTable, TableFormData } from '@/shared/types/table';
+import { TableFormData } from '@/shared/types/table';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { ViewDataTables } from './ViewDataTables';
 
