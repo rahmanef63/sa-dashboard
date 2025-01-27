@@ -13,12 +13,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "shared/components/ui/breadcrumb"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "shared/components/ui/dropdown-menu"
 
 type BreadcrumbContextType = {
   breadcrumbs: { href: string; label: string }[]

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { MenuItemWithChildren, GroupLabel, NavGroup } from '@/shared/types/navigation-types';
 
 interface MenuContextType {
   menuItems: MenuItemWithChildren[];
@@ -7,6 +7,15 @@ interface MenuContextType {
   fetchMenuItems: (dashboardId: string) => Promise<MenuItemWithChildren[]>;
   updateMenuItem: (item: MenuItemWithChildren) => Promise<void>;
   deleteMenuItem: (itemId: string) => Promise<void>;
+  navData: {
+    groups: NavGroup[];
+  };
+  updateNavData: (data: { groups: NavGroup[] }) => void;
+  handleChangeGroup: (groupId: string) => void;
+  addGroupLabel: (label: GroupLabel) => void;
+  updateGroupLabel: (labelId: string, label: GroupLabel) => void;
+  deleteGroupLabel: (labelId: string) => void;
+  updateItemCollapsible: (itemId: string, isCollapsed: boolean) => void;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -110,7 +119,16 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     setMenuItems,
     fetchMenuItems,
     updateMenuItem,
-    deleteMenuItem
+    deleteMenuItem,
+    navData: {
+      groups: []
+    },
+    updateNavData: () => {},
+    handleChangeGroup: () => {},
+    addGroupLabel: () => {},
+    updateGroupLabel: () => {},
+    deleteGroupLabel: () => {},
+    updateItemCollapsible: () => {}
   };
 
   return (

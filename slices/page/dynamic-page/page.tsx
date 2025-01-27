@@ -1,32 +1,33 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 
 // Define the mapping between route IDs and their dynamic components
 export function getPageComponents() {
   return {
     'dashboard': dynamic(() => import('./dashboard/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'analytics': dynamic(() => import('./analytics/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'settings': dynamic(() => import('./settings/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'profile': dynamic(() => import('./profile/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'projects': dynamic(() => import('./projects/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'tasks': dynamic(() => import('./tasks/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'messages': dynamic(() => import('./messages/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     }),
     'calendar': dynamic(() => import('./calendar/page'), {
-      loading: () => <div>Loading...</div>
+      loading: () => <LoadingSpinner />
     })
   };
 }

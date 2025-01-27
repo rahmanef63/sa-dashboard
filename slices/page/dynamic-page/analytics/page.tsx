@@ -3,12 +3,13 @@ import { AnalyticsChart } from './components/AnalyticsChart'
 import { useAnalyticsData } from './hooks/useAnalyticsData'
 import { calculateGrowth } from './lib/analyticsUtils'
 import { ANALYTICS_DATE_RANGE } from './constants'
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner'
 
 const AnalyticsPage: React.FC = () => {
   const data = useAnalyticsData()
 
   if (!data) {
-    return <div>Loading...</div>
+    return <LoadingSpinner />
   }
 
   return (

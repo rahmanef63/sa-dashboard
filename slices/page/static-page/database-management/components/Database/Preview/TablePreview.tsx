@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "shared/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "shared/components/ui/select";
 import { showToast } from "shared/utils/toast";
+import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 
 interface TablePreviewProps {
   table: DatabaseTable;
@@ -134,7 +135,7 @@ export const TablePreview = ({ table, databaseName }: TablePreviewProps) => {
     <div className="space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center mx-auto h-full">
-            <p>Loading...</p>
+            <LoadingSpinner />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">

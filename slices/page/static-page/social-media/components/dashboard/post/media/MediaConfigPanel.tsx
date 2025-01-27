@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 import { Card, CardContent } from "shared/components/ui/card";
 import { Separator } from "shared/components/ui/separator";
 import { ACCEPTED_FILE_TYPES } from "../../../../config/media/constants";
+import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 
 const MediaTypeSelector = dynamic(() => import('./MediaTypeSelector').then(mod => mod.MediaTypeSelector), {
   ssr: false
@@ -36,7 +37,7 @@ export const MediaConfigPanel = ({ onFileSelect }: MediaConfigPanelProps) => {
   const maxFiles = format === "single" ? 1 : 10;
 
   if (!mounted) {
-    return <Card className="border border-border/50"><CardContent className="space-y-6 pt-6">Loading...</CardContent></Card>;
+    return <Card className="border border-border/50"><CardContent className="space-y-6 pt-6"><LoadingSpinner /></CardContent></Card>;
   }
 
   return (

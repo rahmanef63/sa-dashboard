@@ -4,6 +4,7 @@ import { notFound, useParams, useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from "shared/components/ui/button"
 import { getPageComponents } from '@/slices/page/static-page/social-media/page-mapper';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 
 const pageComponents = getPageComponents();
 
@@ -55,7 +56,7 @@ export default function DynamicDashboardPage() {
           <PageComponent />
         </>
       ) : (
-        <p>Loading...</p>
+        <LoadingSpinner />
       )}
       <div className="flex justify-center mt-4 mx-auto">
         <Button onClick={() => router.back()} className="mr-2">

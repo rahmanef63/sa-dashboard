@@ -8,8 +8,6 @@ import { NavMain } from "slices/menu/nav-main/nav-main"
 import { NavProjects } from "slices/menu/nav-projects/nav-projects"
 
 import { navProjectsConfig } from "slices/menu/nav-projects/config"
-import { ChevronLeft } from 'lucide-react'
-import Link from "next/link"
 import { cn } from "shared/lib/utils"
 import {
   Sidebar,
@@ -21,15 +19,15 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from "shared/components/ui/sidebar"
-import { Dashboard, MenuItemWithChildren } from '@/shared/types/navigation-types'
+import { Dashboard, MenuItemWithChildren, type MenuSwitcher as MenuSwitcherType, Menu, MenuSwitcherItem } from '@/shared/types/navigation-types'
+import { MenuSwitcher } from '@/slices/menu/menu-switcher/menu-switcher'
 
 interface SidebarContentProps {
-  type: 'primary' | 'secondary'
-  menuItems: MenuItemWithChildren[]
+  type: 'default' | 'menuSwitcher'
+  menuItems: MenuSwitcherType[] | MenuItemWithChildren[]
   isOpen?: boolean
   onDashboardChange: (dashboard: Dashboard) => void
-  onSecondaryClick?: (item: MenuItemWithChildren) => void
-  onSecondaryClose?: () => void
+  onMenuChange: (menu: MenuSwitcherType | MenuItemWithChildren) => void
   onFocus?: () => void
   renderIcon: (icon: string | undefined) => JSX.Element | null
   className?: string
@@ -41,83 +39,70 @@ export function SidebarContentWrapper({
   menuItems,
   isOpen = true,
   onDashboardChange,
-  onSecondaryClick,
-  onSecondaryClose,
+  onMenuChange,
   onFocus,
   renderIcon,
   className,
   sidebarProps
 }: SidebarContentProps) {
-  const isPrimary = type === 'primary'
+  const menuSwitcher = menuItems[0] as MenuSwitcherType
+  const regularMenus = menuItems.slice(1)
+
+  const [selectedMenu, setSelectedMenu] = React.useState<MenuSwitcherItem | null>(
+    menuSwitcher?.menus?.[0] || null
+  )
+
+  const handleMenuChange = (menu: MenuSwitcherItem | MenuItemWithChildren) => {
+    if ('menuList' in menu) {
+      setSelectedMenu(menu as MenuSwitcherItem)
+    }
+    onMenuChange(menu as MenuItemWithChildren)
+  }
 
   return (
     <Sidebar 
-      collapsible="icon" 
-      className={cn(className, { 'secondary-sidebar': !isPrimary })}
+      className={cn(className, { 'menu-switcher-sidebar': type !== 'default' })}
       {...sidebarProps}
     >
       <SidebarHeader>
-        <DashboardSwitcher 
-          dashboards={DASHBOARDS} 
+        <DashboardSwitcher
+          dashboards={DASHBOARDS}
           onDashboardChange={onDashboardChange}
         />
       </SidebarHeader>
       <SidebarSeparator />
-      
-      {!isPrimary && onSecondaryClose && (
-        <>
-          <SidebarMenuButton onClick={onSecondaryClose}>
-            <div className="flex w-full items-center px-3 my-auto">
-              <span className="mr-2"><ChevronLeft /></span>
-              <span>Back</span>
-            </div>
-          </SidebarMenuButton>
-          <SidebarSeparator />
-        </>
-      )}
-
       <SidebarContent>
         <SidebarMenu>
-          {isPrimary ? (
-            <>
-              <MenuSection 
-                items={menuItems}
-                onSecondaryItemClick={onSecondaryClick}
-                onFocus={onFocus}
-                title="Navigation"
-                renderIcon={renderIcon}
-                isCollapsed={!isOpen}
-              />
-              <NavMain />
-              <NavProjects projects={navProjectsConfig.projects} />
-            </>
-          ) : (
-            menuItems.map((item) => (
-              <li key={item.id} className="flex items-center px-2 py-1">
-                <Link
-                  href={item.url?.href || '#'}
-                  className={cn(
-                    "flex items-center gap-2 w-full px-3 py-2 text-sm rounded-md",
-                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                    "transition-colors duration-200"
-                  )}
-                >
-                  {item.icon && typeof item.icon === 'string' && (
-                    <span className="h-4 w-4 shrink-0">{renderIcon(item.icon)}</span>
-                  )}
-                  <span>{item.title}</span>
-                </Link>
-              </li>
-            ))
+          {menuSwitcher?.menus && (
+            <MenuSwitcher 
+              menus={menuSwitcher.menus}
+              onMenuChange={handleMenuChange}
+              className={cn('menu-switcher', className)}
+            />
           )}
+          {selectedMenu && (
+            <MenuSection 
+              items={selectedMenu.menuList}
+              onSecondaryItemClick={onMenuChange}
+              onFocus={onFocus}
+              renderIcon={renderIcon}
+            />
+          )}
+          <MenuSection 
+            items={regularMenus as MenuItemWithChildren[]}
+            onSecondaryItemClick={onMenuChange}
+            onFocus={onFocus}
+            renderIcon={renderIcon}
+          />
+          <NavMain />
+          <NavProjects projects={navProjectsConfig.projects} />
         </SidebarMenu>
       </SidebarContent>
-
       <SidebarSeparator />
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>
-      {isPrimary && <SidebarRail />}
+      {type === 'default' && <SidebarRail />}
     </Sidebar>
   )
 }

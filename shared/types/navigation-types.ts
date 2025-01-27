@@ -2,34 +2,133 @@ import { type LucideIcon } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { type WithIcon } from '@/shared/icon-picker/types'
 
+// Common Types
+export type TargetType = '_blank' | '_self' | '_parent' | '_top'
+
 // Base URL type
 export interface NavUrl {
   href: string
-  target?: '_blank' | '_self' | '_parent' | '_top'
+  target?: TargetType
   rel?: string
 }
 
 // Base Navigation Types
-export interface BaseNavigationItem {
+export interface BaseMenuItem {
   id: string
   title: string
   order?: number
   icon?: LucideIcon | string
   isActive?: boolean
   isCollapsible?: boolean
+  url?: NavUrl
 }
 
+// Menu Category Types
+export type MenuCategory = 
+  | 'main'
+  | 'digital'
+  | 'family'
+  | 'finance'
+  | 'health'
+  | 'hobbies'
+  | 'home'
+  | 'personal'
+  | 'professional'
+  | 'study'
+  | 'travel'
+  | string // Allow dynamic categories
+
 // Modern Navigation System
-export interface MenuItemWithChildren extends BaseNavigationItem {
-  url?: NavUrl
+export interface MenuItemWithChildren extends BaseMenuItem {
   children?: MenuItemWithChildren[]
   parentId?: string
   dashboardId?: string
+  menuType?: MenuCategory
 }
 
+// Menu Types
+export interface MenuSwitcherItem extends BaseMenuItem {
+  id: string
+  title: string
+  icon?: string
+  dashboardId: string
+  menuType: MenuCategory
+  menuList: MenuItemWithChildren[]
+}
+
+export interface Menu extends BaseMenuItem {
+  id: string
+  title: string
+  icon?: string
+  dashboardId: string
+  menuType: MenuCategory
+  menuList: MenuItemWithChildren[]
+  isDefault?: boolean
+  isActive?: boolean
+}
+
+export interface MenuSwitcher extends BaseMenuItem {
+  menus?: MenuSwitcherItem[]
+  dashboardId: string
+  menuType: MenuCategory
+  children?: MenuItemWithChildren[]
+}
+
+// Menu Collections
+export type DigitalNavItems = MenuItemWithChildren[]
+export type FamilyNavItems = MenuItemWithChildren[]
+export type FinanceNavItems = MenuItemWithChildren[]
+export type HealthNavItems = MenuItemWithChildren[]
+export type HobbiesNavItems = MenuItemWithChildren[]
+export type HomeNavItems = MenuItemWithChildren[]
+export type MainNavItems = MenuSwitcher[]
+export type PersonalNavItems = MenuItemWithChildren[]
+export type ProfessionalNavItems = MenuItemWithChildren[]
+export type StudyNavItems = MenuItemWithChildren[]
+export type TravelNavItems = MenuItemWithChildren[]
+
+// Dashboard Types
+export interface DashboardMenu {
+  id: string
+  name: string
+  icon?: string
+  items: MenuItemWithChildren[]
+  menuType: MenuCategory
+  isDefault?: boolean
+  isActive?: boolean
+  createdAt?: Date
+  updatedAt?: Date
+  createdBy?: string
+  updatedBy?: string
+}
+
+export interface Dashboard {
+  id?: string
+  name: string
+  icon?: string
+  logo?: string // Added for dashboard icons
+  plan?: string
+  dashboardId: string
+  description?: string
+  menus?: DashboardMenu[]
+  defaultMenuId?: string
+  isActive?: boolean
+  createdAt?: Date
+  updatedAt?: Date
+  createdBy?: string
+  updatedBy?: string
+}
+
+// Dynamic Dashboard Types
+export interface DashboardNavItem extends MenuItemWithChildren {
+  dashboardId: string
+  menuType: MenuCategory
+}
+
+export type DynamicNavItems = DashboardNavItem[]
+
 // Legacy Navigation System
-export interface NavigationItem extends BaseNavigationItem {
-  url?: NavUrl
+export type NavigationItem = BaseMenuItem & {
   children?: NavigationItem[]
   groupId?: string
 }
@@ -39,15 +138,12 @@ export interface MenuItem extends NavigationItem {
   items?: SubMenuItem[]
 }
 
-export interface SubMenuItem extends NavigationItem {
+export interface SubMenuItem extends Omit<NavigationItem, 'children' | 'items'> {
   url: NavUrl
   parentId: string
 }
 
-export interface GroupLabel extends BaseNavigationItem {
-  id: string
-  title: string
-}
+export interface GroupLabel extends Pick<BaseMenuItem, 'id' | 'title'> {}
 
 export interface NavGroup {
   label: GroupLabel
@@ -60,24 +156,19 @@ export interface NavMainData {
 
 // Form Props Types
 export interface BaseFormProps<T extends NavigationItem> {
-  item?: T | null
+  item: T | null
   onSave: (item: T) => void
   onCancel?: () => void
 }
 
-export interface MenuItemFormProps extends BaseFormProps<MenuItem> {
-  item: MenuItem | null
-}
+export type MenuItemFormProps = BaseFormProps<MenuItem>
 
 export interface SubMenuItemFormProps extends BaseFormProps<SubMenuItem> {
-  item?: SubMenuItem | null
   parentId: string
 }
 
-export interface GroupLabelFormProps {
+export type GroupLabelFormProps = Omit<BaseFormProps<GroupLabel>, 'item'> & {
   label: GroupLabel | null
-  onSave: (label: GroupLabel) => void
-  onCancel?: () => void
 }
 
 // Menu Configuration Types
@@ -119,72 +210,62 @@ export interface MenuConfig {
 }
 
 // Component Props Types
-export interface MenuItemProps {
-  item: MenuItemWithChildren
+export interface BaseMenuProps {
   isCollapsed?: boolean
   className?: string
+}
+
+export interface MenuItemProps extends BaseMenuProps {
+  item: MenuItemWithChildren
   config?: Partial<MenuConfig>
 }
 
-export interface CollapsibleMenuProps extends Omit<MenuItemProps, 'config'> {
+export type CollapsibleMenuProps = Omit<MenuItemProps, 'config'> & {
   onFocus?: () => void
 }
 
-export interface SecondaryMenuProps extends Omit<MenuItemProps, 'config'> {
+export type SecondaryMenuProps = Omit<MenuItemProps, 'config'> & {
   onItemClick: (item: MenuItemWithChildren) => void
 }
 
-export interface MenuSectionProps {
+export interface MenuSectionProps extends BaseMenuProps {
   items: MenuItemWithChildren[]
   title?: string
-  isCollapsed?: boolean
   onSecondaryItemClick?: (item: MenuItemWithChildren) => void
   onFocus?: () => void
-  className?: string
   config?: Partial<MenuConfig>
   renderIcon?: (icon: string | undefined) => JSX.Element | null
 }
 
 // Sidebar Menu Item Props
-export interface SidebarMenuItemProps {
+export interface SidebarMenuItemProps extends BaseMenuProps {
   item: MenuItem
   subItems?: SubMenuItem[]
   isActive?: boolean
-  isCollapsed?: boolean
   onSubItemClick?: (subItem: SubMenuItem) => void
   onItemClick?: (item: MenuItem) => void
   onEdit?: (item: MenuItem) => void
   onDelete?: (item: MenuItem) => void
-  className?: string
 }
 
-// User and Team Types (From menu/types.ts)
+// User and Team Types
 export interface User {
   name: string
   email: string
   avatar: string
-  dashboardList?: dashboardList[]
+  dashboardList?: DashboardList[]
 }
 
-export interface Dashboard {
-  name: string
-  logo: string
-  plan: string
-  dashboardId: string
-  defaultMenuId?: string
-  menu?: MenuItemWithChildren[]
-}
-
-export interface dashboardList {
+export interface DashboardList {
   dashboard: Dashboard
   user: User
 }
 
-export type NavProjectsProps = {
+export interface NavProjectsProps {
   projects: MenuItem[]
 }
 
-// Props Types from userMenu.types.ts
+// User Menu Props Types
 export interface UserMenuItemsProps {
   onRemoveItem: (id: string) => void
   onEditItem: (editedItem: MenuItem) => void
@@ -194,7 +275,6 @@ export interface UserMenuItemsProps {
   isSubmenuAvailable?: boolean
 }
 
-// Helper Types
-export type MenuItemType = MenuItem
-export type SubMenuItemType = SubMenuItem
-export type BaseMenuItem = BaseNavigationItem
+// Type aliases for backward compatibility
+export type { MenuItem as MenuItemType }
+export type { SubMenuItem as SubMenuItemType }

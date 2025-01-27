@@ -24,10 +24,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {
     mounted,
     isOpen,
-    isSecondaryOpen,
-    secondaryItems,
     handleNavItemClick,
-    handleSecondaryClose,
     loadDashboardNavigation,
     setIsOpen
   } = useSidebar({
@@ -47,25 +44,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <>
       <SidebarContentWrapper
-        type="primary"
+        type="default"
         menuItems={menuItems}
         isOpen={isOpen}
         onDashboardChange={(dashboard) => loadDashboardNavigation(dashboard.defaultMenuId || 'main')}
-        onSecondaryClick={handleNavItemClick}
+        onMenuChange={handleNavItemClick}
         onFocus={() => setIsOpen(true)}
         renderIcon={renderIcon}
         sidebarProps={props}
       />
-
-      {isSecondaryOpen && secondaryItems && (
-        <SidebarContentWrapper
-          type="secondary"
-          menuItems={secondaryItems}
-          onDashboardChange={(dashboard) => loadDashboardNavigation(dashboard.defaultMenuId || 'main')}
-          onSecondaryClose={handleSecondaryClose}
-          renderIcon={renderIcon}
-        />
-      )}
     </>
   )
 }

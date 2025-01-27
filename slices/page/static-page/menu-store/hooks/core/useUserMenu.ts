@@ -1,5 +1,12 @@
 import { useCallback, useRef, useEffect } from 'react'
-import { MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
+import { 
+  MenuItemWithChildren, 
+  GroupLabel, 
+  NavGroup, 
+  NavUrl,
+  MenuItem,
+  NavigationItem 
+} from '@/shared/types/navigation-types'
 import { useMenu } from '@/slices/menu/context/MenuContext'
 import { toast } from 'sonner'
 import { 
@@ -33,11 +40,15 @@ export function useUserMenu() {
 
   const timeStampRef = useRef<{ [key: string]: number }>({});
 
-  const handleEditItem = useCallback((item: MenuItem, onEditItem: (item: MenuItem) => void) => {
+  const handleEditItem = useCallback((item: MenuItemWithChildren, onEditItem: (item: MenuItemWithChildren) => void) => {
     try {
-      if (!validateMenuItem(item)) return;
+      const itemWithUrl: MenuItem = {
+        ...item,
+        url: item.url || { href: '', path: '' } as NavUrl
+      };
       
-      const navMainItem = convertSharedToNavMain(item);
+      if (!validateMenuItem(itemWithUrl)) return;
+      const navMainItem = convertSharedToNavMain(itemWithUrl);
       contextUpdateMenuItem(navMainItem);
       onEditItem(navMainItem);
     } catch (error) {
@@ -49,21 +60,21 @@ export function useUserMenu() {
   const handleDeleteItem = useCallback((itemId: string, groupId: string, onRemoveItem: (id: string) => void) => {
     try {
       const updatedNavData = { ...navData };
-      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === groupId);
+      const groupIndex = updatedNavData.groups.findIndex((g: NavGroup) => g.label.id === groupId);
       
       if (groupIndex === -1) {
         toast.error("Group not found");
         return;
       }
 
-      const itemExists = updatedNavData.groups[groupIndex].items.some(item => item.id === itemId);
+      const itemExists = updatedNavData.groups[groupIndex].items.some((item: MenuItem) => item.id === itemId);
       if (!itemExists) {
         toast.error("Menu item not found");
         return;
       }
 
       updatedNavData.groups[groupIndex].items = updatedNavData.groups[groupIndex].items.filter(
-        item => item.id !== itemId
+        (item: MenuItem) => item.id !== itemId
       );
       updateNavData(updatedNavData);
       onRemoveItem(itemId);
@@ -77,6 +88,12 @@ export function useUserMenu() {
 
   const handleSaveLabel = useCallback((label: GroupLabel, isEdit: boolean, selectedLabelId: string | null) => {
     try {
+      // Safely check if navData and groups exist
+      if (!navData?.groups) {
+        toast.error("Navigation data is not available");
+        return;
+      }
+
       if (!validateGroupLabel(label, navData.groups)) return;
       
       if (isEdit && selectedLabelId) {
@@ -90,24 +107,42 @@ export function useUserMenu() {
       toast.error(error instanceof Error ? error.message : "Failed to save label");
       console.error("Error saving label:", error);
     }
-  }, [contextAddGroupLabel, contextUpdateGroupLabel, navData.groups]);
+  }, [contextAddGroupLabel, contextUpdateGroupLabel, navData?.groups]);
 
-  const handleSaveMenuItem = useCallback((editedItem: MenuItem) => {
+  const handleSaveMenuItem = useCallback((editedItem: MenuItemWithChildren) => {
     try {
-      if (!validateMenuItem(editedItem)) return;
+      const itemWithUrl: MenuItem = {
+        ...editedItem,
+        url: editedItem.url || { href: '', path: '' } as NavUrl
+      };
+      
+      if (!validateMenuItem(itemWithUrl)) return;
       
       const updatedNavData = { ...navData };
-      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === editedItem.groupId);
+      // Find the group that contains this item
+      const groupIndex = updatedNavData.groups.findIndex((g: NavGroup) => {
+        // Check if the item exists in this group
+        return g.items.some(item => item.id === editedItem.id);
+      });
       
-      if (groupIndex !== -1) {
-        const itemIndex = updatedNavData.groups[groupIndex].items.findIndex(item => item.id === editedItem.id);
-        if (itemIndex !== -1) {
-          updatedNavData.groups[groupIndex].items[itemIndex] = editedItem;
-        } else {
-          updatedNavData.groups[groupIndex].items.push(editedItem);
-        }
-        updateNavData(updatedNavData);
+      if (groupIndex === -1) {
+        toast.error("Group not found");
+        return;
       }
+
+      const itemIndex = updatedNavData.groups[groupIndex].items.findIndex((item: MenuItem) => item.id === editedItem.id);
+      if (itemIndex !== -1) {
+        updatedNavData.groups[groupIndex].items[itemIndex] = {
+          ...itemWithUrl,
+          groupId: updatedNavData.groups[groupIndex].label.id
+        };
+      } else {
+        updatedNavData.groups[groupIndex].items.push({
+          ...itemWithUrl,
+          groupId: updatedNavData.groups[groupIndex].label.id
+        });
+      }
+      updateNavData(updatedNavData);
       
       toast.success("Menu item saved successfully");
     } catch (error) {
@@ -116,7 +151,7 @@ export function useUserMenu() {
     }
   }, [navData, updateNavData]);
 
-  const handleSaveSubMenuItem = useCallback((subItem: SubMenuItem, selectedItemId: string | null, onAddSubMenuItem: (parentId: string, subItem: SubMenuItem) => void) => {
+  const handleSaveSubMenuItem = useCallback((subItem: any, selectedItemId: string | null, onAddSubMenuItem: (parentId: string, subItem: any) => void) => {
     try {
       if (!selectedItemId) {
         toast.error("No parent item selected");
@@ -134,23 +169,32 @@ export function useUserMenu() {
     }
   }, [navData.groups]);
 
-  const handleGroupChange = useCallback((itemId: string, newGroupId: string) => {
+  const handleChangeGroup = useCallback((groupId: string) => {
     try {
-      contextHandleChangeGroup(itemId, newGroupId);
-      toast.success("Item moved to new group successfully");
+      const updatedNavData = { ...navData };
+      
+      updatedNavData.groups = updatedNavData.groups.map((group: NavGroup) => ({
+        ...group,
+        items: group.items.map((item: MenuItem) => ({
+          ...item,
+          groupId: group.label.id
+        }))
+      }));
+      
+      updateNavData(updatedNavData);
+      contextHandleChangeGroup(groupId);
     } catch (error) {
-      toast.error("Failed to move item to new group");
-      console.error("Error moving item:", error);
+      console.error("Error changing group:", error);
     }
-  }, [contextHandleChangeGroup]);
+  }, [navData, updateNavData, contextHandleChangeGroup]);
 
   const handleSaveToNavMain = useCallback(() => {
     try {
       const updatedNavData = { ...navData };
       
-      updatedNavData.groups = updatedNavData.groups.map(group => ({
+      updatedNavData.groups = updatedNavData.groups.map((group: NavGroup) => ({
         ...group,
-        items: group.items.map(item => ({
+        items: group.items.map((item: MenuItem) => ({
           ...item,
           groupId: group.label.id
         }))
@@ -164,18 +208,18 @@ export function useUserMenu() {
     }
   }, [navData, updateNavData]);
 
-  const findMenuItem = useCallback((itemId: string): MenuItem | undefined => {
-    const item = navData.groups.flatMap(g => g.items).find(item => item.id === itemId);
+  const findMenuItem = useCallback((itemId: string): MenuItemWithChildren | undefined => {
+    const item = navData.groups.flatMap((g: NavGroup) => g.items).find((item: MenuItem) => item.id === itemId);
     return item ? convertNavMainToShared(item) : undefined;
   }, [navData.groups]);
 
   const updateItemCollapsible = useCallback((itemId: string, isCollapsible: boolean) => {
     try {
       const updatedNavData = { ...navData };
-      const groupIndex = updatedNavData.groups.findIndex(g => g.items.some(item => item.id === itemId));
+      const groupIndex = updatedNavData.groups.findIndex((g: NavGroup) => g.items.some((item: MenuItem) => item.id === itemId));
       
       if (groupIndex !== -1) {
-        const itemIndex = updatedNavData.groups[groupIndex].items.findIndex(item => item.id === itemId);
+        const itemIndex = updatedNavData.groups[groupIndex].items.findIndex((item: MenuItem) => item.id === itemId);
         if (itemIndex !== -1) {
           updatedNavData.groups[groupIndex].items[itemIndex].isCollapsible = isCollapsible;
           updateNavData(updatedNavData);
@@ -190,8 +234,8 @@ export function useUserMenu() {
   }, [navData, updateNavData]);
 
   useEffect(() => {
-    navData.groups.forEach(group => {
-      group.items.forEach(item => {
+    navData.groups.forEach((group: NavGroup) => {
+      group.items.forEach((item: MenuItem) => {
         if (!timeStampRef.current[`${group.label.id}-${item.id}`]) {
           timeStampRef.current[`${group.label.id}-${item.id}`] = Date.now();
         }
@@ -206,7 +250,7 @@ export function useUserMenu() {
     handleSaveLabel,
     handleSaveMenuItem,
     handleSaveSubMenuItem,
-    handleGroupChange,
+    handleChangeGroup,
     handleSaveToNavMain,
     findMenuItem,
     deleteGroupLabel: contextDeleteGroupLabel,

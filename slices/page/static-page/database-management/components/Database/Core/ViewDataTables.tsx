@@ -7,6 +7,7 @@ import { TablePreview } from '../Preview/TablePreview';
 import { ScrollArea, ScrollBar } from '@/shared/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useTableOperations } from '../../../hooks/useTableOperations';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 
 interface ViewDataTablesProps {
   isOpen: boolean;
@@ -86,7 +87,7 @@ export function ViewDataTables({
         </DialogHeader>
         {isLoading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading table details...</p>
+            <LoadingSpinner />
           </div>
         ) : tableDetails ? (
           <Tabs defaultValue="preview">

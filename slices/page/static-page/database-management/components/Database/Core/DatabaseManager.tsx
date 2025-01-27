@@ -8,6 +8,7 @@ import { DatabaseDetails } from "./DatabaseDetails";
 import { FormDialog } from "@/shared/components/FormDialog";
 import { DatabaseForm } from "../Forms/DatabaseForm";
 import { useDatabaseOperations } from "slices/page/static-page/database-management/hooks/useDatabaseOperations";
+import { LoadingSpinner } from "@/shared/components/LoadingSpinner";
 
 export const DatabaseManager = () => {
   const [selectedDatabase, setSelectedDatabase] = useState<Database | null>(null);
@@ -33,7 +34,11 @@ export const DatabaseManager = () => {
   };
 
   if (isLoading) {
-    return <div className="p-4">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center w-full h-full">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (

@@ -4,6 +4,7 @@ import { notFound, useParams, useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from "shared/components/ui/button"
 import { getPageComponents, type PageKey } from '@/slices/page/dynamic-page/page';
+import { LoadingSpinner } from '@/shared/components/LoadingSpinner';
 
 const pages = getPageComponents();
 
@@ -39,7 +40,7 @@ export default function DynamicDashboardPage() {
           <PageComponent />
         </>
       ) : (
-        <p>Loading...</p>
+        <LoadingSpinner />
       )}
       <div className="mt-4">
         <Button onClick={() => router.back()}>Back</Button>
