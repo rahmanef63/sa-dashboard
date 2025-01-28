@@ -3,7 +3,7 @@
 import * as React from "react"
 import { type LucideIcon } from 'lucide-react'
 import { getIconByName } from "@/shared/icon-picker/utils"
-import { useMenu } from '@/slices/menu/context/MenuContext'
+import { useMenu } from '@/slices/menu/context/MenuContextStore'
 import { Sidebar } from "shared/components/ui/sidebar"
 import { useSidebar } from '@/shared/hooks/useSidebar'
 import { SidebarContentWrapper } from './sidebar-content'

@@ -1,76 +1,71 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { StudyNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const STUDY_NAV_ITEMS: MenuItemWithChildren[] = [
+export const STUDY_NAV_ITEMS: StudyNavItems = [
+  {
+    id: 'study-overview',
+    title: 'Study Overview',
+    url: { href: '/study/overview' },
+    icon: 'GraduationCap',
+    menuType: 'study',
+    dashboardId: 'study-dashboard'
+  },
   {
     id: 'study-courses',
-    title: 'Course Tracking',
+    title: 'Courses',
     url: { href: '/study/courses' },
-    icon: 'BookOpen'
+    icon: 'BookOpen',
+    menuType: 'study',
+    dashboardId: 'study-dashboard',
+    isCollapsible: true,
+    children: [
+      {
+        id: 'study-courses-current',
+        title: 'Current Courses',
+        url: { href: '/study/courses/current' },
+        icon: 'Book',
+        menuType: 'study',
+        dashboardId: 'study-dashboard'
+      },
+      {
+        id: 'study-courses-completed',
+        title: 'Completed Courses',
+        url: { href: '/study/courses/completed' },
+        icon: 'CheckSquare',
+        menuType: 'study',
+        dashboardId: 'study-dashboard'
+      }
+    ]
+  },
+  {
+    id: 'study-assignments',
+    title: 'Assignments',
+    url: { href: '/study/assignments' },
+    icon: 'FileText',
+    menuType: 'study',
+    dashboardId: 'study-dashboard'
   },
   {
     id: 'study-schedule',
     title: 'Study Schedule',
     url: { href: '/study/schedule' },
-    icon: 'Calendar'
+    icon: 'Calendar',
+    menuType: 'study',
+    dashboardId: 'study-dashboard'
   },
   {
-    id: 'study-materials',
-    title: 'Learning Materials',
-    url: { href: '/study/materials' },
-    icon: 'FileText'
+    id: 'study-resources',
+    title: 'Learning Resources',
+    url: { href: '/study/resources' },
+    icon: 'Library',
+    menuType: 'study',
+    dashboardId: 'study-dashboard'
   },
   {
     id: 'study-progress',
-    title: 'Progress Reports',
+    title: 'Progress Tracking',
     url: { href: '/study/progress' },
-    icon: 'BarChart2'
-  },
-  {
-    id: 'study-goals',
-    title: 'Educational Goals',
-    url: { href: '/study/goals' },
-    icon: 'Target'
-  },
-  {
-    id: 'study-research',
-    title: 'Research Projects',
-    url: { href: '/study/research' },
-    icon: 'Search'
-  },
-  {
-    id: 'study-goals-setting',
-    title: 'Goal Setting',
-    url: { href: '/study/goals' },
-    icon: 'Flag'
-  },
-  {
-    id: 'study-habits',
-    title: 'Habit Tracking',
-    url: { href: '/study/habits' },
-    icon: 'CheckCircle'
-  },
-  {
-    id: 'study-journal',
-    title: 'Journal',
-    url: { href: '/study/journal' },
-    icon: 'Book'
-  },
-  {
-    id: 'study-reading',
-    title: 'Reading List',
-    url: { href: '/study/reading' },
-    icon: 'BookOpen'
-  },
-  {
-    id: 'study-skills',
-    title: 'Skill Development',
-    url: { href: '/study/skills' },
-    icon: 'Award'
-  },
-  {
-    id: 'study-projects',
-    title: 'Personal Projects',
-    url: { href: '/study/projects' },
-    icon: 'FolderPlus'
+    icon: 'TrendingUp',
+    menuType: 'study',
+    dashboardId: 'study-dashboard'
   }
 ];

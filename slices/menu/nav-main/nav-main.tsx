@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { useMenu } from '../context/MenuContext'
+import { useMenu } from '../context/MenuContextStore'
 import * as hooks from './hooks'
 import { SidebarGroupComponent } from './components/groups/MenuGroup'
 import { GroupLabel, MenuItem, SubMenuItem, NavMainData } from 'shared/types/navigation-types'

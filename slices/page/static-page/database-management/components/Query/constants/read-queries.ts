@@ -10,6 +10,19 @@ AND table_type = 'BASE TABLE'
 ORDER BY table_name;`,
     description: 'View all tables in the database'
   },
+  // view all tables and columns
+  {
+    name: "View all tables and columns",
+    query: `SELECT 
+  table_schema || '.' || table_name AS name,
+  column_name,
+  data_type,
+  is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+ORDER BY table_name, ordinal_position;`,
+    description: 'View all tables and columns in the database'
+  },
   {
     name: "View Products",
     query: `SELECT 

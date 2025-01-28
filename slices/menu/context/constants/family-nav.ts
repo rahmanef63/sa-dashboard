@@ -1,40 +1,44 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { FamilyNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const FAMILY_NAV_ITEMS: MenuItemWithChildren[] = [
+export const FAMILY_NAV_ITEMS: FamilyNavItems = [
   {
     id: 'family-calendar',
     title: 'Family Calendar',
     url: { href: '/family/calendar' },
-    icon: 'Calendar'
-  },
-  {
-    id: 'family-contacts',
-    title: 'Contact Directory',
-    url: { href: '/family/contacts' },
-    icon: 'Users'
-  },
-  {
-    id: 'family-events',
-    title: 'Event Planning',
-    url: { href: '/family/events' },
-    icon: 'Calendar'
-  },
-  {
-    id: 'family-gifts',
-    title: 'Gift Lists',
-    url: { href: '/family/gifts' },
-    icon: 'Gift'
+    icon: 'Calendar',
+    menuType: 'family',
+    dashboardId: 'family-dashboard'
   },
   {
     id: 'family-tasks',
-    title: 'Shared Tasks',
+    title: 'Family Tasks',
     url: { href: '/family/tasks' },
-    icon: 'CheckSquare'
+    icon: 'CheckSquare',
+    menuType: 'family',
+    dashboardId: 'family-dashboard'
   },
   {
-    id: 'family-dates',
-    title: 'Important Dates',
-    url: { href: '/family/dates' },
-    icon: 'Star'
+    id: 'family-photos',
+    title: 'Family Photos',
+    url: { href: '/family/photos' },
+    icon: 'Image',
+    menuType: 'family',
+    dashboardId: 'family-dashboard'
+  },
+  {
+    id: 'family-contacts',
+    title: 'Family Contacts',
+    url: { href: '/family/contacts' },
+    icon: 'Users',
+    menuType: 'family',
+    dashboardId: 'family-dashboard'
+  },
+  {
+    id: 'family-events',
+    title: 'Family Events',
+    url: { href: '/family/events' },
+    icon: 'PartyPopper',
+    menuType: 'family',
+    dashboardId: 'family-dashboard'
   }
 ];

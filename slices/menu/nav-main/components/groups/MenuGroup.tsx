@@ -3,7 +3,7 @@ import { ChevronRight } from "lucide-react"
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu } from "shared/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "shared/components/ui/collapsible"
 import { GroupLabel, MenuItem } from 'shared/types/navigation-types'
-import { useMenu } from '@/slices/menu/context/MenuContext'
+import { useMenu } from '@/slices/menu/context/MenuContextStore'
 import { MenuItem as MenuItemComponent } from '../items/MenuItem'
 import { cn } from '@/shared/lib/utils'
 import { sortByOrder } from '../../utils'

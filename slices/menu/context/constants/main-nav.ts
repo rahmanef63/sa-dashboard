@@ -1,4 +1,4 @@
-import { MenuItemWithChildren, MenuSwitcher, MenuSwitcherItem } from 'shared/types/navigation-types';
+import { MainNavItems, MenuItemWithChildren, MenuSwitcher, MenuSwitcherItem } from 'shared/types/navigation-types';
 
 const menuItems: MenuSwitcherItem[] = [
   {
@@ -59,7 +59,7 @@ const menuItems: MenuSwitcherItem[] = [
   }
 ];
 
-export const MAIN_NAV_ITEMS: MenuSwitcher[] = [
+export const MAIN_NAV_ITEMS: MainNavItems[] = [
   {
     id: 'menuSwitcher',
     title: 'MenuSwitcher',
@@ -67,7 +67,7 @@ export const MAIN_NAV_ITEMS: MenuSwitcher[] = [
     menuType: 'main',
     dashboardId: 'main-dashboard',
     menus: menuItems
-  },
+  } as MenuSwitcher,
   { 
     id: 'dashboard', 
     title: 'Dashboard',
@@ -174,26 +174,25 @@ export const MAIN_NAV_ITEMS: MenuSwitcher[] = [
     icon: 'Users',
     menuType: 'main',
     dashboardId: 'main-dashboard',
+    isCollapsible: true,
     children: [
       { 
-        id: 'team-members', 
-        title: 'Members',
+      id: 'team-members', 
+      title: 'Members',
+      icon: 'UserCircle',
+      url: { href: '/dashboard/team/members'}
+      },
+      { 
+        id: 'team-members-active', 
+        title: 'Active Members',
         icon: 'UserCircle',
-        isCollapsible: false,
-        children: [
-          { 
-            id: 'team-members-active', 
-            title: 'Active Members',
-            icon: 'UserCircle',
-            url: { href: '/dashboard/team/members/active'}
-          },
-          { 
-            id: 'team-members-inactive', 
-            title: 'Inactive Members',
-            icon: 'UserCircle',
-            url: { href: '/dashboard/team/members/inactive'}
-          }
-        ]
+        url: { href: '/dashboard/team/members/active'}
+      },
+      { 
+        id: 'team-members-inactive', 
+        title: 'Inactive Members',
+        icon: 'UserCircle',
+        url: { href: '/dashboard/team/members/inactive'}
       },
       { 
         id: 'team-settings', 

@@ -4,7 +4,7 @@ import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
 import { MenuItem as MenuType } from 'shared/types/navigation-types'
 import { MenuItem } from './MenuItem'
-import { useMenu } from '@/slices/menu/context/MenuContext'
+import { useMenu } from '@/slices/menu/context/MenuContextStore'
 
 interface SidebarMenuItemComponentProps {
   item: MenuType

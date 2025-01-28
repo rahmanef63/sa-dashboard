@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { renderIcon } from "@/shared/icon-picker/utils"
-import { MenuSwitcher as MenuSwitcherType } from '@/shared/types/navigation-types'
+import { ChevronsUpDown, Plus } from "lucide-react"
+import { MenuSwitcher as MenuSwitcherType, MenuSwitcherItem } from '@/shared/types/navigation-types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,40 +16,38 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "shared/components/ui/sidebar"
-import { ChevronsUpDown, Plus } from "lucide-react"
+import { renderIcon } from "@/shared/icon-picker/utils"
 
 type MenuSwitcherProps = {
-  menus: MenuSwitcherType[]
-  onMenuChange: (menu: MenuSwitcherType) => void
+  menuSwitcher: MenuSwitcherType
+  onMenuChange: (menu: MenuSwitcherItem) => void
   className?: string
+  isMobile?: boolean
 }
 
-export function MenuSwitcher({ menus, onMenuChange, className }: MenuSwitcherProps) {
-  const { isMobile } = useSidebar()
-  const [activeMenu, setActiveMenu] = React.useState(menus[0])
+export function MenuSwitcher({ menuSwitcher, onMenuChange, className, isMobile = false }: MenuSwitcherProps) {
+  const [activeMenu, setActiveMenu] = React.useState(menuSwitcher.menus?.[0])
 
-  const handleMenuChange = (menu: MenuSwitcherType) => {
-    setActiveMenu(menu)
-    onMenuChange(menu)
+  if (!menuSwitcher.menus?.length) {
+    return null
   }
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className={className}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-hover transition-colors duration-200"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground transition-transform duration-200 hover:scale-105">
-                {renderIcon(activeMenu.icon)}
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                {renderIcon(activeMenu?.icon)}
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight transition-opacity duration-200">
-                <span className="truncate font-semibold hover:text-sidebar-accent-foreground">
-                  {activeMenu.title}
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">
+                  {activeMenu?.title}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
@@ -64,10 +62,13 @@ export function MenuSwitcher({ menus, onMenuChange, className }: MenuSwitcherPro
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               Menus
             </DropdownMenuLabel>
-            {menus.map((menu, index) => (
+            {menuSwitcher.menus?.map((menu, index) => (
               <DropdownMenuItem
                 key={menu.id}
-                onClick={() => handleMenuChange(menu)}
+                onClick={() => {
+                  setActiveMenu(menu)
+                  onMenuChange(menu)
+                }}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">

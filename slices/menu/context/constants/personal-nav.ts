@@ -4,44 +4,58 @@ export const PERSONAL_NAV_ITEMS: MenuItemWithChildren[] = [
   {
     id: 'personal-schedule',
     title: 'Daily Schedule',
+    icon: 'Calendar',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard',
     url: { href: '/personal/schedule' },
-    icon: 'Calendar'
   },
   {
     id: 'personal-reminders',
     title: 'Important Reminders',
     url: { href: '/personal/reminders' },
-    icon: 'Bell'
+    icon: 'Bell',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard'
   },
   {
     id: 'personal-actions',
     title: 'Quick Actions',
     url: { href: '/personal/actions' },
-    icon: 'Zap'
+    icon: 'Zap',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard'
   },
   {
     id: 'personal-metrics',
     title: 'Key Metrics',
     url: { href: '/personal/metrics' },
-    icon: 'BarChart'
+    icon: 'BarChart',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard'
   },
   {
     id: 'personal-weather',
     title: 'Weather',
     url: { href: '/personal/weather' },
-    icon: 'Cloud'
+    icon: 'Cloud',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard'
   },
   {
     id: 'personal-news',
     title: 'News Feed',
     url: { href: '/personal/news' },
-    icon: 'Newspaper'
+    icon: 'Newspaper',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard'
   },
   {
     id: 'personal-settings',
     title: 'Settings & Integration',
     url: { href: '/personal/settings' },
     icon: 'Settings',
+    menuType: 'personal',
+    dashboardId: 'personal-dashboard',
     isCollapsible: true,
     children: [
       {

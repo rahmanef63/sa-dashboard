@@ -1,40 +1,52 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { HomeNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const HOME_NAV_ITEMS: MenuItemWithChildren[] = [
+export const HOME_NAV_ITEMS: HomeNavItems = [
+  {
+    id: 'home-overview',
+    title: 'Home Overview',
+    url: { href: '/home/overview' },
+    icon: 'Home',
+    menuType: 'home',
+    dashboardId: 'home-dashboard'
+  },
   {
     id: 'home-maintenance',
-    title: 'Maintenance Schedule',
+    title: 'Maintenance',
     url: { href: '/home/maintenance' },
-    icon: 'Tool'
+    icon: 'Tool',
+    menuType: 'home',
+    dashboardId: 'home-dashboard'
   },
   {
     id: 'home-inventory',
-    title: 'Inventory',
+    title: 'Home Inventory',
     url: { href: '/home/inventory' },
-    icon: 'Package'
-  },
-  {
-    id: 'home-shopping',
-    title: 'Shopping Lists',
-    url: { href: '/home/shopping' },
-    icon: 'ShoppingCart'
+    icon: 'Package',
+    menuType: 'home',
+    dashboardId: 'home-dashboard'
   },
   {
     id: 'home-utilities',
     title: 'Utilities',
     url: { href: '/home/utilities' },
-    icon: 'Zap'
+    icon: 'Zap',
+    menuType: 'home',
+    dashboardId: 'home-dashboard'
+  },
+  {
+    id: 'home-security',
+    title: 'Security',
+    url: { href: '/home/security' },
+    icon: 'Shield',
+    menuType: 'home',
+    dashboardId: 'home-dashboard'
   },
   {
     id: 'home-documents',
     title: 'Documents',
     url: { href: '/home/documents' },
-    icon: 'FileText'
-  },
-  {
-    id: 'home-warranties',
-    title: 'Warranties',
-    url: { href: '/home/warranties' },
-    icon: 'Shield'
+    icon: 'FileText',
+    menuType: 'home',
+    dashboardId: 'home-dashboard'
   }
 ];

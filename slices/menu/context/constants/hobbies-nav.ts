@@ -1,40 +1,52 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { HobbiesNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const HOBBIES_NAV_ITEMS: MenuItemWithChildren[] = [
+export const HOBBIES_NAV_ITEMS: HobbiesNavItems = [
+  {
+    id: 'hobbies-overview',
+    title: 'Hobbies Overview',
+    url: { href: '/hobbies/overview' },
+    icon: 'Palette',
+    menuType: 'hobbies',
+    dashboardId: 'hobbies-dashboard'
+  },
+  {
+    id: 'hobbies-collection',
+    title: 'Collections',
+    url: { href: '/hobbies/collections' },
+    icon: 'Package',
+    menuType: 'hobbies',
+    dashboardId: 'hobbies-dashboard'
+  },
   {
     id: 'hobbies-projects',
-    title: 'Project Tracking',
+    title: 'Creative Projects',
     url: { href: '/hobbies/projects' },
-    icon: 'Trello'
+    icon: 'Brush',
+    menuType: 'hobbies',
+    dashboardId: 'hobbies-dashboard'
   },
   {
-    id: 'hobbies-equipment',
-    title: 'Equipment Inventory',
-    url: { href: '/hobbies/equipment' },
-    icon: 'Package'
+    id: 'hobbies-sports',
+    title: 'Sports Activities',
+    url: { href: '/hobbies/sports' },
+    icon: 'Trophy',
+    menuType: 'hobbies',
+    dashboardId: 'hobbies-dashboard'
   },
   {
-    id: 'hobbies-gallery',
-    title: 'Progress Gallery',
-    url: { href: '/hobbies/gallery' },
-    icon: 'Image'
+    id: 'hobbies-music',
+    title: 'Music',
+    url: { href: '/hobbies/music' },
+    icon: 'Music',
+    menuType: 'hobbies',
+    dashboardId: 'hobbies-dashboard'
   },
   {
-    id: 'hobbies-community',
-    title: 'Community Connections',
-    url: { href: '/hobbies/community' },
-    icon: 'Users'
-  },
-  {
-    id: 'hobbies-events',
-    title: 'Event Calendar',
-    url: { href: '/hobbies/events' },
-    icon: 'Calendar'
-  },
-  {
-    id: 'hobbies-resources',
-    title: 'Resources & Ideas',
-    url: { href: '/hobbies/resources' },
-    icon: 'Lightbulb'
+    id: 'hobbies-reading',
+    title: 'Reading List',
+    url: { href: '/hobbies/reading' },
+    icon: 'BookOpen',
+    menuType: 'hobbies',
+    dashboardId: 'hobbies-dashboard'
   }
 ];

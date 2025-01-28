@@ -3,7 +3,7 @@ import { SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from "shared
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
 import { SubMenuItem } from 'shared/types/navigation-types'
-import { useMenu } from '@/slices/menu/context/MenuContext'
+import { useMenu } from '@/slices/menu/context/MenuContextStore'
 import Link from 'next/link'
 
 interface SidebarMenuSubComponentProps {

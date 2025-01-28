@@ -1,40 +1,52 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { FinanceNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const FINANCE_NAV_ITEMS: MenuItemWithChildren[] = [
+export const FINANCE_NAV_ITEMS: FinanceNavItems = [
   {
-    id: 'finance-budget',
-    title: 'Budget Overview',
-    url: { href: '/finance/budget' },
-    icon: 'PieChart'
+    id: 'finance-dashboard',
+    title: 'Financial Overview',
+    url: { href: '/finance/dashboard' },
+    icon: 'PieChart',
+    menuType: 'finance',
+    dashboardId: 'finance-dashboard'
   },
   {
-    id: 'finance-expenses',
-    title: 'Expense Tracking',
-    url: { href: '/finance/expenses' },
-    icon: 'DollarSign'
+    id: 'finance-budget',
+    title: 'Budget Planning',
+    url: { href: '/finance/budget' },
+    icon: 'Calculator',
+    menuType: 'finance',
+    dashboardId: 'finance-dashboard'
   },
   {
     id: 'finance-investments',
-    title: 'Investment Portfolio',
+    title: 'Investments',
     url: { href: '/finance/investments' },
-    icon: 'TrendingUp'
+    icon: 'TrendingUp',
+    menuType: 'finance',
+    dashboardId: 'finance-dashboard'
   },
   {
-    id: 'finance-bills',
-    title: 'Bills & Subscriptions',
-    url: { href: '/finance/bills' },
-    icon: 'CreditCard'
+    id: 'finance-expenses',
+    title: 'Expenses',
+    url: { href: '/finance/expenses' },
+    icon: 'CreditCard',
+    menuType: 'finance',
+    dashboardId: 'finance-dashboard'
+  },
+  {
+    id: 'finance-reports',
+    title: 'Financial Reports',
+    url: { href: '/finance/reports' },
+    icon: 'FileText',
+    menuType: 'finance',
+    dashboardId: 'finance-dashboard'
   },
   {
     id: 'finance-goals',
     title: 'Financial Goals',
     url: { href: '/finance/goals' },
-    icon: 'Target'
-  },
-  {
-    id: 'finance-tax',
-    title: 'Tax Documents',
-    url: { href: '/finance/tax' },
-    icon: 'FileText'
+    icon: 'Target',
+    menuType: 'finance',
+    dashboardId: 'finance-dashboard'
   }
 ];

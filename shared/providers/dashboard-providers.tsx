@@ -2,7 +2,7 @@
 
 import { AppSidebar } from "shared/components/sidebar/app-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "shared/components/ui/sidebar"
-import { MenuProvider } from "slices/menu/context/MenuContext"
+import { MenuProvider } from "@/slices/menu/context/MenuContextStore"
 import { BreadcrumbProvider, BreadcrumbNav } from "shared/components/sidebar/breadcrumb-provider"
 
 export function DashboardProviders({

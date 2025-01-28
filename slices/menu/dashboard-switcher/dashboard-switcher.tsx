@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { renderIcon } from "@/shared/icon-picker/utils"
+import { ChevronsUpDown, Plus } from "lucide-react"
 import { Dashboard } from 'shared/types/navigation-types'
 import {
   DropdownMenu,
@@ -16,32 +16,60 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "shared/components/ui/sidebar"
-import { ChevronsUpDown, Plus } from "lucide-react"
+import { renderIcon } from "@/shared/icon-picker/utils"
+import { DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS } from "./constants"
 
-type DashboardSwitcherProps = {
+interface DashboardSwitcherProps {
   dashboards: Dashboard[]
   onDashboardChange: (dashboard: Dashboard) => void
+  className?: string
+  isMobile?: boolean
+  defaultDashboardId?: string
 }
 
-export function DashboardSwitcher({ dashboards, onDashboardChange }: DashboardSwitcherProps) {
-  const { isMobile } = useSidebar()
-  const [activeDashboard, setActiveDashboard] = React.useState(dashboards[0])
+export function DashboardSwitcher({ 
+  dashboards, 
+  onDashboardChange, 
+  className,
+  isMobile = false,
+  defaultDashboardId = 'main'
+}: DashboardSwitcherProps) {
+  // Find default dashboard or use first one
+  const defaultDashboard = React.useMemo(() => 
+    dashboards.find(d => d.dashboardId === defaultDashboardId) || dashboards[0],
+    [dashboards, defaultDashboardId]
+  )
 
-  const handleDashboardChange = (dashboard: Dashboard) => {
+  const [activeDashboard, setActiveDashboard] = React.useState<Dashboard | undefined>(defaultDashboard)
+  const [open, setOpen] = React.useState(false)
+
+  // Update active dashboard if defaultDashboardId changes
+  React.useEffect(() => {
+    const dashboard = dashboards.find(d => d.dashboardId === defaultDashboardId)
+    if (dashboard) {
+      setActiveDashboard(dashboard)
+    }
+  }, [dashboards, defaultDashboardId])
+
+  if (!dashboards?.length || !activeDashboard) {
+    return null
+  }
+
+  const handleDashboardSelect = (dashboard: Dashboard) => {
     setActiveDashboard(dashboard)
     onDashboardChange(dashboard)
+    setOpen(false)
   }
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className={className}>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground p-4"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 {renderIcon(activeDashboard.logo)}
@@ -50,9 +78,11 @@ export function DashboardSwitcher({ dashboards, onDashboardChange }: DashboardSw
                 <span className="truncate font-semibold">
                   {activeDashboard.name}
                 </span>
-                <span className="truncate text-xs">{activeDashboard.plan}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {activeDashboard.plan}
+                </span>
               </div>
-              <ChevronsUpDown className="ml-auto" />
+              <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -62,19 +92,19 @@ export function DashboardSwitcher({ dashboards, onDashboardChange }: DashboardSw
             sideOffset={4}
           >
             <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Dashboards
+              {DASHBOARD_SWITCHER_LABELS.DASHBOARDS}
             </DropdownMenuLabel>
             {dashboards.map((dashboard, index) => (
               <DropdownMenuItem
-                key={dashboard.name}
-                onClick={() => handleDashboardChange(dashboard)}
+                key={dashboard.dashboardId}
+                onClick={() => handleDashboardSelect(dashboard)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
                   {renderIcon(dashboard.logo)}
                 </div>
-                {dashboard.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                <span className="flex-1">{dashboard.name}</span>
+                <DropdownMenuShortcut>{DASHBOARD_SWITCHER_SHORTCUTS.BASE}{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
@@ -82,7 +112,7 @@ export function DashboardSwitcher({ dashboards, onDashboardChange }: DashboardSw
               <div className="flex size-6 items-center justify-center rounded-md border bg-background">
                 <Plus className="size-4" />
               </div>
-              <div className="font-medium text-muted-foreground">Add dashboard</div>
+              <div className="font-medium text-muted-foreground">{DASHBOARD_SWITCHER_LABELS.ADD_DASHBOARD}</div>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

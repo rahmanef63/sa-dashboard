@@ -1,112 +1,71 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { ProfessionalNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const PROFESSIONAL_NAV_ITEMS: MenuItemWithChildren[] = [
+export const PROFESSIONAL_NAV_ITEMS: ProfessionalNavItems = [
   {
-    id: 'professional-work-hub',
-    title: 'Work Hub',
-    url: { href: '/professional/work-hub' },
+    id: 'professional-overview',
+    title: 'Career Overview',
+    url: { href: '/professional/overview' },
     icon: 'Briefcase',
+    menuType: 'professional',
+    dashboardId: 'professional-dashboard'
+  },
+  {
+    id: 'professional-projects',
+    title: 'Projects',
+    url: { href: '/professional/projects' },
+    icon: 'FolderKanban',
+    menuType: 'professional',
+    dashboardId: 'professional-dashboard',
     isCollapsible: true,
     children: [
       {
-        id: 'professional-company-a',
-        title: 'Company A',
-        url: { href: '/professional/work-hub/company-a' },
-        icon: 'Building',
-        isCollapsible: true,
-        children: [
-          {
-            id: 'professional-company-a-tasks',
-            title: 'Tasks & Projects',
-            url: { href: '/professional/work-hub/company-a/tasks' },
-            icon: 'CheckSquare'
-          },
-          {
-            id: 'professional-company-a-communication',
-            title: 'Team Communication',
-            url: { href: '/professional/work-hub/company-a/communication' },
-            icon: 'MessageSquare'
-          },
-          {
-            id: 'professional-company-a-metrics',
-            title: 'Performance Metrics',
-            url: { href: '/professional/work-hub/company-a/metrics' },
-            icon: 'TrendingUp'
-          },
-          {
-            id: 'professional-company-a-resources',
-            title: 'Company Resources',
-            url: { href: '/professional/work-hub/company-a/resources' },
-            icon: 'Database'
-          },
-          {
-            id: 'professional-company-a-time',
-            title: 'Time Tracking',
-            url: { href: '/professional/work-hub/company-a/time' },
-            icon: 'Clock'
-          }
-        ]
+        id: 'professional-projects-active',
+        title: 'Active Projects',
+        url: { href: '/professional/projects/active' },
+        icon: 'Play',
+        menuType: 'professional',
+        dashboardId: 'professional-dashboard'
       },
       {
-        id: 'professional-freelance',
-        title: 'Freelance Projects',
-        url: { href: '/professional/work-hub/freelance' },
-        icon: 'Laptop',
-        isCollapsible: true,
-        children: [
-          {
-            id: 'professional-freelance-clients',
-            title: 'Client Management',
-            url: { href: '/professional/work-hub/freelance/clients' },
-            icon: 'Users'
-          },
-          {
-            id: 'professional-freelance-projects',
-            title: 'Project Tracking',
-            url: { href: '/professional/work-hub/freelance/projects' },
-            icon: 'Trello'
-          },
-          {
-            id: 'professional-freelance-invoicing',
-            title: 'Invoicing',
-            url: { href: '/professional/work-hub/freelance/invoicing' },
-            icon: 'FileText'
-          }
-        ]
+        id: 'professional-projects-completed',
+        title: 'Completed Projects',
+        url: { href: '/professional/projects/completed' },
+        icon: 'CheckCircle',
+        menuType: 'professional',
+        dashboardId: 'professional-dashboard'
       }
     ]
   },
   {
-    id: 'professional-career',
-    title: 'Career Development',
-    url: { href: '/professional/career' },
-    icon: 'TrendingUp',
-    isCollapsible: true,
-    children: [
-      {
-        id: 'professional-career-skills',
-        title: 'Skills Training',
-        url: { href: '/professional/career/skills' },
-        icon: 'Book'
-      },
-      {
-        id: 'professional-career-certifications',
-        title: 'Certifications',
-        url: { href: '/professional/career/certifications' },
-        icon: 'Award'
-      },
-      {
-        id: 'professional-career-network',
-        title: 'Professional Network',
-        url: { href: '/professional/career/network' },
-        icon: 'Users'
-      },
-      {
-        id: 'professional-career-goals',
-        title: 'Career Goals',
-        url: { href: '/professional/career/goals' },
-        icon: 'Target'
-      }
-    ]
+    id: 'professional-skills',
+    title: 'Skills & Certifications',
+    url: { href: '/professional/skills' },
+    icon: 'Award',
+    menuType: 'professional',
+    dashboardId: 'professional-dashboard'
+  },
+  {
+    id: 'professional-network',
+    title: 'Professional Network',
+    url: { href: '/professional/network' },
+    icon: 'Users',
+    menuType: 'professional',
+    dashboardId: 'professional-dashboard'
+  },
+  {
+    id: 'professional-resume',
+    title: 'Resume Builder',
+    url: { href: '/professional/resume' },
+    icon: 'FileText',
+    menuType: 'professional',
+    dashboardId: 'professional-dashboard'
+  },
+  {
+    id: 'professional-goals',
+    title: 'Career Goals',
+    url: { href: '/professional/goals' },
+    icon: 'Target',
+    menuType: 'professional',
+    dashboardId: 'professional-dashboard'
   }
 ];

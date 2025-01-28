@@ -1,46 +1,71 @@
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { TravelNavItems, MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-export const TRAVEL_NAV_ITEMS: MenuItemWithChildren[] = [
+export const TRAVEL_NAV_ITEMS: TravelNavItems = [
   {
-    id: 'travel-planning',
-    title: 'Trip Planning',
-    url: { href: '/travel/planning' },
-    icon: 'Map'
+    id: 'travel-overview',
+    title: 'Travel Overview',
+    url: { href: '/travel/overview' },
+    icon: 'Globe',
+    menuType: 'travel',
+    dashboardId: 'travel-dashboard'
   },
   {
-    id: 'travel-itineraries',
-    title: 'Itineraries',
-    url: { href: '/travel/itineraries' },
-    icon: 'List'
+    id: 'travel-trips',
+    title: 'Trip Planning',
+    url: { href: '/travel/trips' },
+    icon: 'Map',
+    menuType: 'travel',
+    dashboardId: 'travel-dashboard',
+    isCollapsible: true,
+    children: [
+      {
+        id: 'travel-trips-upcoming',
+        title: 'Upcoming Trips',
+        url: { href: '/travel/trips/upcoming' },
+        icon: 'Calendar',
+        menuType: 'travel',
+        dashboardId: 'travel-dashboard'
+      },
+      {
+        id: 'travel-trips-past',
+        title: 'Past Trips',
+        url: { href: '/travel/trips/past' },
+        icon: 'Archive',
+        menuType: 'travel',
+        dashboardId: 'travel-dashboard'
+      }
+    ]
   },
   {
     id: 'travel-bookings',
     title: 'Bookings',
     url: { href: '/travel/bookings' },
-    icon: 'Bookmark'
+    icon: 'Ticket',
+    menuType: 'travel',
+    dashboardId: 'travel-dashboard'
   },
   {
     id: 'travel-documents',
     title: 'Travel Documents',
     url: { href: '/travel/documents' },
-    icon: 'FileText'
+    icon: 'FileText',
+    menuType: 'travel',
+    dashboardId: 'travel-dashboard'
   },
   {
     id: 'travel-expenses',
-    title: 'Expenses',
+    title: 'Travel Expenses',
     url: { href: '/travel/expenses' },
-    icon: 'DollarSign'
-  },
-  {
-    id: 'travel-journal',
-    title: 'Travel Journal',
-    url: { href: '/travel/journal' },
-    icon: 'Book'
+    icon: 'CreditCard',
+    menuType: 'travel',
+    dashboardId: 'travel-dashboard'
   },
   {
     id: 'travel-photos',
-    title: 'Photos & Memories',
+    title: 'Travel Photos',
     url: { href: '/travel/photos' },
-    icon: 'Camera'
+    icon: 'Camera',
+    menuType: 'travel',
+    dashboardId: 'travel-dashboard'
   }
 ];

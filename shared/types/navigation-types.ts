@@ -14,7 +14,7 @@ export interface NavUrl {
 
 // Base Navigation Types
 export interface BaseMenuItem {
-  id: string
+  id?: string
   title: string
   order?: number
   icon?: LucideIcon | string
@@ -57,9 +57,12 @@ export interface MenuSwitcherItem extends BaseMenuItem {
 }
 
 export interface MenuSwitcher extends BaseMenuItem {
+  id: string
+  title: string
+  icon?: string
   menus?: MenuSwitcherItem[]
-  dashboardId: string
-  menuType: MenuCategory
+  dashboardId?: string
+  menuType?: MenuCategory
   children?: MenuItemWithChildren[]
 }
 
@@ -81,7 +84,7 @@ export type FinanceNavItems = MenuItemWithChildren[]
 export type HealthNavItems = MenuItemWithChildren[]
 export type HobbiesNavItems = MenuItemWithChildren[]
 export type HomeNavItems = MenuItemWithChildren[]
-export type MainNavItems = MenuSwitcher[]
+export type MainNavItems = MenuItemWithChildren | MenuSwitcher
 export type PersonalNavItems = MenuItemWithChildren[]
 export type ProfessionalNavItems = MenuItemWithChildren[]
 export type StudyNavItems = MenuItemWithChildren[]

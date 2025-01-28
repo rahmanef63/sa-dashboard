@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { MenuItemWithChildren } from '@/shared/types/navigation-types'
-import { useMenu } from '@/slices/menu/context/MenuContext'
+import { useMenu } from '@/slices/menu/context/MenuContextStore'
 import { menuConfigs } from '@/slices/menu/context/menu-configs'
 
 interface UseSidebarProps {
@@ -18,6 +18,25 @@ export const useSidebar = ({
   const [secondaryItems, setSecondaryItems] = useState<MenuItemWithChildren[] | null>(null)
   const [currentMenuId, setCurrentMenuId] = useState<string>(initialMenuId)
   const { setMenuItems } = useMenu()
+
+  // Check if we're on mobile based on window width
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // 768px is a common breakpoint for mobile
+    }
+
+    // Initial check
+    checkMobile()
+
+    // Add resize listener
+    window.addEventListener('resize', checkMobile)
+
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+    }
+  }, [])
 
   const loadDashboardNavigation = useCallback((menuId: string) => {
     setCurrentMenuId(menuId);
@@ -53,7 +72,6 @@ export const useSidebar = ({
   const handleSecondaryClose = useCallback(() => {
     setIsSecondaryOpen(false)
     setSecondaryItems(null)
-    setIsOpen(true)
   }, [])
 
   const toggleSidebar = useCallback(() => {
@@ -66,6 +84,7 @@ export const useSidebar = ({
     isSecondaryOpen,
     secondaryItems,
     currentMenuId,
+    isMobile,
     handleNavItemClick,
     handleSecondaryClose,
     setCurrentMenuId,
