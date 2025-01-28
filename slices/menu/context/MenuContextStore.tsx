@@ -22,7 +22,7 @@ const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
 export function MenuProvider({ children }: { children: React.ReactNode }) {
   const [menuItems, setMenuItems] = useState<MenuItemWithChildren[]>([]);
-  const [currentDashboardId, setCurrentDashboardId] = useState<string | null>(null);
+  const [currentDashboardId, setCurrentDashboardId] = useState<string>('main');
   const [loading, setLoading] = useState(true);
 
   // Helper function to build menu tree
@@ -32,11 +32,14 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
 
     // First pass: create map of items
     items.forEach(item => {
-      itemMap.set(item.id, { ...item, children: [] });
+      if (item.id) {
+        itemMap.set(item.id, { ...item, children: [] });
+      }
     });
 
     // Second pass: build tree structure
     items.forEach(item => {
+      if (!item.id) return;
       const mappedItem = itemMap.get(item.id);
       if (!mappedItem) return;
 
@@ -61,6 +64,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
       if (data.success) {
         const hierarchicalMenu = buildMenuTree(data.data);
         setMenuItems(hierarchicalMenu);
+        setCurrentDashboardId(dashboardId);
         setLoading(false);
         return hierarchicalMenu;
       }
@@ -73,6 +77,10 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
 
   const updateMenuItem = useCallback(async (item: MenuItemWithChildren) => {
     try {
+      if (!item.dashboardId) {
+        item.dashboardId = currentDashboardId;
+      }
+      
       const response = await fetch('/api/admin/menu', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -83,13 +91,12 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.message || 'Failed to update menu item');
       }
       // Refresh menu items after successful update
-      const items = await fetchMenuItems(item.dashboardId || 'main');
-      setMenuItems(items);
+      await fetchMenuItems(item.dashboardId);
     } catch (error) {
       console.error('Error updating menu item:', error);
       throw error;
     }
-  }, [fetchMenuItems]);
+  }, [currentDashboardId, fetchMenuItems]);
 
   const deleteMenuItem = useCallback(async (itemId: string) => {
     try {

@@ -1,16 +1,51 @@
-import { useState, useCallback } from 'react'
-import { Dashboard } from '@/shared/types/navigation-types'
+import { useState, useCallback, useMemo } from 'react'
+import { Dashboard, MenuItemWithChildren } from '@/shared/types/navigation-types'
 
-export function useDashboardSwitcher(initialDashboards: Dashboard[]) {
-  const [activeDashboard, setActiveDashboard] = useState(initialDashboards[0])
+interface UseDashboardSwitcherProps {
+  initialDashboards: Dashboard[]
+  onDashboardChange?: (dashboard: Dashboard) => void
+  defaultDashboardId?: string
+}
+
+export function useDashboardSwitcher({ 
+  initialDashboards, 
+  onDashboardChange,
+  defaultDashboardId = 'main'
+}: UseDashboardSwitcherProps) {
+  // Find default dashboard or use first one
+  const defaultDashboard = useMemo(() => 
+    initialDashboards.find(d => d.dashboardId === defaultDashboardId) || initialDashboards[0],
+    [initialDashboards, defaultDashboardId]
+  )
+
+  const [activeDashboard, setActiveDashboard] = useState<Dashboard>(defaultDashboard)
+
+  // Get menu items for the active dashboard
+  const menuItems = useMemo(() => {
+    if (!activeDashboard) return []
+    
+    // First try to get menuList (backward compatibility)
+    if (activeDashboard.menuList) {
+      return activeDashboard.menuList
+    }
+    
+    // Then try to get items from the default menu
+    if (activeDashboard.menus?.length) {
+      const defaultMenu = activeDashboard.menus.find(menu => menu.isDefault) || activeDashboard.menus[0]
+      return defaultMenu.items
+    }
+
+    return []
+  }, [activeDashboard])
 
   const handleDashboardChange = useCallback((dashboard: Dashboard) => {
     setActiveDashboard(dashboard)
-  }, [])
+    onDashboardChange?.(dashboard)
+  }, [onDashboardChange])
 
   return {
     activeDashboard,
-    setActiveDashboard,
-    handleDashboardChange,
+    menuItems,
+    setActiveDashboard: handleDashboardChange
   }
 }

@@ -6,3 +6,5 @@ export const DASHBOARD_SWITCHER_LABELS = {
 export const DASHBOARD_SWITCHER_SHORTCUTS = {
   BASE: '⌘',
 } as const
+
+export * as DashboardConstants from './dashboard-constants'

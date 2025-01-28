@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ChevronsUpDown, Plus } from "lucide-react"
-import { Dashboard } from 'shared/types/navigation-types'
+import { Dashboard } from '@/shared/types/navigation-types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "shared/components/ui/dropdown-menu"
+} from "@/shared/components/ui/dropdown-menu"
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "shared/components/ui/sidebar"
+} from "@/shared/components/ui/sidebar"
 import { renderIcon } from "@/shared/icon-picker/utils"
 import { DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS } from "./constants"
+import { useDashboardSwitcher } from "./hooks/use-dashboard-switcher"
 
 interface DashboardSwitcherProps {
   dashboards: Dashboard[]
@@ -35,32 +36,20 @@ export function DashboardSwitcher({
   isMobile = false,
   defaultDashboardId = 'main'
 }: DashboardSwitcherProps) {
-  // Find default dashboard or use first one
-  const defaultDashboard = React.useMemo(() => 
-    dashboards.find(d => d.dashboardId === defaultDashboardId) || dashboards[0],
-    [dashboards, defaultDashboardId]
-  )
+  const { activeDashboard, menuItems, setActiveDashboard } = useDashboardSwitcher({
+    initialDashboards: dashboards,
+    onDashboardChange,
+    defaultDashboardId
+  })
 
-  const [activeDashboard, setActiveDashboard] = React.useState<Dashboard | undefined>(defaultDashboard)
   const [open, setOpen] = React.useState(false)
 
-  // Update active dashboard if defaultDashboardId changes
-  React.useEffect(() => {
-    const dashboard = dashboards.find(d => d.dashboardId === defaultDashboardId)
-    if (dashboard) {
-      setActiveDashboard(dashboard)
-    }
-  }, [dashboards, defaultDashboardId])
-
-  if (!dashboards?.length || !activeDashboard) {
-    return null
-  }
-
-  const handleDashboardSelect = (dashboard: Dashboard) => {
+  const handleDashboardSelect = React.useCallback((dashboard: Dashboard) => {
     setActiveDashboard(dashboard)
-    onDashboardChange(dashboard)
     setOpen(false)
-  }
+  }, [setActiveDashboard])
+
+  if (!activeDashboard) return null
 
   return (
     <SidebarMenu className={className}>

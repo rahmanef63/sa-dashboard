@@ -95,7 +95,7 @@ export interface DashboardMenu {
   id: string
   name: string
   icon?: string
-  logo?: string // Added for dashboard icons
+  logo?: string
   items: MenuItemWithChildren[]
   menuType: MenuCategory
   isDefault?: boolean
@@ -110,11 +110,12 @@ export interface Dashboard {
   id?: string
   name: string
   icon?: string
-  logo?: string // Added for dashboard icons
+  logo?: string
   plan?: string
   dashboardId: string
   description?: string
   menus?: DashboardMenu[]
+  menuList?: MenuItemWithChildren[]
   defaultMenuId?: string
   isActive?: boolean
   createdAt?: Date

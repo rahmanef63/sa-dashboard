@@ -38,16 +38,24 @@ export const useSidebar = ({
     }
   }, [])
 
-  const loadDashboardNavigation = useCallback((menuId: string) => {
+  const loadDashboardNavigation = useCallback((menuId: string, dashboardMenus?: MenuItemWithChildren[]) => {
     setCurrentMenuId(menuId);
     
+    // If custom dashboard menus are provided, use those
+    if (dashboardMenus) {
+      setMenuItems(dashboardMenus);
+    }
     // If switching to a specific dashboard, only show its items
-    if (menuId !== 'main' && menuConfigs[menuId]) {
+    else if (menuId !== 'main' && menuConfigs[menuId]) {
       setMenuItems(menuConfigs[menuId] || []);
     } else {
       // If we're on main menu, show main items
       setMenuItems(menuConfigs.main || []);
     }
+
+    // Reset secondary menu state when switching dashboards
+    setSecondaryItems(null);
+    setIsSecondaryOpen(false);
   }, [setMenuItems])
 
   useEffect(() => {
