@@ -1,6 +1,7 @@
 import { type LucideIcon } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { type WithIcon } from '@/shared/icon-picker/types'
+import { DashboardNavItem } from '@/slices/dashboard/types'
 
 // Common Types
 export type TargetType = '_blank' | '_self' | '_parent' | '_top'
@@ -89,46 +90,6 @@ export type PersonalNavItems = MenuItemWithChildren[]
 export type ProfessionalNavItems = MenuItemWithChildren[]
 export type StudyNavItems = MenuItemWithChildren[]
 export type TravelNavItems = MenuItemWithChildren[]
-
-// Dashboard Types
-export interface DashboardMenu {
-  id: string
-  name: string
-  icon?: string
-  logo?: string
-  items: MenuItemWithChildren[]
-  menuType: MenuCategory
-  isDefault?: boolean
-  isActive?: boolean
-  createdAt?: Date
-  updatedAt?: Date
-  createdBy?: string
-  updatedBy?: string
-}
-
-export interface Dashboard {
-  id?: string
-  name: string
-  icon?: string
-  logo?: string
-  plan?: string
-  dashboardId: string
-  description?: string
-  menus?: DashboardMenu[]
-  menuList?: MenuItemWithChildren[]
-  defaultMenuId?: string
-  isActive?: boolean
-  createdAt?: Date
-  updatedAt?: Date
-  createdBy?: string
-  updatedBy?: string
-}
-
-// Dynamic Dashboard Types
-export interface DashboardNavItem extends MenuItemWithChildren {
-  dashboardId: string
-  menuType: MenuCategory
-}
 
 export type DynamicNavItems = DashboardNavItem[]
 
@@ -251,19 +212,6 @@ export interface SidebarMenuItemProps extends BaseMenuProps {
   onItemClick?: (item: MenuItem) => void
   onEdit?: (item: MenuItem) => void
   onDelete?: (item: MenuItem) => void
-}
-
-// User and Team Types
-export interface User {
-  name: string
-  email: string
-  avatar: string
-  dashboardList?: DashboardList[]
-}
-
-export interface DashboardList {
-  dashboard: Dashboard
-  user: User
 }
 
 export interface NavProjectsProps {

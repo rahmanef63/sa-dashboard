@@ -1,4 +1,4 @@
-import { type Dashboard } from 'shared/types/navigation-types'
+import { type Dashboard } from 'slices/dashboard/types'
 import {
   DIGITAL_NAV_ITEMS,
   FAMILY_NAV_ITEMS,
@@ -15,7 +15,7 @@ import {
 
 export const DASHBOARDS: Dashboard[] = [
   {
-    name: 'Main',
+    name: 'Mainan',
     logo: 'layout-dashboard',
     plan: 'Personal',
     dashboardId: 'main',

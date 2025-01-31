@@ -4,8 +4,10 @@ import { updateQueries } from './update-queries';
 import { deleteQueries } from './delete-queries';
 import { joinQueries } from './join-queries';
 import { QueryCollection } from './types';
+import { initialQueries } from './initial-queries';
 
 export const SAMPLE_QUERIES: QueryCollection = {
+  initial: initialQueries,
   create: createQueries,
   read: readQueries,
   update: updateQueries,
@@ -13,6 +15,7 @@ export const SAMPLE_QUERIES: QueryCollection = {
   join: joinQueries
 };
 
+export * from './initial-queries';
 export * from './types';
 export * from './create-queries';
 export * from './read-queries';

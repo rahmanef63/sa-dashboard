@@ -1,5 +1,5 @@
 import { renderIcon } from "@/shared/icon-picker/utils"
-import { Dashboard } from '@/shared/types/navigation-types'
+import { Dashboard } from 'slices/dashboard/types/'
 import { SidebarMenuButton } from "shared/components/ui/sidebar"
 import { ChevronsUpDown } from "lucide-react"
 

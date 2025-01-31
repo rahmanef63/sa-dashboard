@@ -1,26 +1,33 @@
-import type { Metadata } from 'next'
+'use client'
+
 import './globals.css'
 import { DebugConsole } from '@/shared/components/DebugConsole'
 import { Toaster } from '@/shared/components/ui/toaster'
+import DevTools from '@/shared/dev-tool/DevTools'
+import { AuthProvider } from '@/shared/dev-tool/auth-context'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-export const metadata: Metadata = {
-  title: 'Main Dashboard',
-  description: 'general dashboard',
-}
+// Create a client
+const queryClient = new QueryClient()
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-background">
-        {children}
-        <div id="debug-console">
-          <DebugConsole />
-        </div>
-        <Toaster />
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            {children}
+            <div id="debug-console">
+              <DebugConsole />
+            </div>
+            <DevTools />
+            <Toaster />
+          </AuthProvider>
+        </QueryClientProvider>
       </body>
     </html>
   )

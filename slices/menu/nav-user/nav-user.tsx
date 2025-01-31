@@ -30,8 +30,9 @@ import { handleLogout, showKeyboardShortcuts } from "./profile/utils/userActions
 import { DynamicSheet } from "./profile/lib/DynamicSheet"
 import { DynamicDrawer } from "./profile/lib/DynamicDrawer"
 import { useEffect } from "react"
-import { User } from 'shared/types/navigation-types'
+import { User } from 'shared/types/global'
 import { navUserConfig, user as defaultUser, logout } from './config'
+import { useAuth } from '@/shared/dev-tool/auth-context'
 
 interface NavUserProps {
   user?: User
@@ -41,6 +42,7 @@ export function NavUser({ user = defaultUser }: NavUserProps) {
   const { toast } = useToast()
   const { isMobile, state } = useSidebar()
   const isDesktop = useMediaQuery("(min-width: 768px)")
+  const { login, logout: authLogout } = useAuth()
   const {
     activeMenu,
     dropdownOpen,
@@ -144,7 +146,10 @@ export function NavUser({ user = defaultUser }: NavUserProps) {
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleLogout(logout, toast)}>
+              <DropdownMenuItem onClick={() => {
+                authLogout()
+                handleLogout(logout, toast)
+              }}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
                 <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

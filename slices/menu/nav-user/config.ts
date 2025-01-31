@@ -1,5 +1,6 @@
-import { User } from 'shared/types/navigation-types'
+import { User } from 'shared/types/global'
 import { UserMenuType } from './profile/types'
+import { MOCK_ADMIN_USER } from '@/shared/dev-tool/types'
 
 // User data with extended profile information
 export const user: User & {
@@ -8,13 +9,13 @@ export const user: User & {
   phone?: string
   website?: string
 } = {
-  name: "shadcn",
-  email: "m@example.com",
-  avatar: "/avatars/shadcn.jpg",
-  bio: "Software developer and open source enthusiast",
-  location: "San Francisco, CA",
+  ...MOCK_ADMIN_USER,
+  avatar: "/avatars/admin.jpg",
+  role: "admin",
+  bio: "System Administrator",
+  location: "Silicon Valley, CA",
   phone: "+1 (555) 123-4567",
-  website: "https://shadcn.com"
+  website: "https://example.com"
 }
 
 // Menu items configuration

@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       data: result.rows
     });
   } catch (error: any) {
-    console.error('[Admin Menu API] GET Error:', error);
+    console.error('[Menu API] GET Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       data: result.rows[0]
     });
   } catch (error: any) {
-    console.error('[Admin Menu API] POST Error:', error);
+    console.error('[Menu API] POST Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
       data: result.rows[0]
     });
   } catch (error: any) {
-    console.error('[Admin Menu API] PUT Error:', error);
+    console.error('[Menu API] PUT Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -83,14 +83,14 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const result = await adminDbOperations.delete('menu_items', { id });
+    await adminDbOperations.delete('menu_items', { id });
 
     return NextResponse.json({
       success: true,
-      data: result.rows[0]
+      message: 'Menu item deleted successfully'
     });
   } catch (error: any) {
-    console.error('[Admin Menu API] DELETE Error:', error);
+    console.error('[Menu API] DELETE Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

@@ -1,4 +1,4 @@
-import { Frame, PieChart, Map } from 'lucide-react'
+import { Frame, PieChart, Map, Database } from 'lucide-react'
 import { MenuItem } from 'shared/types/navigation-types'
 
 export const navProjectsConfig = {
@@ -21,5 +21,11 @@ export const navProjectsConfig = {
       url: { href: '#' },
       icon: Map,
     },
+    {
+      id: 'project-4',
+      title: 'Database',
+      url: { href: '/dashboard/database-manager' },
+      icon: Database,
+    }
   ] as MenuItem[]
 }

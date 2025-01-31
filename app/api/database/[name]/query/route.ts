@@ -44,16 +44,16 @@ export async function POST(
     
     logDebug("POST - Query result", {
       rowCount: result.rowCount,
-      fields: result.fields.map((f: FieldDef) => f.name),
+      fields: result.fields?.map((f: FieldDef) => f.name) || []
     });
 
     return NextResponse.json({
-      rows: result.rows,
+      rows: result.rows || [],
       rowCount: result.rowCount,
-      fields: result.fields.map((f: FieldDef) => ({
+      fields: result.fields?.map((f: FieldDef) => ({
         name: f.name,
         dataType: f.dataTypeID,
-      })),
+      })) || []
     });
   } catch (error: any) {
     logDebug("POST - Error", {

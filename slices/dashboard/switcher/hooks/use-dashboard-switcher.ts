@@ -1,11 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
-import { Dashboard, MenuItemWithChildren } from '@/shared/types/navigation-types'
-
-interface UseDashboardSwitcherProps {
-  initialDashboards: Dashboard[]
-  onDashboardChange?: (dashboard: Dashboard) => void
-  defaultDashboardId?: string
-}
+import { Dashboard, UseDashboardSwitcherProps  } from 'slices/dashboard/types/'
+import { MenuCategory } from 'shared/types/navigation-types'
 
 export function useDashboardSwitcher({ 
   initialDashboards, 
@@ -14,7 +9,7 @@ export function useDashboardSwitcher({
 }: UseDashboardSwitcherProps) {
   // Find default dashboard or use first one
   const defaultDashboard = useMemo(() => 
-    initialDashboards.find(d => d.dashboardId === defaultDashboardId) || initialDashboards[0],
+    initialDashboards.find(d => d.id === defaultDashboardId) || initialDashboards[0],
     [initialDashboards, defaultDashboardId]
   )
 

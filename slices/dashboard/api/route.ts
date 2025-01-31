@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       data: result.rows
     });
   } catch (error: any) {
-    console.error('[Admin Dashboard API] GET Error:', error);
+    console.error('[Dashboard API] GET Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -29,16 +29,33 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, logo, plan, default_menu_id, user_id } = body;
+    const { id, name, description, logo, plan, is_public, user_id } = body;
 
     // Use transaction to create dashboard and link it to user
-    await adminDbOperations.transaction(async (client) => {
+    const result = await adminDbOperations.transaction(async (client) => {
       // Create dashboard
       const dashboardResult = await client.query(
-        `INSERT INTO dashboards (id, name, logo, plan, default_menu_id)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO dashboards (id, name, description, logo, plan, is_public)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [id, name, logo, plan, default_menu_id]
+        [id, name, description, logo, plan, is_public]
+      );
+
+      // Create default menu for the dashboard
+      const menuResult = await client.query(
+        `INSERT INTO menu_items (id, title, icon, href, menu_type, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [`${id}-menu`, 'Main Menu', 'layout-dashboard', '/dashboard', 'main', true]
+      );
+
+      // Link menu to dashboard
+      await client.query(
+        `UPDATE dashboards 
+         SET default_menu_id = $1
+         WHERE id = $2
+         RETURNING *`,
+        [menuResult.rows[0].id, id]
       );
 
       // If user_id is provided, link dashboard to user
@@ -55,10 +72,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Dashboard created successfully'
+      data: result
     });
   } catch (error: any) {
-    console.error('[Admin Dashboard API] POST Error:', error);
+    console.error('[Dashboard API] POST Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -78,7 +95,7 @@ export async function PUT(request: NextRequest) {
       data: result.rows[0]
     });
   } catch (error: any) {
-    console.error('[Admin Dashboard API] PUT Error:', error);
+    console.error('[Dashboard API] PUT Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }
@@ -100,19 +117,19 @@ export async function DELETE(request: NextRequest) {
 
     // Use transaction to delete dashboard and its relationships
     await adminDbOperations.transaction(async (client) => {
-      // Delete dashboard menu items
-      await client.query(
-        'DELETE FROM dashboard_menu_items WHERE dashboard_id = $1',
-        [id]
-      );
-
-      // Delete user dashboard links
+      // Delete user-dashboard relationships
       await client.query(
         'DELETE FROM user_dashboards WHERE dashboard_id = $1',
         [id]
       );
 
-      // Delete dashboard
+      // Delete dashboard-menu relationships
+      await client.query(
+        'DELETE FROM dashboard_menu_items WHERE dashboard_id = $1',
+        [id]
+      );
+
+      // Delete the dashboard
       await client.query(
         'DELETE FROM dashboards WHERE id = $1',
         [id]
@@ -121,10 +138,10 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Dashboard and related data deleted successfully'
+      message: 'Dashboard deleted successfully'
     });
   } catch (error: any) {
-    console.error('[Admin Dashboard API] DELETE Error:', error);
+    console.error('[Dashboard API] DELETE Error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

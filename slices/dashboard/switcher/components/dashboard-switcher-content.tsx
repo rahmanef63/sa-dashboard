@@ -1,5 +1,8 @@
 import { renderIcon } from "@/shared/icon-picker/utils"
-import { Dashboard } from '@/shared/types/navigation-types'
+import { Dashboard,
+  DASHBOARD_SWITCHER_LABELS, 
+  DASHBOARD_SWITCHER_SHORTCUTS
+ } from 'slices/dashboard/types/'
 import {
   DropdownMenuContent,
   DropdownMenuItem,
@@ -8,7 +11,6 @@ import {
   DropdownMenuShortcut,
 } from "shared/components/ui/dropdown-menu"
 import { Plus } from "lucide-react"
-import { DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS } from '../constants'
 
 interface DashboardSwitcherContentProps {
   dashboards: Dashboard[]

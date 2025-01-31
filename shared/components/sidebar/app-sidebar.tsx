@@ -8,7 +8,8 @@ import { Sidebar } from "@/shared/components/ui/sidebar"
 import { useSidebar } from '@/shared/hooks/useSidebar'
 import { SidebarContentWrapper } from './sidebar-content'
 import { cn } from "@/shared/lib/utils"
-import { Dashboard, MenuItemWithChildren } from '@/shared/types/navigation-types'
+import { MenuItemWithChildren } from '@/shared/types/navigation-types'
+import { Dashboard } from '@/slices/dashboard/types/index'
 
 interface IconProps {
   icon?: string | LucideIcon
@@ -49,10 +50,10 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       menuItems={menuItems}
       isOpen={isOpen}
       onDashboardChange={(dashboard: Dashboard) => {
-        // Pass dashboard to load its navigation
+        // Load dashboard navigation with default menu or first menu
         loadDashboardNavigation(
-          dashboard.defaultMenuId || 'main',
-          dashboard.menus?.[0]?.items || dashboard.menuList || []
+          dashboard.id || 'main',
+          dashboard.menus?.[0]?.items || []
         )
       }}
       onMenuChange={handleNavItemClick}

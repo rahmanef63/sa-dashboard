@@ -17,7 +17,7 @@ export const useSidebar = ({
   const [isSecondaryOpen, setIsSecondaryOpen] = useState(false)
   const [secondaryItems, setSecondaryItems] = useState<MenuItemWithChildren[] | null>(null)
   const [currentMenuId, setCurrentMenuId] = useState<string>(initialMenuId)
-  const { setMenuItems } = useMenu()
+  const { setCurrentDashboardId } = useMenu()
 
   // Check if we're on mobile based on window width
   const [isMobile, setIsMobile] = useState(false)
@@ -38,25 +38,18 @@ export const useSidebar = ({
     }
   }, [])
 
-  const loadDashboardNavigation = useCallback((menuId: string, dashboardMenus?: MenuItemWithChildren[]) => {
+  const loadDashboardNavigation = useCallback((menuId: string, dashboardId?: string) => {
     setCurrentMenuId(menuId);
     
-    // If custom dashboard menus are provided, use those
-    if (dashboardMenus) {
-      setMenuItems(dashboardMenus);
-    }
-    // If switching to a specific dashboard, only show its items
-    else if (menuId !== 'main' && menuConfigs[menuId]) {
-      setMenuItems(menuConfigs[menuId] || []);
-    } else {
-      // If we're on main menu, show main items
-      setMenuItems(menuConfigs.main || []);
+    // If a specific dashboard ID is provided, set it in the menu context
+    if (dashboardId) {
+      setCurrentDashboardId(dashboardId);
     }
 
     // Reset secondary menu state when switching dashboards
     setSecondaryItems(null);
     setIsSecondaryOpen(false);
-  }, [setMenuItems])
+  }, [setCurrentDashboardId])
 
   useEffect(() => {
     setMounted(true)

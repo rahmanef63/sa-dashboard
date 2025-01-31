@@ -1,5 +1,7 @@
+"use client"
+
 import React from 'react'
-import { DashboardSwitcher } from "@/slices/menu/dashboard-switcher/dashboard-switcher"
+import { DashboardSwitcher } from "@/slices/dashboard/switcher/dashboard-switcher"
 import { NavUser } from "@/slices/menu/nav-user/nav-user"
 import { MenuSection } from "@/slices/menu/nav-main/components"
 import { NavMain } from "@/slices/menu/nav-main/nav-main"
@@ -12,21 +14,20 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuSkeleton,
   SidebarRail,
   SidebarSeparator,
 } from "@/shared/components/ui/sidebar"
 import { 
-  Dashboard, 
   MenuItemWithChildren, 
   MenuSwitcher as MenuSwitcherType, 
   Menu, 
   MenuSwitcherItem 
 } from '@/shared/types/navigation-types'
+import { Dashboard } from '@/slices/dashboard/types/index'
 import { MenuSwitcher } from '@/slices/menu/menu-switcher/menu-switcher'
 import { useSidebar } from '@/shared/hooks/useSidebar'
-import { DashboardConstants } from '@/slices/menu/dashboard-switcher/constants'
+import { useUser } from '@/shared/hooks/use-user'
+import { useDashboards } from '@/slices/dashboard/hooks/use-dashboards'
 
 interface SidebarContentProps {
   type: 'default' | 'menuSwitcher'
@@ -52,6 +53,9 @@ export function SidebarContentWrapper({
   sidebarProps
 }: SidebarContentProps) {
   const { isMobile, currentMenuId } = useSidebar()
+  const { userId } = useUser()
+  const { data: dashboards, isLoading } = useDashboards(userId)
+
   const menuSwitcher = menuItems[0] as MenuSwitcherType
   const regularMenus = menuItems.slice(1) as MenuItemWithChildren[]
 
@@ -61,7 +65,6 @@ export function SidebarContentWrapper({
 
   const handleMenuChange = React.useCallback((menu: MenuSwitcherItem) => {
     setSelectedMenu(menu)
-    // Pass the menuList items to parent component
     if (menu.menuList?.length) {
       onMenuChange(menu.menuList[0])
     }
@@ -71,7 +74,7 @@ export function SidebarContentWrapper({
     <Sidebar collapsible="icon" {...sidebarProps}>
       <SidebarHeader>
         <DashboardSwitcher
-          dashboards={DashboardConstants.DASHBOARDS}
+          dashboards={dashboards || []}
           onDashboardChange={onDashboardChange}
           isMobile={isMobile}
           className="mb-2"
@@ -80,7 +83,6 @@ export function SidebarContentWrapper({
       </SidebarHeader>
       <SidebarSeparator />
       <SidebarContent>
-        {/* sidebar menu from dashboard switcher */}
         <SidebarMenu>
           <SidebarGroup>
             {menuSwitcher?.menus && (

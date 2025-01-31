@@ -1,9 +1,14 @@
+import { Dashboard } from "@/slices/dashboard/types/index";
+
 export interface User {
   id: string;
-  name: string;
   email: string;
-  role: string;
-  avatar: string;
+  name: string;
+  role?: string;
+  avatar?: string;
+  dashboards?: Dashboard[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Database {

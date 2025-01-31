@@ -1,5 +1,10 @@
 import { Pool, PoolConfig } from 'pg';
 
+// Ensure this code only runs on the server side
+if (typeof window !== 'undefined') {
+  throw new Error('This module can only be used on the server side');
+}
+
 // Admin database configuration
 const adminDbConfig: PoolConfig = {
   host: process.env.POSTGRES_HOST,
@@ -112,7 +117,8 @@ export const adminDbOperations = {
 
   // Specific Table Operations
   getDashboards: async () => {
-    return adminQuery('SELECT * FROM dashboards ORDER BY created_at DESC');
+    const result = await adminQuery('SELECT * FROM dashboards ORDER BY created_at DESC');
+    return result.rows;
   },
 
   getMenuItems: async (dashboardId?: string) => {
@@ -120,22 +126,18 @@ export const adminDbOperations = {
       WITH RECURSIVE menu_tree AS (
         -- Base case: get parent menu items
         SELECT 
-          mi.id,
-          mi.title,
-          mi.icon,
-          mi.url_href,
-          mi.url_target,
-          mi.url_rel,
-          mi.parent_id,
-          mi.is_collapsible,
-          COALESCE(dmi.order_index, mi.order_index) as order_index,
-          dmi.is_enabled,
+          id,
+          title,
+          icon,
+          url_href,
+          parent_id,
+          order_index,
+          is_active,
           1 as level,
-          ARRAY[COALESCE(dmi.order_index, mi.order_index)] as path
-        FROM menu_items mi
-        LEFT JOIN dashboard_menu_items dmi ON mi.id = dmi.menu_item_id
-        WHERE mi.parent_id IS NULL
-        ${dashboardId ? 'AND dmi.dashboard_id = $1' : ''}
+          ARRAY[order_index] as path
+        FROM menu_items
+        WHERE parent_id IS NULL
+          AND dashboard_id = $1
         
         UNION ALL
         
@@ -145,48 +147,89 @@ export const adminDbOperations = {
           c.title,
           c.icon,
           c.url_href,
-          c.url_target,
-          c.url_rel,
           c.parent_id,
-          c.is_collapsible,
-          COALESCE(dmi.order_index, c.order_index) as order_index,
-          dmi.is_enabled,
+          c.order_index,
+          c.is_active,
           p.level + 1,
-          p.path || COALESCE(dmi.order_index, c.order_index)
+          p.path || c.order_index
         FROM menu_items c
         INNER JOIN menu_tree p ON c.parent_id = p.id
-        LEFT JOIN dashboard_menu_items dmi ON c.id = dmi.menu_item_id
-        ${dashboardId ? 'AND dmi.dashboard_id = $1' : ''}
+        WHERE c.dashboard_id = $1
       )
       SELECT 
         id,
         title,
         icon,
         url_href,
-        url_target,
-        url_rel,
         parent_id,
-        is_collapsible,
         order_index,
-        is_enabled,
+        is_active,
         level,
         path
       FROM menu_tree
       ORDER BY path;
     `;
 
-    return adminQuery(sql, dashboardId ? [dashboardId] : undefined);
+    if (!dashboardId) {
+      throw new Error('Dashboard ID is required');
+    }
+
+    const result = await adminQuery(sql, [dashboardId]);
+    return result.rows;
   },
 
   getUserDashboards: async (userId: string) => {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
     const sql = `
-      SELECT d.*, ud.is_active
+      SELECT DISTINCT d.* 
       FROM dashboards d
-      JOIN user_dashboards ud ON d.id = ud.dashboard_id
-      WHERE ud.user_id = $1
-      ORDER BY ud.created_at DESC
+      LEFT JOIN users u ON u.id = $1
+      WHERE d.user_id = $1 
+        OR d.id = ANY(SELECT UNNEST(string_to_array(u.dashboard_ids, ','))::uuid)
+      ORDER BY d.created_at DESC
     `;
-    return adminQuery(sql, [userId]);
+    
+    try {
+      const result = await adminQuery(sql, [userId]);
+      return result.rows;
+    } catch (error) {
+      console.error('[getUserDashboards] Error:', error);
+      throw error;
+    }
+  },
+
+  getDefaultDashboard: async () => {
+    const sql = `
+      SELECT * FROM dashboards 
+      WHERE name = 'main' OR name = 'Main'
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `;
+    const result = await adminQuery(sql);
+    return result.rows[0];
+  },
+
+  createDefaultMenuItems: async (dashboardId: string) => {
+    const sql = `
+      INSERT INTO menu_items (dashboard_id, title, icon, url_href, order_index)
+      SELECT 
+          $1 as dashboard_id,
+          'Overview' as title,
+          'layout-dashboard' as icon,
+          '/dashboard' as url_href,
+          0 as order_index
+      WHERE NOT EXISTS (
+          SELECT 1 FROM menu_items mi 
+          WHERE mi.dashboard_id = $1 AND mi.title = 'Overview'
+      )
+      RETURNING *;
+    `;
+
+    const result = await adminQuery(sql, [dashboardId]);
+    return result.rows[0];
   },
 
   // Transaction helper

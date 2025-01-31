@@ -26,13 +26,14 @@ export function QueryDialog({ open, onOpenChange, onSelectQuery }: QueryDialogPr
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Sample Queries</DialogTitle>
         </DialogHeader>
-        <Tabs 
-          defaultValue="read" 
-          value={activeTab} 
-          onValueChange={(value: string) => setActiveTab(value as TabValue)} 
+        <Tabs
+          defaultValue="read"
+          value={activeTab}
+          onValueChange={(value: string) => setActiveTab(value as TabValue)}
           className="flex-1 flex flex-col min-h-0"
         >
           <TabsList className="flex justify-start mb-4">
+            <TabsTrigger value="initial">Initial</TabsTrigger>
             <TabsTrigger value="create">Create</TabsTrigger>
             <TabsTrigger value="read">Read</TabsTrigger>
             <TabsTrigger value="update">Update</TabsTrigger>
