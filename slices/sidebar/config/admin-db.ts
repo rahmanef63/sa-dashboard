@@ -191,59 +191,34 @@ export const adminDbOperations = {
   },
 
   getMenuItems: async (dashboardId?: string): Promise<QueryResult> => {
-    let sql = `
-      WITH RECURSIVE menu_tree AS (
-        -- Base case: get parent menu items
-        SELECT 
-          id,
-          title,
-          icon,
-          url_href,
-          parent_id,
-          order_index,
-          is_active,
-          1 as level,
-          ARRAY[order_index] as path
-        FROM menu_items
-        WHERE parent_id IS NULL
-          AND dashboard_id = $1
-        
-        UNION ALL
-        
-        -- Recursive case: get child menu items
-        SELECT 
-          c.id,
-          c.title,
-          c.icon,
-          c.url_href,
-          c.parent_id,
-          c.order_index,
-          c.is_active,
-          p.level + 1,
-          p.path || c.order_index
-        FROM menu_items c
-        INNER JOIN menu_tree p ON c.parent_id = p.id
-        WHERE c.dashboard_id = $1
-      )
+    if (!dashboardId) {
+      throw new Error('Dashboard ID is required');
+    }
+
+    console.log('[Debug] Fetching menu items for dashboard:', dashboardId);
+
+    // First get all menu items for the dashboard
+    const sql = `
       SELECT 
         id,
+        dashboard_id,
         title,
         icon,
         url_href,
         parent_id,
         order_index,
         is_active,
-        level,
-        path
-      FROM menu_tree
-      ORDER BY path;
+        created_at,
+        updated_at
+      FROM menu_items
+      WHERE dashboard_id = $1
+      ORDER BY 
+        COALESCE(parent_id, id),
+        order_index;
     `;
 
-    if (!dashboardId) {
-      throw new Error('Dashboard ID is required');
-    }
-
     const result = await adminQuery(sql, [dashboardId]);
+    console.log('[Debug] Found menu items:', result.rows.length);
     return result;
   },
 

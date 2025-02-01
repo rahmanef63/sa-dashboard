@@ -10,7 +10,7 @@ export const user: User & {
   website?: string
 } = {
   ...MOCK_ADMIN_USER,
-  avatar: "/avatars/admin.jpg",
+  avatar: "/avatars/shadcn.jpg",
   role: "admin",
   bio: "System Administrator",
   location: "Silicon Valley, CA",

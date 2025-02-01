@@ -7,37 +7,30 @@ export function useDashboardSwitcher({
   onDashboardChange,
   defaultDashboardId = 'main'
 }: UseDashboardSwitcherProps) {
-  // Use dashboardId instead of id
+  // Find the default dashboard
   const defaultDashboard = useMemo(() =>
     initialDashboards.find(d => d.dashboardId === defaultDashboardId) || initialDashboards[0],
     [initialDashboards, defaultDashboardId]
   );
 
-  const [activeDashboard, setActiveDashboard] = useState<Dashboard>(defaultDashboard);
+  // Keep track of the active dashboard
+  const [activeDashboard, setActiveDashboard] = useState<Dashboard | null>(null);
 
-  const menuItems = useMemo(() => {
-    if (!activeDashboard) return [];
-
-    if (activeDashboard.menuList) {
-      return activeDashboard.menuList;
+  // Update active dashboard when initialDashboards or defaultDashboardId changes
+  useCallback(() => {
+    if (!activeDashboard || !initialDashboards.find(d => d.dashboardId === activeDashboard.dashboardId)) {
+      setActiveDashboard(defaultDashboard);
     }
-
-    if (activeDashboard.menus?.length) {
-      const defaultMenu = activeDashboard.menus.find(menu => menu.isDefault) || activeDashboard.menus[0];
-      return defaultMenu.items;
-    }
-
-    return [];
-  }, [activeDashboard]);
+  }, [initialDashboards, defaultDashboard, activeDashboard]);
 
   const handleDashboardChange = useCallback((dashboard: Dashboard) => {
+    console.log('[Debug] Dashboard Change:', dashboard);
     setActiveDashboard(dashboard);
     onDashboardChange?.(dashboard);
   }, [onDashboardChange]);
 
   return {
-    activeDashboard,
-    menuItems,
+    activeDashboard: activeDashboard || defaultDashboard,
     setActiveDashboard: handleDashboardChange,
   };
 }

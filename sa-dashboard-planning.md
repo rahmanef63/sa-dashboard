@@ -70,7 +70,7 @@ CREATE TABLE menu_items (
 
 ### Phase 2: API Layer Updates
 
-#### Dashboard API (`app/api/dashboards/route.ts`)
+#### Dashboard API (`app/api/sidebar/dashboards/route.ts`)
 1. Update POST endpoint:
    ```typescript
    - Accept dashboard creation
@@ -90,7 +90,7 @@ CREATE TABLE menu_items (
    - Auto-remove from user's arrays
    ```
 
-#### Menu API (`app/api/menu/route.ts`)
+#### Menu API (`app/api/sidebar/menu/route.ts`)
 1. Update endpoints to work with new schema:
    ```typescript
    - GET: Fetch menu items by dashboard
@@ -101,7 +101,7 @@ CREATE TABLE menu_items (
 
 ### Phase 3: Frontend Updates
 
-#### Dashboard Slice (`slices/dashboard/`)
+#### Dashboard Slice (`slices/sidebar/dashboard/`)
 1. Update types:
    ```typescript
    - Modify DashboardSchema
@@ -116,7 +116,7 @@ CREATE TABLE menu_items (
    - Update user dashboard operations
    ```
 
-#### Menu Slice (`slices/menu/`)
+#### Menu Slice (`slices/sidebar/menu/`)
 1. Update components:
    ```typescript
    - Modify menu rendering
@@ -131,14 +131,14 @@ CREATE TABLE menu_items (
    ```
 
 #### Sidebar Components
-1. Update `sidebar-content.tsx`:
+1. Update `slices/sidebar/content/sidebar-content.tsx`:
    ```typescript
    - Modify menu fetching
    - Update rendering logic
    - Add role-based visibility
    ```
 
-2. Update `app-sidebar.tsx`:
+2. Update `slices/sidebar/app-sidebar.tsx`:
    ```typescript
    - Update dashboard switching
    - Modify menu state management

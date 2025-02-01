@@ -48,7 +48,9 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchMenuItems = useCallback(async (dashboardId: string) => {
+    console.log('[Debug] Fetching menu items for dashboard:', dashboardId);
     try {
+      setLoading(true);
       // Fetch menu items for the current dashboard
       const response = await fetch(`/api/menu?dashboardId=${dashboardId}`);
       const data = await response.json();
@@ -58,6 +60,7 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
       }
 
       const menuItems = data.data || [];
+      console.log('[Debug] Fetched menu items:', menuItems);
       const hierarchicalMenu = buildMenuTree(menuItems);
       setMenuItems(hierarchicalMenu);
       setCurrentDashboardId(dashboardId);
@@ -65,28 +68,32 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
       return hierarchicalMenu;
     } catch (error) {
       console.error('Error fetching menu items:', error);
+      setLoading(false);
       throw error;
     }
   }, []);
 
   // Initialize with default dashboard
   useEffect(() => {
+    console.log('[Debug] Initializing menu with current dashboard:', currentDashboardId);
     const initializeMenu = async () => {
       try {
-        // First try to get default dashboard
-        const response = await fetch('/api/dashboards');
-        const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch dashboards');
-        }
-
-        const dashboards = data.data || [];
-        if (dashboards.length > 0) {
-          const defaultDashboard = dashboards[0];
-          await fetchMenuItems(defaultDashboard.id);
+        if (currentDashboardId) {
+          await fetchMenuItems(currentDashboardId);
         } else {
-          setLoading(false);
+          // First try to get default dashboard
+          const response = await fetch('/api/sidebar/dashboards');
+          const data = await response.json();
+          
+          if (!data.success) {
+            throw new Error(data.error || 'Failed to fetch dashboards');
+          }
+
+          const dashboards = data.data || [];
+          if (dashboards.length > 0) {
+            const defaultDashboard = dashboards[0];
+            await fetchMenuItems(defaultDashboard.id);
+          }
         }
       } catch (error) {
         console.error('Error initializing menu:', error);
@@ -95,7 +102,19 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
     };
 
     initializeMenu();
-  }, [fetchMenuItems]);
+  }, [currentDashboardId, fetchMenuItems]);
+
+  // Fetch menu items when dashboard changes
+  useEffect(() => {
+    if (currentDashboardId) {
+      setLoading(true);
+      fetchMenuItems(currentDashboardId)
+        .catch(error => {
+          console.error('Error fetching menu items:', error);
+          setLoading(false);
+        });
+    }
+  }, [currentDashboardId, fetchMenuItems]);
 
   return (
     <MenuContext.Provider value={{ menuItems, currentDashboardId, loading, setCurrentDashboardId }}>

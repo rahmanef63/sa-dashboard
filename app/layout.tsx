@@ -1,7 +1,6 @@
 'use client'
 
 import './globals.css'
-import { DebugConsole } from '@/shared/components/DebugConsole'
 import { Toaster } from '@/shared/components/ui/toaster'
 import DevTools from '@/shared/dev-tool/DevTools'
 import { AuthProvider } from '@/shared/dev-tool/auth-context'
@@ -21,9 +20,6 @@ export default function RootLayout({
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             {children}
-            <div id="debug-console">
-              <DebugConsole />
-            </div>
             <DevTools />
             <Toaster />
           </AuthProvider>

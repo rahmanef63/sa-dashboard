@@ -13,7 +13,7 @@ class DashboardError extends Error {
 }
 
 export class DashboardService {
-  private static readonly API_BASE = '/api/dashboards';
+  private static readonly API_BASE = '/api/sidebar/dashboards';
 
   static async getDashboards(userId?: string | null) {
     try {
@@ -63,7 +63,7 @@ export class DashboardService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id, ...input }),
+        body: JSON.stringify(input),
       });
 
       if (!response.ok) {

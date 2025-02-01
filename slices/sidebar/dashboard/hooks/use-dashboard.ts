@@ -9,28 +9,31 @@ export function useDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchDashboards() {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        let data: Dashboard[];
-        if (user) {
-          data = await dashboardService.getUserDashboards(user.id);
-        } else {
-          data = await dashboardService.getAllDashboards();
-        }
-        
-        setDashboards(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch dashboards');
-        console.error('[useDashboard] Error:', err);
-      } finally {
-        setLoading(false);
+  const fetchDashboards = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      let data: Dashboard[];
+      if (user) {
+        data = await dashboardService.getUserDashboards(user.id);
+      } else {
+        data = await dashboardService.getAllDashboards();
       }
+      
+      console.log('[Debug] Fetched dashboards:', data);
+      setDashboards(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch dashboards');
+      console.error('[useDashboard] Error:', err);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  // Initial fetch
+  useEffect(() => {
+    console.log('[Debug] Initial dashboard fetch for user:', user?.id);
     fetchDashboards();
   }, [user]);
 
@@ -38,19 +41,6 @@ export function useDashboard() {
     dashboards,
     loading,
     error,
-    refetch: () => {
-      setLoading(true);
-      if (user) {
-        dashboardService.getUserDashboards(user.id)
-          .then(setDashboards)
-          .catch(err => setError(err instanceof Error ? err.message : 'Failed to fetch dashboards'))
-          .finally(() => setLoading(false));
-      } else {
-        dashboardService.getAllDashboards()
-          .then(setDashboards)
-          .catch(err => setError(err instanceof Error ? err.message : 'Failed to fetch dashboards'))
-          .finally(() => setLoading(false));
-      }
-    }
+    refetch: fetchDashboards
   };
 }

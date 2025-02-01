@@ -56,11 +56,16 @@ export function SidebarContentWrapper({
   const { isMobile, currentMenuId } = useSidebar()
   const { userId } = useUser()
   const { dashboards, loading: dashboardsLoading, error: dashboardsError, refetch } = useDashboard()
+  console.log('[Debug] Dashboards:', dashboards)
   const selectedDashboard = dashboards?.[0]
+  console.log('[Debug] Selected Dashboard:', selectedDashboard)
+  
   const { menuItems: fetchedMenuItems, loading: menuLoading, error: menuError } = useMenu(selectedDashboard?.dashboardId)
+  console.log('[Debug] Fetched Menu Items:', fetchedMenuItems)
 
   // Convert fetched menu items to the expected format
   const menuSwitcher = React.useMemo(() => {
+    console.log('[Debug] Converting menu items. Input:', { fetchedMenuItems, menuItems, dashboardId: selectedDashboard?.dashboardId })
     if (!fetchedMenuItems?.length) {
       return menuItems[0] as MenuSwitcherType
     }
@@ -77,6 +82,7 @@ export function SidebarContentWrapper({
       dashboardId: item.dashboardId,
       menuType: item.menuType
     })) as MenuItemWithChildren[]
+    console.log('[Debug] Converted Menu Items:', convertedMenuItems)
 
     // Create a menu switcher item with the converted menu items
     const defaultMenu: MenuSwitcherItem = {
@@ -93,18 +99,27 @@ export function SidebarContentWrapper({
       menus: [defaultMenu]
     } as MenuSwitcherType
   }, [fetchedMenuItems, menuItems, selectedDashboard?.dashboardId])
-
+  console.log('[Debug] Final Menu Switcher:', menuSwitcher)
+  
   const regularMenus = React.useMemo(() => menuItems.slice(1) as MenuItemWithChildren[], [menuItems])
   
   const [selectedMenu, setSelectedMenu] = React.useState<MenuSwitcherItem | null>(null)
   
+  // Reset selected menu when dashboard changes
   React.useEffect(() => {
-    if (menuSwitcher?.menus?.length) {
+    setSelectedMenu(null);
+  }, [selectedDashboard?.dashboardId]);
+
+  // Update selected menu when menu switcher changes
+  React.useEffect(() => {
+    console.log('[Debug] Menu Switcher Effect:', { menus: menuSwitcher?.menus, selectedMenu })
+    if (menuSwitcher?.menus?.length && !selectedMenu) {
       setSelectedMenu(menuSwitcher.menus[0])
     }
-  }, [menuSwitcher?.menus])
+  }, [menuSwitcher?.menus, selectedMenu])
 
   const handleMenuChange = React.useCallback((menu: MenuSwitcherItem) => {
+    console.log('[Debug] Menu Change:', menu);
     setSelectedMenu(menu)
     if (menu.menuList?.length) {
       onMenuChange(menu.menuList[0])
@@ -112,7 +127,11 @@ export function SidebarContentWrapper({
   }, [onMenuChange])
 
   if (dashboardsLoading || menuLoading) {
-    return <div>Loading...</div>
+    return (
+      <Sidebar collapsible="icon" {...sidebarProps}>
+        <div className="flex items-center justify-center h-full">Loading...</div>
+      </Sidebar>
+    )
   }
 
   if (dashboardsError || menuError) {

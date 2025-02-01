@@ -2,7 +2,7 @@
 import { DashboardFormValues, Dashboard } from '../types';
 
 export class DashboardService {
-  private static readonly API_BASE = '/api/dashboards';
+  private static readonly API_BASE = '/api/sidebar/dashboards';
 
   static async getDashboards(userId?: string): Promise<Dashboard[]> {
     const url = userId ? `${DashboardService.API_BASE}?userId=${userId}` : DashboardService.API_BASE;

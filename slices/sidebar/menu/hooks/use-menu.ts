@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { MenuItem } from '@/shared/types/navigation-types';
 import { menuService } from '../api/menuService';
 
@@ -7,29 +7,42 @@ export function useMenu(dashboardId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchMenuItems() {
-      if (!dashboardId) {
-        setMenuItems([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await menuService.getMenuItems(dashboardId);
-        setMenuItems(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch menu items');
-        console.error('[useMenu] Error:', err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchMenuItems = useCallback(async () => {
+    if (!dashboardId) {
+      console.log('[Debug] No dashboard ID, clearing menu items');
+      setMenuItems([]);
+      setLoading(false);
+      return;
     }
 
-    fetchMenuItems();
+    try {
+      console.log('[Debug] Fetching menu items for dashboard:', dashboardId);
+      setLoading(true);
+      setError(null);
+      const data = await menuService.getMenuItems(dashboardId);
+      console.log('[Debug] Setting menu items:', data);
+      setMenuItems(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch menu items';
+      console.error('[useMenu] Error:', errorMessage);
+      setError(errorMessage);
+      // Clear menu items on error to prevent stale data
+      setMenuItems([]);
+    } finally {
+      setLoading(false);
+    }
   }, [dashboardId]);
 
-  return { menuItems, loading, error };
+  // Fetch menu items when dashboard changes
+  useEffect(() => {
+    console.log('[Debug] Dashboard ID changed:', dashboardId);
+    fetchMenuItems();
+  }, [dashboardId, fetchMenuItems]);
+
+  return { 
+    menuItems, 
+    loading, 
+    error,
+    refetch: fetchMenuItems 
+  };
 }

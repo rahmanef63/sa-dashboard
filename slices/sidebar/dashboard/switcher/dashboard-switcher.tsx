@@ -69,9 +69,19 @@ function DashboardSwitcherContent({
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const handleDashboardSelect = React.useCallback((dashboard: Dashboard) => {
-    setActiveDashboard(dashboard);
+    console.log('[Debug] Dashboard Selected:', dashboard);
+    // Immediately close dropdown to improve perceived performance
     setDropdownOpen(false);
+    // Update active dashboard
+    setActiveDashboard(dashboard);
   }, [setActiveDashboard]);
+
+  // Effect to sync dashboard changes
+  React.useEffect(() => {
+    if (activeDashboard) {
+      console.log('[Debug] Active Dashboard Changed:', activeDashboard);
+    }
+  }, [activeDashboard]);
 
   const handleAddDashboard = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();

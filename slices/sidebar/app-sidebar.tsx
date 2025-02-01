@@ -28,7 +28,7 @@ function Icon({ icon, className }: IconProps) {
 }
 
 export function AppSidebar({ className, ...props }: React.ComponentProps<typeof SidebarContentWrapper>) {
-  const { menuItems } = useMenu()
+  const { menuItems, setCurrentDashboardId } = useMenu()
   const {
     mounted,
     isOpen,
@@ -50,10 +50,11 @@ export function AppSidebar({ className, ...props }: React.ComponentProps<typeof 
       menuItems={menuItems}
       isOpen={isOpen}
       onDashboardChange={(dashboard: Dashboard) => {
+        // Update the current dashboard in menu context
+        setCurrentDashboardId(dashboard.dashboardId || 'main');
         // Load dashboard navigation with default menu or first menu
         loadDashboardNavigation(
-          dashboard.dashboardId || 'main',
-          // dashboard.menus?.[0]?.items || []
+          dashboard.dashboardId || 'main'
         )
       }}
       onMenuChange={handleNavItemClick}
