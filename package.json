@@ -6,10 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "migrate": "tsx scripts/migrate.ts",
-    "setup-db": "tsx scripts/setup-db.ts",
-    "migrate:create": "node -e \"const fs=require('fs');const path=require('path');const name=process.argv[2];const timestamp=new Date().toISOString().replace(/[^0-9]/g, '').slice(0,14);const filename=path.join('migrations', `${timestamp}_${name}.sql`);fs.writeFileSync(filename, '-- Migration: ' + name + '\n\n');console.log('Created migration file:', filename);\" "
+    "lint": "next lint"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

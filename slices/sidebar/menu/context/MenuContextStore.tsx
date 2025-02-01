@@ -1,11 +1,14 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { MenuItemWithChildren, NavMainData } from '@/shared/types/navigation-types';
+import {dashboardService} from '@/slices/sidebar/dashboard/api/dashboardService'; // Import dashboardService
 
 interface MenuContextType {
   menuItems: MenuItemWithChildren[];
   currentDashboardId: string | null;
   loading: boolean;
   setCurrentDashboardId: (id: string) => void;
+  navData: NavMainData | null;
+  updateNavData: (data: NavMainData) => void;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -14,6 +17,11 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const [menuItems, setMenuItems] = useState<MenuItemWithChildren[]>([]);
   const [currentDashboardId, setCurrentDashboardId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [navData, setNavData] = useState<NavMainData | null>(null);
+
+  const updateNavData = useCallback((data: NavMainData) => {
+    setNavData(data);
+  }, []);
 
   // Helper function to build menu tree
   const buildMenuTree = (items: MenuItemWithChildren[]): MenuItemWithChildren[] => {
@@ -81,18 +89,10 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
         if (currentDashboardId) {
           await fetchMenuItems(currentDashboardId);
         } else {
-          // First try to get default dashboard
-          const response = await fetch('/api/sidebar/dashboards');
-          const data = await response.json();
-          
-          if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch dashboards');
-          }
-
-          const dashboards = data.data || [];
+          const dashboards = await dashboardService.getAllDashboards();
           if (dashboards.length > 0) {
             const defaultDashboard = dashboards[0];
-            await fetchMenuItems(defaultDashboard.id);
+            await fetchMenuItems(defaultDashboard.dashboardId);
           }
         }
       } catch (error) {
@@ -117,7 +117,14 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   }, [currentDashboardId, fetchMenuItems]);
 
   return (
-    <MenuContext.Provider value={{ menuItems, currentDashboardId, loading, setCurrentDashboardId }}>
+    <MenuContext.Provider value={{
+      menuItems,
+      currentDashboardId,
+      loading,
+      setCurrentDashboardId,
+      navData,
+      updateNavData
+    }}>
       {children}
     </MenuContext.Provider>
   );

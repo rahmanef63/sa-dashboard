@@ -5,6 +5,14 @@ import { type WithIcon } from '@/shared/icon-picker/types'
 // Common Types
 export type TargetType = '_blank' | '_self' | '_parent' | '_top'
 
+// Group Label Type
+export interface GroupLabel {
+  id: string;
+  title: string;
+  icon?: string;
+  isCollapsible?: boolean;
+}
+
 // Menu item database schema (snake_case)
 export interface MenuItemSchema {
   id: string;
@@ -63,6 +71,11 @@ export interface MenuItem extends BaseMenuItem {
   orderIndex?: number;
   dashboardId?: string;
   menuType?: MenuCategory;
+  items?: MenuItem[];
+}
+
+export interface SubMenuItem extends MenuItem {
+  parentId: string;
 }
 
 export interface MenuItemWithChildren extends MenuItem {
@@ -77,7 +90,7 @@ export interface MenuSwitcher extends MenuItem {
   menus: MenuSwitcherItem[];
 }
 
-export interface Menu extends MenuItem {
+export interface Menu extends BaseMenuItem {
   id: string;
   name: string;
   icon?: string;
@@ -85,6 +98,16 @@ export interface Menu extends MenuItem {
   menuType: MenuCategory;
   isDefault?: boolean;
   isActive?: boolean;
+}
+
+// Navigation Main Data Type
+export interface NavMainGroup {
+  label: GroupLabel;
+  items: MenuItem[];
+}
+
+export interface NavMainData {
+  groups: NavMainGroup[];
 }
 
 // Transform functions

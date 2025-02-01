@@ -2,86 +2,134 @@
 import { DashboardFormValues, Dashboard } from '../types';
 
 export class DashboardService {
-  private static readonly API_BASE = '/api/sidebar/dashboards';
+  private static instance: DashboardService;
+  private readonly API_BASE = '/api/sidebar/dashboards';
+  private cache: Map<string, { data: Dashboard[]; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-  static async getDashboards(userId?: string): Promise<Dashboard[]> {
-    const url = userId ? `${DashboardService.API_BASE}?userId=${userId}` : DashboardService.API_BASE;
+  private constructor() {
+    // Private constructor to enforce singleton
+  }
+
+  static getInstance(): DashboardService {
+    if (!DashboardService.instance) {
+      DashboardService.instance = new DashboardService();
+    }
+    return DashboardService.instance;
+  }
+
+  private isCacheValid(key: string): boolean {
+    const cached = this.cache.get(key);
+    if (!cached) return false;
+    return Date.now() - cached.timestamp < this.CACHE_TTL;
+  }
+
+  async getUserDashboards(userId: string): Promise<Dashboard[]> {
+    return this.getDashboards(userId);
+  }
+
+  async getAllDashboards(): Promise<Dashboard[]> {
+    return this.getDashboards();
+  }
+
+  private async getDashboards(userId?: string): Promise<Dashboard[]> {
+    const cacheKey = userId || 'all';
+    
+    // Return cached data if valid
+    if (this.isCacheValid(cacheKey)) {
+      console.log('[DashboardService] Using cached data for:', cacheKey);
+      const cached = this.cache.get(cacheKey)!;
+      return cached.data;
+    }
+
+    console.log('[DashboardService] Fetching fresh data for:', cacheKey);
+    const url = userId ? `${this.API_BASE}?userId=${userId}` : this.API_BASE;
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error('Failed to fetch dashboards');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const { data } = await response.json();
+    const { success, data, error } = await response.json();
+    if (!success) {
+      throw new Error(error || 'Failed to fetch dashboards');
+    }
+
+    // Cache the result
+    this.cache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+
     return data;
   }
 
-  static async createDashboard(data: DashboardFormValues): Promise<Dashboard> {
-    const response = await fetch(DashboardService.API_BASE, {
+  async createDashboard(data: DashboardFormValues): Promise<Dashboard> {
+    const response = await fetch(this.API_BASE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: data.name,
-        description: data.description,
-        logo: data.logo,
-        plan: data.plan,
-        isPublic: data.isPublic,
-        userId: data.userId,
-        userName: data.userName,
-        userEmail: data.userEmail,
-      }),
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to create dashboard');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const { data: dashboard } = await response.json();
-    return dashboard;
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to create dashboard');
+    }
+
+    // Invalidate cache after creation
+    this.cache.clear();
+    return result.data;
   }
 
-  static async updateDashboard(id: string, data: Partial<DashboardFormValues>): Promise<Dashboard> {
-    const response = await fetch(`${DashboardService.API_BASE}/${id}`, {
+  async updateDashboard(id: string, data: Partial<DashboardFormValues>): Promise<Dashboard> {
+    const response = await fetch(`${this.API_BASE}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        name: data.name,
-        description: data.description,
-        logo: data.logo,
-        plan: data.plan,
-        isPublic: data.isPublic,
-        userId: data.userId,
-        userName: data.userName,
-        userEmail: data.userEmail,
-      }),
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update dashboard');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const { data: dashboard } = await response.json();
-    return dashboard;
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update dashboard');
+    }
+
+    // Invalidate cache after update
+    this.cache.clear();
+    return result.data;
   }
 
-  static async deleteDashboard(id: string): Promise<void> {
-    const response = await fetch(`${DashboardService.API_BASE}/${id}`, {
+  async deleteDashboard(id: string): Promise<void> {
+    const response = await fetch(`${this.API_BASE}/${id}`, {
       method: 'DELETE',
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to delete dashboard');
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to delete dashboard');
+    }
+
+    // Invalidate cache after deletion
+    this.cache.clear();
+  }
+
+  clearCache(): void {
+    this.cache.clear();
   }
 }
 
-// For hooks that expect an instance-style API:
-export const dashboardService = {
-  getUserDashboards: (userId: string) => DashboardService.getDashboards(userId),
-  getAllDashboards: () => DashboardService.getDashboards(),
-};
+// Export a singleton instance
+export const dashboardService = DashboardService.getInstance();

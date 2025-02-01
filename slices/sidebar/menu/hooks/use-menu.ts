@@ -1,48 +1,36 @@
-import { useEffect, useState, useCallback } from 'react';
+// slices/sidebar/menu/hooks/use-menu.ts
+import { useState, useCallback } from 'react';
 import { MenuItem } from '@/shared/types/navigation-types';
 import { menuService } from '../api/menuService';
 
-export function useMenu(dashboardId: string | undefined) {
+export function useMenu() {
+  // Fixed hook count (3 useState)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMenuItems = useCallback(async () => {
-    if (!dashboardId) {
-      console.log('[Debug] No dashboard ID, clearing menu items');
-      setMenuItems([]);
-      setLoading(false);
-      return;
-    }
-
+  // Stable fetch function with no dependencies
+  const fetchMenu = useCallback(async (dashboardId?: string) => {
     try {
-      console.log('[Debug] Fetching menu items for dashboard:', dashboardId);
       setLoading(true);
       setError(null);
-      const data = await menuService.getMenuItems(dashboardId);
-      console.log('[Debug] Setting menu items:', data);
+      
+      const data = dashboardId 
+        ? await menuService.getMenuItems(dashboardId)
+        : [];
+        
       setMenuItems(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch menu items';
-      console.error('[useMenu] Error:', errorMessage);
-      setError(errorMessage);
-      // Clear menu items on error to prevent stale data
-      setMenuItems([]);
+      setError(err instanceof Error ? err.message : "Menu load failed");
     } finally {
       setLoading(false);
     }
-  }, [dashboardId]);
+  }, []); // Empty dependency array since all state setters are stable
 
-  // Fetch menu items when dashboard changes
-  useEffect(() => {
-    console.log('[Debug] Dashboard ID changed:', dashboardId);
-    fetchMenuItems();
-  }, [dashboardId, fetchMenuItems]);
-
-  return { 
-    menuItems, 
-    loading, 
+  return {
+    menuItems,
+    loading,
     error,
-    refetch: fetchMenuItems 
+    fetchMenu // Expose fetch method for external control
   };
 }

@@ -15,6 +15,10 @@ export interface DashboardSchema {
   created_at: Date;
   updated_at: Date;
   user_id?: string;
+  user_names?: string;
+  user_emails?: string;
+  user_roles?: string;
+  is_default?: boolean;
 }
 
 // Base dashboard schema
@@ -59,6 +63,7 @@ export interface Dashboard {
   menuList?: MenuItemWithChildren[];
   defaultMenuId?: string;
   isActive?: boolean;
+  isPublic?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   createdBy?: string;
@@ -68,6 +73,9 @@ export interface Dashboard {
   userEmail?: string;
   userRole?: string;
   isDefault?: boolean;
+  userNames?: string[];
+  userEmails?: string[];
+  userRoles?: string[];
 }
 
 export interface DashboardMenu {
@@ -163,16 +171,16 @@ export function transformToCamelCase(dashboard: DashboardSchema): Dashboard {
     dashboardId: dashboard.id,
     name: dashboard.name,
     description: dashboard.description || undefined,
-    logo: dashboard.logo,
-    plan: dashboard.plan,
+    logo: dashboard.logo || 'layout-dashboard',
+    plan: dashboard.plan || 'Personal',
+    isPublic: dashboard.is_public,
     isActive: dashboard.is_active,
     createdAt: dashboard.created_at,
     updatedAt: dashboard.updated_at,
-    userId: dashboard.user_id,
-    userName: '',
-    userEmail: '',
-    userRole: '',
     isDefault: false,
+    userNames: [],
+    userEmails: [],
+    userRoles: []
   };
 }
 

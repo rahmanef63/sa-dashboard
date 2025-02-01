@@ -3,7 +3,7 @@ import {
   DashboardFormValues, 
   DashboardCreateInput, 
   DashboardUpdateInput 
-} from '@/slices/sidebar/dashboard/types/index';
+} from '@/slices/sidebar/dashboard/types/';
 
 class DashboardError extends Error {
   constructor(message: string, public statusCode: number = 500) {

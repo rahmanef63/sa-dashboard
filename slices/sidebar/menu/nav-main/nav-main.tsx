@@ -4,8 +4,12 @@ import React from 'react'
 import { useMenu } from '../context/MenuContextStore'
 import * as hooks from './hooks'
 import { SidebarGroupComponent } from './components/groups/MenuGroup'
-import { GroupLabel, MenuItem, SubMenuItem, NavMainData } from 'shared/types/navigation-types'
+import { GroupLabel, MenuItem, SubMenuItem, NavMainData, NavMainGroup } from '@/shared/types/navigation-types'
 
+// Type guard to check if a MenuItem is a SubMenuItem
+function isSubMenuItem(item: MenuItem): item is SubMenuItem {
+  return item.parentId !== undefined;
+}
 
 export function NavMain() {
   const { navData: contextNavData, updateNavData } = useMenu()
@@ -19,7 +23,7 @@ export function NavMain() {
   const [mounted, setMounted] = React.useState(false)
 
   // Cast the navData to our more specific type
-  const navData = contextNavData as unknown as NavMainData
+  const navData = contextNavData as NavMainData
 
   React.useEffect(() => {
     setMounted(true)
@@ -35,9 +39,9 @@ export function NavMain() {
   }
 
   const handleSaveGroupLabel = (label: GroupLabel) => {
-    const updatedNavData = { ...navData }
+    const updatedNavData: NavMainData = { ...navData }
     if (dialogState?.type === 'group' && dialogState.item) {
-      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === (dialogState.item as GroupLabel).id)
+      const groupIndex = updatedNavData.groups.findIndex((g: NavMainGroup) => g.label.id === (dialogState.item as GroupLabel).id)
       if (groupIndex !== -1) {
         updatedNavData.groups[groupIndex].label = label
       }
@@ -49,25 +53,27 @@ export function NavMain() {
   }
 
   const handleDeleteGroupLabel = (id: string) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.filter(g => g.label.id !== id)
+      groups: navData.groups.filter((g: NavMainGroup) => g.label.id !== id)
     }
     updateNavData(updatedNavData)
   }
 
   const handleSaveMenuItem = (item: MenuItem) => {
-    const updatedNavData = { ...navData }
+    const updatedNavData: NavMainData = { ...navData }
     if (dialogState?.type === 'menuItem' && dialogState.item) {
-      const groupIndex = updatedNavData.groups.findIndex(g => g.items.some(i => i.id === (dialogState.item as MenuItem).id))
+      const groupIndex = updatedNavData.groups.findIndex((g: NavMainGroup) => 
+        g.items.some((i: MenuItem) => i.id === (dialogState.item as MenuItem).id)
+      )
       if (groupIndex !== -1) {
-        const itemIndex = updatedNavData.groups[groupIndex].items.findIndex(i => i.id === (dialogState.item as MenuItem).id)
+        const itemIndex = updatedNavData.groups[groupIndex].items.findIndex((i: MenuItem) => i.id === (dialogState.item as MenuItem).id)
         if (itemIndex !== -1) {
           updatedNavData.groups[groupIndex].items[itemIndex] = item
         }
       }
     } else if (dialogState?.type === 'group') {
-      const groupIndex = updatedNavData.groups.findIndex(g => g.label.id === (dialogState.item as GroupLabel).id)
+      const groupIndex = updatedNavData.groups.findIndex((g: NavMainGroup) => g.label.id === (dialogState.item as GroupLabel).id)
       if (groupIndex !== -1) {
         updatedNavData.groups[groupIndex].items.push(item)
       }
@@ -77,11 +83,11 @@ export function NavMain() {
   }
 
   const handleDeleteMenuItem = (groupId: string, itemId: string) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.map(group => 
+      groups: navData.groups.map((group: NavMainGroup) => 
         group.label.id === groupId 
-          ? { ...group, items: group.items.filter(item => item.id !== itemId) }
+          ? { ...group, items: group.items.filter((item: MenuItem) => item.id !== itemId) }
           : group
       )
     }
@@ -89,16 +95,22 @@ export function NavMain() {
   }
 
   const handleSaveSubMenuItem = (item: SubMenuItem) => {
-    const updatedNavData = { ...navData }
+    const updatedNavData: NavMainData = { ...navData }
     if (dialogState?.type === 'subMenuItem' && dialogState.item) {
       const parentId = (dialogState.item as SubMenuItem).parentId
       if (parentId) {
         for (const group of updatedNavData.groups) {
-          const parentItem = group.items.find(i => i.id === parentId)
+          const parentItem = group.items.find((i: MenuItem) => i.id === parentId)
           if (parentItem && parentItem.items) {
-            const itemIndex = parentItem.items.findIndex(i => i.id === item.id)
+            const subItems = parentItem.items.filter(isSubMenuItem)
+            const itemIndex = subItems.findIndex((si: SubMenuItem) => si.id === item.id)
             if (itemIndex !== -1) {
-              parentItem.items[itemIndex] = item
+              // Update existing item while preserving the array type
+              parentItem.items = [
+                ...parentItem.items.slice(0, itemIndex),
+                item,
+                ...parentItem.items.slice(itemIndex + 1)
+              ]
             } else {
               parentItem.items.push(item)
             }
@@ -112,15 +124,23 @@ export function NavMain() {
   }
 
   const handleDeleteSubMenuItem = (groupId: string, parentId: string, subItemId: string) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.map(group => 
+      groups: navData.groups.map((group: NavMainGroup) => 
         group.label.id === groupId
           ? {
               ...group,
-              items: group.items.map(item => 
+              items: group.items.map((item: MenuItem) => 
                 item.id === parentId
-                  ? { ...item, items: item.items?.filter(si => si.id !== subItemId) }
+                  ? { 
+                      ...item, 
+                      items: item.items?.filter((menuItem: MenuItem) => {
+                        if (isSubMenuItem(menuItem)) {
+                          return menuItem.id !== subItemId;
+                        }
+                        return true;
+                      })
+                    }
                   : item
               )
             }
@@ -131,9 +151,9 @@ export function NavMain() {
   }
 
   const handleEditLabel = (label: GroupLabel) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.map(g => 
+      groups: navData.groups.map((g: NavMainGroup) => 
         g.label.id === label.id ? { ...g, label } : g
       )
     }
@@ -141,30 +161,30 @@ export function NavMain() {
   }
 
   const handleDeleteLabel = (id: string) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.filter(g => g.label.id !== id)
+      groups: navData.groups.filter((g: NavMainGroup) => g.label.id !== id)
     }
     updateNavData(updatedNavData)
   }
 
   const handleEditItem = (item: MenuItem) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.map(g => ({
+      groups: navData.groups.map((g: NavMainGroup) => ({
         ...g,
-        items: g.items.map(i => i.id === item.id ? item : i)
+        items: g.items.map((i: MenuItem) => i.id === item.id ? item : i)
       }))
     }
     updateNavData(updatedNavData)
   }
 
   const handleDeleteItem = (itemId: string) => {
-    const updatedNavData = {
+    const updatedNavData: NavMainData = {
       ...navData,
-      groups: navData.groups.map(g => ({
+      groups: navData.groups.map((g: NavMainGroup) => ({
         ...g,
-        items: g.items.filter(i => i.id !== itemId)
+        items: g.items.filter((i: MenuItem) => i.id !== itemId)
       }))
     }
     updateNavData(updatedNavData)
@@ -172,7 +192,7 @@ export function NavMain() {
 
   return (
     <>
-      {navData.groups.map((group) => (
+      {navData.groups.map((group: NavMainGroup) => (
         <SidebarGroupComponent
           key={group.label.id}
           group={group}

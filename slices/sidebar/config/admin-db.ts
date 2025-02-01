@@ -1,6 +1,11 @@
 // shared/config/admin-db.ts
 
-import { Pool, PoolConfig, QueryResult } from 'pg';
+import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+
+// Database error type
+interface DbError extends Error {
+  code?: string;
+}
 
 // Ensure this code only runs on the server side
 if (typeof window !== 'undefined') {
@@ -15,9 +20,11 @@ const adminDbConfig: PoolConfig = {
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  max: 10, // Maximum number of clients in the pool
+  idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
+  connectionTimeoutMillis: 5000, // How long to wait for a connection
+  maxUses: 7500, // Close and replace a connection after it has been used this many times
+  allowExitOnIdle: true // Allow the pool to exit when there are no connections
 };
 
 // Create a singleton pool for the admin database
@@ -28,65 +35,94 @@ adminPool.on('connect', () => {
   console.log('Connected to Admin PostgreSQL database');
 });
 
-adminPool.on('error', (err) => {
+adminPool.on('error', (err: DbError) => {
   console.error('Unexpected error on admin database client', err);
-  process.exit(-1);
+  // Don't exit the process, just log the error
+  // process.exit(-1);
 });
 
-// Helper function for queries
-export const adminQuery = async (text: string, params?: any[]): Promise<QueryResult> => {
-  const client = await adminPool.connect();
-  try {
-    const result = await client.query(text, params);
-    return result;
-  } finally {
-    client.release();
+// Helper function for queries with retry logic
+export async function adminQuery<T extends QueryResultRow = any>(
+  text: string,
+  values?: any[]
+): Promise<QueryResult<T>> {
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const client = await adminPool.connect();
+      try {
+        const result = await client.query<T>(text, values);
+        if (!result) {
+          throw new Error('Query returned no result');
+        }
+        return result;
+      } finally {
+        client.release();
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt === maxRetries - 1) {
+        throw lastError;
+      }
+      console.log(`Retrying query (attempt ${attempt + 1}/${maxRetries})...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
   }
-};
+
+  throw lastError || new Error('Query failed after all retries');
+}
 
 // Admin database operations
 export const adminDbOperations = {
   // Direct query method
-  query: async (text: string, params?: any[]): Promise<QueryResult> => {
-    return adminQuery(text, params);
+  query: async <T extends QueryResultRow = any>(
+    text: string,
+    params?: any[]
+  ): Promise<QueryResult<T>> => {
+    return adminQuery<T>(text, params);
   },
 
   // Table Operations
-  listTables: async (): Promise<QueryResult> => {
+  listTables: async (): Promise<QueryResult<{ table_name: string }>> => {
     const sql = `
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public';
     `;
-    return adminQuery(sql);
+    return adminQuery<{ table_name: string }>(sql);
   },
 
   // User Operations
-  createUser: async (name: string, email: string): Promise<QueryResult> => {
+  createUser: async (name: string, email: string): Promise<QueryResult<BaseRow & { name: string; email: string }>> => {
     const sql = `
       INSERT INTO users (name, email)
       VALUES ($1, $2)
       RETURNING *;
     `;
-    return adminQuery(sql, [name, email]);
+    return adminQuery<BaseRow & { name: string; email: string }>(sql, [name, email]);
   },
 
-  getUser: async (userId: string): Promise<QueryResult> => {
+  getUser: async (userId: string): Promise<QueryResult<BaseRow & { name: string; email: string }>> => {
     const sql = `
       SELECT * FROM users WHERE id = $1;
     `;
-    return adminQuery(sql, [userId]);
+    return adminQuery<BaseRow & { name: string; email: string }>(sql, [userId]);
   },
 
-  getUserByEmail: async (email: string): Promise<QueryResult> => {
+  getUserByEmail: async (email: string): Promise<QueryResult<BaseRow & { name: string; email: string }>> => {
     const sql = `
       SELECT * FROM users WHERE email = $1;
     `;
-    return adminQuery(sql, [email]);
+    return adminQuery<BaseRow & { name: string; email: string }>(sql, [email]);
   },
 
   // Generic CRUD Operations
-  create: async (tableName: string, data: Record<string, any>): Promise<QueryResult> => {
+  create: async <T extends QueryResultRow>(
+    tableName: string,
+    data: Record<string, any>
+  ): Promise<QueryResult<T>> => {
     const columns = Object.keys(data);
     const values = Object.values(data);
     const placeholders = values.map((_, i) => `$${i + 1}`);
@@ -96,10 +132,15 @@ export const adminDbOperations = {
       VALUES (${placeholders.join(', ')})
       RETURNING *;
     `;
-    return adminQuery(sql, values);
+    return adminQuery<T>(sql, values);
   },
 
-  read: async (tableName: string, conditions?: Record<string, any>, orderBy?: string, limit?: number): Promise<QueryResult> => {
+  read: async <T extends QueryResultRow>(
+    tableName: string,
+    conditions?: Record<string, any>,
+    orderBy?: string,
+    limit?: number
+  ): Promise<QueryResult<T>> => {
     let sql = `SELECT * FROM ${tableName}`;
     const values: any[] = [];
     
@@ -117,10 +158,14 @@ export const adminDbOperations = {
       sql += ` LIMIT ${limit}`;
     }
 
-    return adminQuery(sql, values);
+    return adminQuery<T>(sql, values);
   },
 
-  update: async (tableName: string, id: string | number, data: Record<string, any>): Promise<QueryResult> => {
+  update: async <T extends QueryResultRow>(
+    tableName: string,
+    id: string | number,
+    data: Record<string, any>
+  ): Promise<QueryResult<T>> => {
     const updates = Object.keys(data).map((key, index) => `${key} = $${index + 1}`);
     const values = [...Object.values(data), id];
 
@@ -130,10 +175,13 @@ export const adminDbOperations = {
       WHERE id = $${values.length}
       RETURNING *;
     `;
-    return adminQuery(sql, values);
+    return adminQuery<T>(sql, values);
   },
 
-  delete: async (tableName: string, conditions: Record<string, any>): Promise<QueryResult> => {
+  delete: async <T extends QueryResultRow>(
+    tableName: string,
+    conditions: Record<string, any>
+  ): Promise<QueryResult<T>> => {
     const whereClauses = Object.entries(conditions).map(([key, _], index) => `${key} = $${index + 1}`);
     const values = Object.values(conditions);
 
@@ -142,11 +190,11 @@ export const adminDbOperations = {
       WHERE ${whereClauses.join(' AND ')}
       RETURNING *;
     `;
-    return adminQuery(sql, values);
+    return adminQuery<T>(sql, values);
   },
 
   // Specific Table Operations
-  getDashboards: async (): Promise<QueryResult> => {
+  getDashboards: async (): Promise<QueryResult<DashboardRow>> => {
     const sql = `
       WITH user_dashboard_info AS (
         SELECT 
@@ -170,10 +218,10 @@ export const adminDbOperations = {
       LEFT JOIN user_dashboard_info udi ON udi.dashboard_id = d.id
       ORDER BY d.created_at DESC;
     `;
-    return adminQuery(sql);
+    return adminQuery<DashboardRow>(sql);
   },
 
-  getUserDashboards: async (userId: string): Promise<QueryResult> => {
+  getUserDashboards: async (userId: string): Promise<QueryResult<UserDashboardRow>> => {
     const sql = `
       SELECT 
         d.*,
@@ -187,17 +235,16 @@ export const adminDbOperations = {
       WHERE ud.user_id = $1
       ORDER BY d.name;
     `;
-    return adminQuery(sql, [userId]);
+    return adminQuery<UserDashboardRow>(sql, [userId]);
   },
 
-  getMenuItems: async (dashboardId?: string): Promise<QueryResult> => {
+  getMenuItems: async (dashboardId?: string): Promise<QueryResult<MenuItem>> => {
     if (!dashboardId) {
       throw new Error('Dashboard ID is required');
     }
 
     console.log('[Debug] Fetching menu items for dashboard:', dashboardId);
 
-    // First get all menu items for the dashboard
     const sql = `
       SELECT 
         id,
@@ -217,12 +264,12 @@ export const adminDbOperations = {
         order_index;
     `;
 
-    const result = await adminQuery(sql, [dashboardId]);
+    const result = await adminQuery<MenuItem>(sql, [dashboardId]);
     console.log('[Debug] Found menu items:', result.rows.length);
     return result;
   },
 
-  getDefaultDashboard: async (): Promise<QueryResult> => {
+  getDefaultDashboard: async (): Promise<QueryResult<DashboardRow>> => {
     const sql = `
       SELECT d.*
       FROM dashboards d
@@ -230,11 +277,10 @@ export const adminDbOperations = {
       WHERE ud.is_default = true
       LIMIT 1;
     `;
-    const result = await adminQuery(sql);
-    return result;
+    return adminQuery<DashboardRow>(sql);
   },
 
-  assignDashboardToUser: async (userId: string, dashboardId: string, role: string = 'viewer', isDefault: boolean = false): Promise<QueryResult> => {
+  assignDashboardToUser: async (userId: string, dashboardId: string, role: string = 'viewer', isDefault: boolean = false): Promise<QueryResult<UserDashboardRow>> => {
     const sql = `
       INSERT INTO user_dashboards (user_id, dashboard_id, role, is_default)
       VALUES ($1, $2, $3, $4)
@@ -245,21 +291,19 @@ export const adminDbOperations = {
         updated_at = CURRENT_TIMESTAMP
       RETURNING *;
     `;
-    const result = await adminQuery(sql, [userId, dashboardId, role, isDefault]);
-    return result;
+    return adminQuery<UserDashboardRow>(sql, [userId, dashboardId, role, isDefault]);
   },
 
-  removeDashboardFromUser: async (userId: string, dashboardId: string): Promise<QueryResult> => {
+  removeDashboardFromUser: async (userId: string, dashboardId: string): Promise<QueryResult<UserDashboardRow>> => {
     const sql = `
       DELETE FROM user_dashboards
       WHERE user_id = $1 AND dashboard_id = $2
       RETURNING *;
     `;
-    const result = await adminQuery(sql, [userId, dashboardId]);
-    return result;
+    return adminQuery<UserDashboardRow>(sql, [userId, dashboardId]);
   },
 
-  setDefaultDashboard: async (userId: string, dashboardId: string): Promise<QueryResult> => {
+  setDefaultDashboard: async (userId: string, dashboardId: string): Promise<QueryResult<UserDashboardRow>> => {
     // First, remove default status from all user's dashboards
     await adminQuery(`
       UPDATE user_dashboards 
@@ -274,11 +318,10 @@ export const adminDbOperations = {
       WHERE user_id = $1 AND dashboard_id = $2
       RETURNING *;
     `;
-    const result = await adminQuery(sql, [userId, dashboardId]);
-    return result;
+    return adminQuery<UserDashboardRow>(sql, [userId, dashboardId]);
   },
 
-  createDefaultMenuItems: async (dashboardId: string): Promise<QueryResult> => {
+  createDefaultMenuItems: async (dashboardId: string): Promise<QueryResult<MenuItem>> => {
     const sql = `
       INSERT INTO menu_items (dashboard_id, title, icon, url_href, order_index)
       SELECT 
@@ -293,9 +336,7 @@ export const adminDbOperations = {
       )
       RETURNING *;
     `;
-
-    const result = await adminQuery(sql, [dashboardId]);
-    return result;
+    return adminQuery<MenuItem>(sql, [dashboardId]);
   },
 
   // Transaction helper
@@ -314,5 +355,44 @@ export const adminDbOperations = {
     }
   }
 };
+
+// Type definitions for database rows
+interface BaseRow extends QueryResultRow {
+  id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface DashboardRow extends BaseRow {
+  name: string;
+  description: string;
+  logo?: string;
+  plan?: string;
+  is_public: boolean;
+  is_active: boolean;
+  user_names?: string;
+  user_emails?: string;
+  user_roles?: string;
+  is_default?: boolean;
+}
+
+interface UserDashboardRow extends BaseRow {
+  user_id: string;
+  dashboard_id: string;
+  role: string;
+  is_default: boolean;
+  user_name?: string;
+  user_email?: string;
+}
+
+interface MenuItem extends BaseRow {
+  dashboard_id: string;
+  title: string;
+  icon: string;
+  url_href: string;
+  parent_id?: string;
+  order_index: number;
+  is_active: boolean;
+}
 
 export default adminPool;

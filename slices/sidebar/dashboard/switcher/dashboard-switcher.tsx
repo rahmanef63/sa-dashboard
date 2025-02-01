@@ -1,7 +1,8 @@
 // /slices/dashboard/switcher/dashboard-switcher.tsx
 import * as React from "react";
 import { ChevronsUpDown, Plus } from "lucide-react";
-import { Dashboard, DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS, DashboardSwitcherProps } from '@/slices/sidebar/dashboard/types';
+import { cn } from 'shared/lib/utils';
+import { Button } from 'shared/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
+} from 'shared/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from 'shared/components/ui/avatar';
+import { Dashboard, DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS } from '../types';
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -23,15 +26,34 @@ import { Providers } from "../../menu/providers";
 import { useDashboard } from "../hooks/use-dashboard";
 import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useUser } from "@/shared/hooks/use-user";
-import { useMemo } from 'react';
+
+interface DashboardSwitcherProps {
+  dashboards?: Dashboard[];
+  onDashboardChange?: (dashboard: Dashboard) => void;
+  className?: string;
+  isMobile?: boolean;
+  defaultDashboardId?: string;
+}
 
 export function DashboardSwitcher({
-  dashboards: propDashboards,
+  dashboards: propDashboards = [],
   onDashboardChange,
   className,
   isMobile = false,
   defaultDashboardId = 'main'
 }: DashboardSwitcherProps) {
+  const [selectedDashboardId, setSelectedDashboardId] = React.useState(defaultDashboardId);
+
+  React.useEffect(() => {
+    if (propDashboards.length > 0 && !selectedDashboardId) {
+      const initialDashboard = propDashboards.find((d: Dashboard) => d.isDefault) || propDashboards[0];
+      if (initialDashboard) {
+        setSelectedDashboardId(initialDashboard.dashboardId);
+        onDashboardChange?.(initialDashboard);
+      }
+    }
+  }, [propDashboards, selectedDashboardId, onDashboardChange]);
+
   return (
     <Providers>
       <DashboardSwitcherContent
@@ -45,17 +67,25 @@ export function DashboardSwitcher({
   );
 }
 
+interface DashboardSwitcherContentProps {
+  dashboards?: Dashboard[];
+  onDashboardChange?: (dashboard: Dashboard) => void;
+  className?: string;
+  isMobile?: boolean;
+  defaultDashboardId?: string;
+}
+
 function DashboardSwitcherContent({
   dashboards: propDashboards,
   onDashboardChange,
   className,
-  isMobile = false,
-  defaultDashboardId = 'main'
-}: DashboardSwitcherProps) {
+  isMobile,
+  defaultDashboardId,
+}: DashboardSwitcherContentProps) {
   const { userId } = useUser();
-  const { dashboards: apiDashboards, loading } = useDashboard();
+  const { dashboards: apiDashboards, isLoading } = useDashboard();
 
-  const dashboards = useMemo(() => {
+  const dashboards = React.useMemo(() => {
     return propDashboards && propDashboards.length > 0 ? propDashboards : (apiDashboards || []);
   }, [propDashboards, apiDashboards]);
 
@@ -70,18 +100,9 @@ function DashboardSwitcherContent({
 
   const handleDashboardSelect = React.useCallback((dashboard: Dashboard) => {
     console.log('[Debug] Dashboard Selected:', dashboard);
-    // Immediately close dropdown to improve perceived performance
     setDropdownOpen(false);
-    // Update active dashboard
     setActiveDashboard(dashboard);
   }, [setActiveDashboard]);
-
-  // Effect to sync dashboard changes
-  React.useEffect(() => {
-    if (activeDashboard) {
-      console.log('[Debug] Active Dashboard Changed:', activeDashboard);
-    }
-  }, [activeDashboard]);
 
   const handleAddDashboard = React.useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -90,7 +111,7 @@ function DashboardSwitcherContent({
     setDialogOpen(true);
   }, []);
 
-  if (loading && (!propDashboards || propDashboards.length === 0)) {
+  if (isLoading && (!propDashboards || propDashboards.length === 0)) {
     return (
       <SidebarMenu className={className}>
         <SidebarMenuItem>

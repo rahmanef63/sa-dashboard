@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { DashboardSwitcher } from "@/slices/sidebar/dashboard/switcher/dashboard-switcher"
 import { NavUser } from "@/slices/sidebar/menu/nav-user/nav-user"
 import { MenuSection } from "@/slices/sidebar/menu/nav-main/components"
@@ -17,6 +17,7 @@ import {
   SidebarRail,
   SidebarSeparator,
 } from "@/shared/components/ui/sidebar"
+import { Skeleton } from '@/shared/components/ui/skeleton';
 import { 
   MenuItemWithChildren, 
   MenuSwitcher as MenuSwitcherType, 
@@ -28,7 +29,7 @@ import { MenuSwitcher } from '@/slices/sidebar/menu/menu-switcher/menu-switcher'
 import { useSidebar } from '@/shared/hooks/useSidebar'
 import { useUser } from '@/shared/hooks/use-user'
 import { useDashboard } from '@/slices/sidebar/dashboard/hooks/use-dashboard'
-import { useMenu } from '@/slices/sidebar/menu/hooks/use-menu'
+import { useMenuContext } from './menu/context/menu-context';
 
 interface SidebarContentProps {
   type: 'default' | 'menuSwitcher'
@@ -55,34 +56,57 @@ export function SidebarContentWrapper({
 }: SidebarContentProps) {
   const { isMobile, currentMenuId } = useSidebar()
   const { userId } = useUser()
-  const { dashboards, loading: dashboardsLoading, error: dashboardsError, refetch } = useDashboard()
-  console.log('[Debug] Dashboards:', dashboards)
-  const selectedDashboard = dashboards?.[0]
-  console.log('[Debug] Selected Dashboard:', selectedDashboard)
+  const { dashboards, isLoading, error: dashboardsError, refetch } = useDashboard()
+  const { fetchMenu, menuItems: fetchedMenuItems, loading: menuLoading } = useMenuContext();
   
-  const { menuItems: fetchedMenuItems, loading: menuLoading, error: menuError } = useMenu(selectedDashboard?.dashboardId)
-  console.log('[Debug] Fetched Menu Items:', fetchedMenuItems)
+  // Handle cached dashboards while loading
+  const visibleDashboards = isLoading ? [] : dashboards || []
+  const selectedDashboard = visibleDashboards[0] || null
+
+  useEffect(() => {
+    if (selectedDashboard?.dashboardId) {
+      fetchMenu(selectedDashboard.dashboardId);
+    }
+  }, [selectedDashboard?.dashboardId, fetchMenu]);
+
+  // Add loading state
+  if (isLoading) {
+    return (
+      <Sidebar collapsible="icon" {...sidebarProps}>
+        <div className="space-y-2 p-2">
+          <Skeleton className="h-12 w-full" />
+        </div>
+      </Sidebar>
+    )
+  }
+
+  if (menuLoading) {
+    return (
+      <Sidebar collapsible="icon" {...sidebarProps}>
+        <div className="space-y-2 p-2">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-6 w-full" />
+        </div>
+      </Sidebar>
+    )
+  }
+
+  if (dashboardsError) {
+    return <div>Error: {dashboardsError}</div>
+  }
 
   // Convert fetched menu items to the expected format
   const menuSwitcher = React.useMemo(() => {
-    console.log('[Debug] Converting menu items. Input:', { fetchedMenuItems, menuItems, dashboardId: selectedDashboard?.dashboardId })
     if (!fetchedMenuItems?.length) {
       return menuItems[0] as MenuSwitcherType
     }
 
     // Convert fetched menu items to MenuItemWithChildren format
-    const convertedMenuItems = fetchedMenuItems.map(item => ({
-      id: item.id,
-      title: item.title,
-      icon: item.icon,
-      href: item.href,
-      isActive: item.isActive,
-      parentId: item.parentId,
-      orderIndex: item.orderIndex,
-      dashboardId: item.dashboardId,
-      menuType: item.menuType
-    })) as MenuItemWithChildren[]
-    console.log('[Debug] Converted Menu Items:', convertedMenuItems)
+    const convertedMenuItems = fetchedMenuItems.map((item) => ({
+      ...item,
+      href: item.href || '#',
+    }))
 
     // Create a menu switcher item with the converted menu items
     const defaultMenu: MenuSwitcherItem = {
@@ -94,7 +118,6 @@ export function SidebarContentWrapper({
     }
 
     return {
-      id: 'menu-switcher',
       title: 'Menu Switcher',
       menus: [defaultMenu]
     } as MenuSwitcherType
@@ -126,24 +149,11 @@ export function SidebarContentWrapper({
     }
   }, [onMenuChange])
 
-  if (dashboardsLoading || menuLoading) {
-    return (
-      <Sidebar collapsible="icon" {...sidebarProps}>
-        <div className="flex items-center justify-center h-full">Loading...</div>
-      </Sidebar>
-    )
-  }
-
-  if (dashboardsError || menuError) {
-    return <div>Error: {dashboardsError || menuError}</div>
-  }
-
   return (
     <Sidebar collapsible="icon" {...sidebarProps}>
       <SidebarHeader>
         <DashboardSwitcher
-          dashboards={dashboards || []}
-          onDashboardChange={onDashboardChange}
+          dashboards={visibleDashboards}
           isMobile={isMobile}
           className="mb-2"
           defaultDashboardId={currentMenuId}

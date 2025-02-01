@@ -39,31 +39,55 @@ export async function GET(request: NextRequest) {
     
     let result;
     if (userId) {
-      result = await adminDbOperations.query(`
+      const query = `
         SELECT 
-          d.*,
-          u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
-          CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
-          u.name as user_name,
-          u.email as user_email
-        FROM users u
-        JOIN unnest(u.dashboard_ids) WITH ORDINALITY AS did(id, idx) ON true
-        JOIN dashboards d ON d.id = did.id
-        WHERE u.id = $1
-        ORDER BY did.idx;
-      `, [userId]);
-    } else {
-      result = await adminDbOperations.query(`
-        SELECT 
-          d.*,
-          array_agg(u.name) as user_names,
-          array_agg(u.email) as user_emails,
-          array_agg(u.dashboard_roles[array_position(u.dashboard_ids, d.id)]) as user_roles
+          d.id,
+          d.name,
+          d.description,
+          d.logo,
+          d.plan,
+          d.is_public,
+          d.is_active,
+          d.created_at,
+          d.updated_at
         FROM dashboards d
-        LEFT JOIN users u ON d.id = ANY(u.dashboard_ids)
-        GROUP BY d.id
-        ORDER BY d.created_at DESC;
-      `);
+        WHERE d.is_active = true
+        ORDER BY d.created_at DESC
+        LIMIT 50
+      `;
+      try {
+        console.log('[Debug] Executing query:', query.trim());
+        result = await adminDbOperations.query(query);
+        console.log('[Debug] Query result:', JSON.stringify(result.rows, null, 2));
+      } catch (error) {
+        console.error('[Database Error]', error);
+        throw new Error('Failed to fetch dashboards');
+      }
+    } else {
+      const query = `
+        SELECT 
+          d.id,
+          d.name,
+          d.description,
+          d.logo,
+          d.plan,
+          d.is_public,
+          d.is_active,
+          d.created_at,
+          d.updated_at
+        FROM dashboards d
+        WHERE d.is_active = true
+        ORDER BY d.created_at DESC
+        LIMIT 50
+      `;
+      try {
+        console.log('[Debug] Executing query:', query.trim());
+        result = await adminDbOperations.query(query);
+        console.log('[Debug] Query result:', JSON.stringify(result.rows, null, 2));
+      } catch (error) {
+        console.error('[Database Error]', error);
+        throw new Error('Failed to fetch dashboards');
+      }
     }
 
     const dashboards = result.rows as DashboardWithRole[];
