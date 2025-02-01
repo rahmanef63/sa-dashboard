@@ -14,9 +14,9 @@ import {
   useUserMenu
  } from '../hooks'
 import { createEmptySubMenuItem } from '../utils'
-import { MenuItemForm } from '@/slices/menu/nav-main/components/forms/MenuItemForm'
-import { GroupLabelForm } from '@/slices/menu/nav-main/components/forms/GroupForm'
-import { SubMenuItemForm } from '@/slices/menu/nav-main/components/forms/SubMenuItemForm'
+import { MenuItemForm } from '@/slices/sidebar/menu/nav-main/components/forms/MenuItemForm'
+import { GroupLabelForm } from '@/slices/sidebar/menu/nav-main/components/forms/GroupForm'
+import { SubMenuItemForm } from '@/slices/sidebar/menu/nav-main/components/forms/SubMenuItemForm'
 
 // Helper function to render icon component
 const renderIcon = (icon: string | LucideIcon | undefined): JSX.Element => {

@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDbOperations } from '@/shared/config/admin-db';
+import { adminDbOperations } from '@/slices/sidebar/config/admin-db';
 import { 
   DashboardCreateInput, 
   DashboardSchema,
-  isDashboardSchema, 
   transformToCamelCase, 
   transformToSnakeCase 
-} from '@/slices/dashboard/types/dashboard.types';
+} from '@/slices/sidebar/dashboard/types';
+import { QueryResult } from 'pg';
+
+interface DashboardWithRole extends DashboardSchema {
+  userRole?: string;
+  isDefault?: boolean;
+  userName?: string;
+  userEmail?: string;
+  userNames?: string[];
+  userEmails?: string[];
+  userRoles?: string[];
+}
+
+const isDashboardSchema = (obj: any): obj is DashboardSchema => {
+  const requiredKeys = ['id', 'name', 'description', 'logo', 'plan', 'isPublic', 'isActive', 'createdAt', 'updatedAt'] as const;
+  return requiredKeys.every(key => key in obj);
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,30 +37,54 @@ export async function GET(request: NextRequest) {
 
     console.log('[Dashboards API] Fetching dashboards for user:', userId || 'all');
     
-    const result = userId 
-      ? await adminDbOperations.getUserDashboards(userId)
-      : await adminDbOperations.getDashboards();
+    let result;
+    if (userId) {
+      result = await adminDbOperations.query(`
+        SELECT 
+          d.*,
+          u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
+          CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
+          u.name as user_name,
+          u.email as user_email
+        FROM users u
+        JOIN unnest(u.dashboard_ids) WITH ORDINALITY AS did(id, idx) ON true
+        JOIN dashboards d ON d.id = did.id
+        WHERE u.id = $1
+        ORDER BY did.idx;
+      `, [userId]);
+    } else {
+      result = await adminDbOperations.query(`
+        SELECT 
+          d.*,
+          array_agg(u.name) as user_names,
+          array_agg(u.email) as user_emails,
+          array_agg(u.dashboard_roles[array_position(u.dashboard_ids, d.id)]) as user_roles
+        FROM dashboards d
+        LEFT JOIN users u ON d.id = ANY(u.dashboard_ids)
+        GROUP BY d.id
+        ORDER BY d.created_at DESC;
+      `);
+    }
 
-    const dashboards = Array.isArray(result) ? result : [];
+    const dashboards = result.rows as DashboardWithRole[];
     console.log('[Dashboards API] Found dashboards:', dashboards.length);
     
     const transformedDashboards = dashboards
       .filter(isDashboardSchema)
-      .map(transformToCamelCase);
-      
-    return NextResponse.json({
-      success: true,
-      data: transformedDashboards
-    });
-  } catch (error: any) {
+      .map((dashboard: DashboardWithRole) => ({
+        ...transformToCamelCase(dashboard),
+        userRole: dashboard.userRole || dashboard.userRoles,
+        isDefault: dashboard.isDefault || false,
+        userName: dashboard.userName || dashboard.userNames,
+        userEmail: dashboard.userEmail || dashboard.userEmails
+      }));
+
+    return NextResponse.json({ success: true, data: transformedDashboards });
+  } catch (error) {
     console.error('[Dashboards API] GET Error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error.message || 'Failed to fetch dashboards',
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      },
-      { status: error.statusCode || 500 }
+      { success: false, error: 'Failed to fetch dashboards' },
+      { status: 500 }
     );
   }
 }
@@ -53,6 +92,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { userId, role, isDefault, userName, userEmail, ...dashboardData } = body;
     
     if (!body.name) {
       return NextResponse.json(
@@ -61,35 +101,109 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Transform and validate input data
-    const dashboardData = {
-      ...transformToSnakeCase(body as DashboardCreateInput),
-      is_active: true,
-      is_public: true
-    };
-
-    // Create dashboard
-    const result = await adminDbOperations.create('dashboards', dashboardData);
-    const dashboard = result.rows[0];
-    
-    if (!dashboard?.id) {
-      throw new Error('Failed to create dashboard');
+    if (!userEmail) {
+      return NextResponse.json(
+        { success: false, error: 'User email is required' },
+        { status: 400 }
+      );
     }
 
-    // Create default menu items for the dashboard
-    await adminDbOperations.createDefaultMenuItems(dashboard.id);
+    // Start a transaction
+    const dashboard = await adminDbOperations.transaction(async (client) => {
+      // Check if user exists or create a new one
+      let user;
+      if (userId) {
+        const userResult = await client.query(`
+          SELECT * FROM users WHERE id = $1;
+        `, [userId]);
+        user = userResult.rows[0];
+        if (!user) {
+          return NextResponse.json(
+            { success: false, error: 'User not found' },
+            { status: 404 }
+          );
+        }
+      } else {
+        // Check if user exists by email
+        const existingUserResult = await client.query(`
+          SELECT * FROM users WHERE email = $1;
+        `, [userEmail]);
+        
+        if (existingUserResult.rows.length > 0) {
+          user = existingUserResult.rows[0];
+        } else {
+          // Create new user
+          const newUserResult = await client.query(`
+            INSERT INTO users (name, email)
+            VALUES ($1, $2)
+            RETURNING *;
+          `, [userName || userEmail.split('@')[0], userEmail]);
+          user = newUserResult.rows[0];
+        }
+      }
 
-    // Transform response to camelCase
-    const transformedDashboard = transformToCamelCase(dashboard as DashboardSchema);
+      // Create dashboard
+      const dashboardResult = await client.query(`
+        INSERT INTO dashboards (name, description, logo, plan, is_public, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING *;
+      `, [
+        dashboardData.name,
+        dashboardData.description || '',
+        dashboardData.logo || 'layout-dashboard',
+        dashboardData.plan || 'Personal',
+        dashboardData.isPublic || false,
+        true
+      ]);
 
-    return NextResponse.json({
-      success: true,
-      data: transformedDashboard
+      const newDashboard = dashboardResult.rows[0];
+
+      // Update user's dashboard arrays
+      await client.query(`
+        UPDATE users 
+        SET 
+          dashboard_ids = array_append(dashboard_ids, $1),
+          dashboard_roles = array_append(dashboard_roles, $2),
+          default_dashboard_id = CASE 
+            WHEN $3 = true OR default_dashboard_id IS NULL 
+            THEN $1 
+            ELSE default_dashboard_id 
+          END
+        WHERE id = $4;
+      `, [newDashboard.id, role || 'owner', isDefault || false, user.id]);
+
+      // Create default menu items
+      await client.query(`
+        INSERT INTO menu_items (dashboard_id, title, icon, url, type, order_index)
+        VALUES 
+          ($1, 'Dashboard', 'layout-dashboard', '{"href":"/"}', 'main', 1),
+          ($1, 'Settings', 'settings', '{"href":"/settings"}', 'main', 2);
+      `, [newDashboard.id]);
+
+      // Return the complete dashboard info
+      const finalDashboardResult = await client.query(`
+        SELECT 
+          d.*,
+          u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
+          CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
+          u.name as user_name,
+          u.email as user_email
+        FROM dashboards d
+        JOIN users u ON d.id = ANY(u.dashboard_ids)
+        WHERE d.id = $1 AND u.id = $2;
+      `, [newDashboard.id, user.id]);
+
+      return finalDashboardResult.rows[0];
     });
-  } catch (error: any) {
+
+    return NextResponse.json({ success: true, data: dashboard });
+  } catch (error) {
     console.error('[Dashboards API] POST Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to create dashboard' },
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'An unexpected error occurred while creating the dashboard'
+      },
       { status: 500 }
     );
   }
@@ -98,7 +212,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, ...updateData } = body;
+    const { id, userId, isDefault, ...updateData } = body;
     
     if (!id) {
       return NextResponse.json(
@@ -107,34 +221,80 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    if (Object.keys(updateData).length === 0) {
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (Object.keys(updateData).length === 0 && isDefault === undefined) {
       return NextResponse.json(
         { success: false, error: 'No update data provided' },
         { status: 400 }
       );
     }
 
-    const transformedData = {
-      ...transformToSnakeCase(updateData),
-      updated_at: new Date()
-    };
+    const dashboard = await adminDbOperations.transaction(async (client) => {
+      // Update dashboard data if provided
+      if (Object.keys(updateData).length > 0) {
+        const transformedData = {
+          ...transformToSnakeCase(updateData),
+          updated_at: new Date()
+        };
 
-    const { rows } = await adminDbOperations.update('dashboards', id, transformedData);
-    const result = rows[0];
-    
-    if (!isDashboardSchema(result)) {
-      console.error('[Dashboards API] Invalid data:', result);
-      throw new Error('Invalid dashboard data returned from database');
+        await client.query(`
+          UPDATE dashboards
+          SET ${Object.keys(transformedData).map((key, i) => `${key} = $${i + 1}`).join(', ')}
+          WHERE id = $${Object.keys(transformedData).length + 1}
+          RETURNING *;
+        `, [...Object.values(transformedData), id]);
+      }
+
+      // Update default dashboard status if specified
+      if (isDefault !== undefined) {
+        await client.query(`
+          UPDATE users
+          SET default_dashboard_id = CASE 
+            WHEN $1 = true THEN $2
+            WHEN default_dashboard_id = $2 THEN NULL
+            ELSE default_dashboard_id
+          END
+          WHERE id = $3;
+        `, [isDefault, id, userId]);
+      }
+
+      // Return updated dashboard with user info
+      const result = await client.query(`
+        SELECT 
+          d.*,
+          u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
+          CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
+          u.name as user_name,
+          u.email as user_email
+        FROM dashboards d
+        JOIN users u ON d.id = ANY(u.dashboard_ids)
+        WHERE d.id = $1 AND u.id = $2;
+      `, [id, userId]);
+
+      return result.rows[0];
+    });
+
+    if (!dashboard) {
+      return NextResponse.json(
+        { success: false, error: 'Dashboard not found' },
+        { status: 404 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      data: transformToCamelCase(result)
+      data: transformToCamelCase(dashboard)
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Dashboards API] PUT Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to update dashboard' },
+      { success: false, error: error instanceof Error ? error.message : 'Failed to update dashboard' },
       { status: 500 }
     );
   }
@@ -142,26 +302,51 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
+    const { id, userId } = await request.json();
+
+    if (!id || !userId) {
       return NextResponse.json(
-        { success: false, error: 'Dashboard ID is required' },
+        { success: false, error: 'Both dashboard ID and user ID are required' },
         { status: 400 }
       );
     }
-    
-    await adminDbOperations.delete('dashboards', { id });
-    
-    return NextResponse.json({
-      success: true,
-      data: { id }
+
+    await adminDbOperations.transaction(async (client) => {
+      // Remove dashboard from user's arrays
+      await client.query(`
+        UPDATE users
+        SET 
+          dashboard_ids = array_remove(dashboard_ids, $1),
+          dashboard_roles = array_remove(dashboard_roles, dashboard_roles[array_position(dashboard_ids, $1)]),
+          default_dashboard_id = CASE 
+            WHEN default_dashboard_id = $1 THEN NULL 
+            ELSE default_dashboard_id 
+          END
+        WHERE id = $2;
+      `, [id, userId]);
+
+      // Delete menu items
+      await client.query('DELETE FROM menu_items WHERE dashboard_id = $1', [id]);
+
+      // Delete dashboard if no users have it
+      await client.query(`
+        DELETE FROM dashboards d
+        WHERE d.id = $1
+        AND NOT EXISTS (
+          SELECT 1 FROM users u 
+          WHERE $1 = ANY(u.dashboard_ids)
+        );
+      `, [id]);
     });
-  } catch (error: any) {
-    console.error('[Dashboards API] DELETE Error:', error);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[DELETE Dashboard]', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to delete dashboard' },
+      { 
+        success: false,
+        error: error instanceof Error ? error.message : 'An unexpected error occurred while deleting the dashboard' 
+      }, 
       { status: 500 }
     );
   }

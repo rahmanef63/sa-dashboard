@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { MenuItemWithChildren } from '@/shared/types/navigation-types'
-import { useMenu } from '@/slices/menu/context/MenuContextStore'
-import { menuConfigs } from '@/slices/menu/context/menu-configs'
+import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
+import { menuConfigs } from '@/slices/sidebar/menu/context/menu-configs'
 
 interface UseSidebarProps {
   initialMenuId?: string

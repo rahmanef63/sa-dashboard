@@ -7,7 +7,7 @@ import {
   MenuItem,
   NavigationItem 
 } from '@/shared/types/navigation-types'
-import { useMenu } from '@/slices/menu/context/MenuContextStore'
+import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
 import { toast } from 'sonner'
 import { 
   convertSharedToNavMain,

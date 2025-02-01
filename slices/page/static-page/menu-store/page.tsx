@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { useMenu } from '@/slices/menu/context/MenuContextStore'
+import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
 import { useToast } from "shared/components/ui/use-toast"
 import { useAvailableMenuItems } from './hooks'
 import { AvailableMenuItems } from './components/AvailableMenuItems'

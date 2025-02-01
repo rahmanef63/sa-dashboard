@@ -1,8 +1,14 @@
+import { MOCK_ADMIN_USER } from '../dev-tool/types';
+import { user as navUser } from '@/slices/sidebar/menu/nav-user/config';
+
 // Temporary hook to get user ID - replace with actual auth system later
 export function useUser() {
-  // Using the default user ID that matches our migration
   return {
-    userId: "b24c5f8a-5e25-4f9d-8492-9bf5f418c408",
+    userId: MOCK_ADMIN_USER.id,
+    userName: MOCK_ADMIN_USER.name,
+    userEmail: MOCK_ADMIN_USER.email,
+    avatar: navUser.avatar,
+    role: navUser.role,
     isLoading: false,
     error: null
   };

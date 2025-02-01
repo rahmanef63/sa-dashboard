@@ -1,4 +1,4 @@
-import { Dashboard } from "@/slices/dashboard/types/index";
+import { Dashboard } from "@/slices/sidebar/dashboard/types/index";
 
 export interface User {
   id: string;
