@@ -8,18 +8,25 @@ interface MenuContextValue {
   menuItems: MenuItem[];
   loading: boolean;
   error: string | null;
-  currentDashboardId: string;
-  setCurrentDashboardId: (id: string) => void;
+  currentDashboardId: string | null;
+  setCurrentDashboardId: (id: string | null) => void;
   fetchMenu: (dashboardId?: string) => Promise<void>;
 }
 
-const MenuContext = createContext<MenuContextValue>({} as MenuContextValue);
+const MenuContext = createContext<MenuContextValue>({
+  menuItems: [],
+  loading: false,
+  error: null,
+  currentDashboardId: null,
+  setCurrentDashboardId: () => {},
+  fetchMenu: async () => {}
+});
 
 export function MenuProvider({ children }: { children: React.ReactNode }) {
-  const menu = useMenu(); // Always called
+  const menu = useMenu();
   
   const value = useMemo(() => ({
-    ...menu,
+    ...menu
   }), [menu]);
 
   return <MenuContext.Provider value={value}>{children}</MenuContext.Provider>;

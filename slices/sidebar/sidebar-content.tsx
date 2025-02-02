@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import { DashboardSwitcher } from "@/slices/sidebar/dashboard/features/switcher/dashboard-switcher"
 import { NavUser } from "@/slices/sidebar/menu/nav-user/nav-user"
 import { SidebarGroupComponent } from "@/slices/sidebar/menu/nav-main/components/groups/MenuGroup"
@@ -30,7 +30,6 @@ interface SidebarContentProps {
   onDashboardChange: (dashboard: Dashboard) => void
   onMenuChange: (menu: MenuItemWithChildren) => void
   onFocus?: () => void
-  renderIcon: (icon: string | undefined) => JSX.Element | null
   className?: string
   sidebarProps?: React.ComponentProps<typeof Sidebar>
 }
@@ -42,7 +41,6 @@ export function SidebarContentWrapper({
   onDashboardChange,
   onMenuChange,
   onFocus,
-  renderIcon,
   className,
   sidebarProps,
 }: SidebarContentProps) {
@@ -50,82 +48,80 @@ export function SidebarContentWrapper({
   const { dashboards: availableDashboards, currentDashboard, selectDashboard } = useDashboard();
   const { menuItems: contextMenuItems, setCurrentDashboardId, fetchMenu } = useMenuContext();
 
-  const handleDashboardChange = (dashboard: Dashboard) => {
-    selectDashboard(dashboard);
-    onDashboardChange(dashboard);
-    setCurrentDashboardId(dashboard.id);
-  };
-
-  // Transform menu items for SidebarGroupComponent
-  const mainGroup = React.useMemo(() => ({
-    label: {
-      id: 'main-menu',
-      title: 'Main Menu',
-      icon: 'menu',
-      isCollapsible: true
-    },
-    items: (menuItems as MenuItemWithChildren[]).map(item => ({
-      ...item,
-      id: item.id || String(Math.random()),
-      order: item.orderIndex || 0
-    }))
-  }), [menuItems]);
-
-  // Update menu when dashboard changes
-  React.useEffect(() => {
-    if (type !== 'menuSwitcher' && currentDashboard?.id) {
+  useEffect(() => {
+    if (currentDashboard?.id) {
+      console.log('[SidebarContent] Current dashboard changed:', currentDashboard.id);
+      setCurrentDashboardId(currentDashboard.id);
       fetchMenu(currentDashboard.id);
     }
-  }, [type, currentDashboard?.id, fetchMenu]);
+  }, [currentDashboard?.id, setCurrentDashboardId, fetchMenu]);
+
+  const handleDashboardChange = useCallback((dashboard: Dashboard) => {
+    console.log('[SidebarContent] Dashboard changed:', dashboard);
+    onDashboardChange(dashboard);
+    selectDashboard(dashboard);
+  }, [onDashboardChange, selectDashboard]);
+
+  const handleMenuChange = useCallback((menu: MenuItemWithChildren) => {
+    console.log('[SidebarContent] Menu changed:', menu);
+    onMenuChange(menu);
+  }, [onMenuChange]);
+
+  // Use contextMenuItems instead of prop menuItems for rendering
+  const menuItemsToRender = type === 'menuSwitcher' ? menuItems : contextMenuItems;
+  console.log('[SidebarContent] Menu items to render:', menuItemsToRender);
 
   return (
     <Sidebar
       {...sidebarProps}
+      className={className}
     >
       <SidebarHeader>
         <DashboardSwitcher
           dashboards={availableDashboards}
-          onDashboardChange={handleDashboardChange}
           defaultDashboardId={currentDashboard?.id}
+          onDashboardChange={handleDashboardChange}
         />
       </SidebarHeader>
+
       <SidebarContent>
-        <SidebarGroup>
-          {type === 'menuSwitcher' ? (
-            <MenuSwitcher
-              menuSwitcher={{
-                id: 'menu-switcher',
-                title: 'Menu Switcher',
-                menus: (menuItems as MenuSwitcherItem[]).map(item => ({
-                  ...item,
-                  menuList: item.menuList || []
-                }))
-              }}
-              onMenuChange={(menu) => onMenuChange(menu as MenuItemWithChildren)}
-              className={className}
-            />
-          ) : (
-            <SidebarGroupComponent
-              group={mainGroup}
-              onEditItem={onMenuChange}
-              className={className}
-            />
-          )}
-        </SidebarGroup>
-        <SidebarSeparator />
-        <SidebarGroup>
-          <NavProjects {...navProjectsConfig} />
-        </SidebarGroup>
+        {type === 'menuSwitcher' ? (
+          <MenuSwitcher
+            menuSwitcher={{
+              id: 'menu-switcher',
+              title: 'Menu',
+              menus: menuItemsToRender as MenuSwitcherItem[]
+            }}
+            onMenuChange={handleMenuChange}
+          />
+        ) : (
+          <SidebarMenu>
+            <SidebarGroup>
+              <SidebarGroupComponent
+                group={{
+                  label: {
+                    id: 'main-menu',
+                    title: 'Main Menu',
+                    icon: 'menu'
+                  },
+                  items: menuItemsToRender as MenuItemWithChildren[]
+                }}
+                onEditItem={handleMenuChange}
+              />
+            </SidebarGroup>
+          </SidebarMenu>
+        )}
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser 
+        <NavUser
           user={{
-            id: userId,
-            name: userName,
-            email: userEmail,
+            id: userId || 'default',
+            name: userName || '',
+            email: userEmail || '',
             avatar: avatar,
-            role: role
-          }} 
+            role: role || 'user'
+          }}
         />
       </SidebarFooter>
     </Sidebar>

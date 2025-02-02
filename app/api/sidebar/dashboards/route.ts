@@ -35,7 +35,8 @@ export async function GET(request: NextRequest) {
             u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
             u.name as user_name,
             u.email as user_email,
-            CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default
+            CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
+            COALESCE(d.menu_items, '[]'::jsonb) as menu_items
           FROM dashboards d
           JOIN users u ON d.id = ANY(u.dashboard_ids)
           WHERE u.id = $1 AND d.is_active = true
@@ -48,7 +49,8 @@ export async function GET(request: NextRequest) {
             'viewer' as user_role,
             u.name as user_name,
             u.email as user_email,
-            false as is_default
+            false as is_default,
+            COALESCE(d.menu_items, '[]'::jsonb) as menu_items
           FROM dashboards d
           CROSS JOIN users u
           WHERE u.id = $1 
@@ -63,7 +65,7 @@ export async function GET(request: NextRequest) {
         SELECT * FROM user_dashboards
         ORDER BY created_at DESC;
       `;
-      const dashboardsResult = await db.query<UserDashboardRow>(query, [userId]);
+      const dashboardsResult = await db.query(query, [userId]);
 
       if (!dashboardsResult.rows.length) {
         throw new ApiError('No dashboards found', 404);
@@ -76,7 +78,18 @@ export async function GET(request: NextRequest) {
       });
 
       // Transform each row to Dashboard type
-      const dashboards: Dashboard[] = dashboardsResult.rows.map(row => transformResponse(row));
+      const dashboards: Dashboard[] = dashboardsResult.rows.map(row => {
+        // Parse menu_items if it's a string
+        const menuItems = typeof row.menu_items === 'string' 
+          ? JSON.parse(row.menu_items)
+          : (row.menu_items || []);
+
+        return transformResponse({
+          ...row,
+          menu_items: menuItems
+        });
+      });
+
       console.log('[Dashboards API] Transformed dashboards:', dashboards);
 
       // Revalidate the referer if provided
@@ -161,8 +174,8 @@ export async function POST(request: NextRequest) {
         }
 
         const dashboardResult = await client.query(`
-          INSERT INTO dashboards (name, description, logo, plan, is_public, is_active)
-          VALUES ($1, $2, $3, $4, $5, $6)
+          INSERT INTO dashboards (name, description, logo, plan, is_public, is_active, menu_items)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
           RETURNING *;
         `, [
           dashboardData.name,
@@ -170,7 +183,8 @@ export async function POST(request: NextRequest) {
           dashboardData.logo || 'layout-dashboard',
           dashboardData.plan || 'Personal',
           dashboardData.isPublic || false,
-          true
+          true,
+          JSON.stringify(dashboardData.menuItems || [])
         ]);
         const newDashboard = dashboardResult.rows[0];
 
@@ -186,13 +200,6 @@ export async function POST(request: NextRequest) {
             END
           WHERE id = $4;
         `, [newDashboard.id, role || 'owner', isDefault || false, user.id]);
-
-        await client.query(`
-          INSERT INTO menu_items (dashboardId, title, icon, url, type, order_index)
-          VALUES 
-            ($1, 'Dashboard', 'layout-dashboard', '{"href":"/"}', 'main', 1),
-            ($1, 'Settings', 'settings', '{"href":"/settings"}', 'main', 2);
-        `, [newDashboard.id]);
 
         const finalDashboardResult = await client.query(`
           SELECT 
@@ -214,66 +221,55 @@ export async function POST(request: NextRequest) {
   });
 }
 
-export async function PUT(request: NextRequest) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   return withAuth(request, async (req) => {
     return withErrorHandler(async () => {
-      const body = await req.json();
-      const { id, userId, isDefault, ...updateData } = body;
-      
-      if (!id) {
-        throw new ApiError('Dashboard ID is required', 400);
-      }
-      if (!userId) {
-        throw new ApiError('User ID is required', 400);
-      }
-      if (Object.keys(updateData).length === 0 && isDefault === undefined) {
-        throw new ApiError('No update data provided', 400);
-      }
+      const dashboardId = params.id;
+      const data = await request.json();
 
-      const dashboard = await db.transaction(async (client) => {
-        if (Object.keys(updateData).length > 0) {
-          const keys = Object.keys(updateData);
-          const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
-          await client.query(`
-            UPDATE dashboards
-            SET ${setClause}
-            WHERE id = $${keys.length + 1}
-            RETURNING *;
-          `, [...Object.values(updateData), id]);
-        }
+      // Update dashboard query
+      const query = `
+        UPDATE dashboards 
+        SET 
+          name = COALESCE($1, name),
+          description = COALESCE($2, description),
+          logo = COALESCE($3, logo),
+          is_public = COALESCE($4, is_public),
+          menu_items = COALESCE($5::jsonb, menu_items),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $6 AND is_active = true
+        RETURNING *;
+      `;
 
-        if (isDefault !== undefined) {
-          await client.query(`
-            UPDATE users
-            SET default_dashboard_id = CASE 
-              WHEN $1 = true THEN $2
-              WHEN default_dashboard_id = $2 THEN NULL
-              ELSE default_dashboard_id
-            END
-            WHERE id = $3;
-          `, [isDefault, id, userId]);
-        }
+      // Convert menu items to JSONB
+      const menuItemsJson = data.menuItems ? JSON.stringify(data.menuItems) : null;
 
-        const result = await client.query(`
-          SELECT 
-            d.*,
-            u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
-            CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
-            u.name as user_name,
-            u.email as user_email
-          FROM dashboards d
-          JOIN users u ON d.id = ANY(u.dashboard_ids)
-          WHERE d.id = $1 AND u.id = $2;
-        `, [id, userId]);
+      const result = await db.query(query, [
+        data.name,
+        data.description,
+        data.logo,
+        data.isPublic,
+        menuItemsJson,
+        dashboardId
+      ]);
 
-        return result.rows[0];
-      });
-
-      if (!dashboard) {
+      if (!result.rows.length) {
         throw new ApiError('Dashboard not found', 404);
       }
 
-      return apiResponse(createApiResponse(transformResponse(dashboard)));
+      // Transform response
+      const dashboard = transformResponse(result.rows[0]);
+      
+      return new NextResponse(
+        JSON.stringify({ data: dashboard }),
+        { 
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store'
+          }
+        }
+      );
     });
   });
 }

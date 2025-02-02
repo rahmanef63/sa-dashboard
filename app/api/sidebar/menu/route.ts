@@ -27,6 +27,19 @@ function buildMenuTree(items: MenuItem[]): MenuItem[] {
     }
   });
 
+  // Sort by order
+  const sortByOrder = (a: MenuItem, b: MenuItem) => {
+    return (a.order || 0) - (b.order || 0);
+  };
+
+  // Sort roots and children
+  roots.sort(sortByOrder);
+  roots.forEach(root => {
+    if (root.children) {
+      root.children.sort(sortByOrder);
+    }
+  });
+
   return roots;
 }
 
@@ -44,10 +57,15 @@ export async function GET(request: NextRequest) {
 
       // Query for menu items
       const query = `
-        SELECT menu_items
+        SELECT 
+          COALESCE(
+            menu_items,
+            '[]'::jsonb
+          )::jsonb as menu_items
         FROM dashboards
         WHERE id = $1 AND is_active = true;
       `;
+      
       const result = await db.query(query, [dashboardId]);
       
       if (!result.rows.length) {
@@ -65,11 +83,16 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const menuItems = result.rows[0].menu_items || [];
-      console.log('[Menu API] Found menu items:', menuItems);
+      // Parse menu items from JSONB
+      const menuItems = result.rows[0].menu_items;
+      console.log('[Menu API] Raw menu items:', menuItems);
+
+      // Ensure menuItems is an array
+      const menuItemsArray = Array.isArray(menuItems) ? menuItems : [];
+      console.log('[Menu API] Menu items array:', menuItemsArray);
 
       // Build menu tree
-      const menuTree = buildMenuTree(menuItems);
+      const menuTree = buildMenuTree(menuItemsArray);
       console.log('[Menu API] Built menu tree:', menuTree);
 
       // Return menu tree wrapped in response
