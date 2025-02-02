@@ -10,7 +10,7 @@ interface BaseNavigationFormProps {
   onSave: (item: any) => void
   onCancel?: () => void
   placeholder?: {
-    title?: string
+    name?: string
     url?: string
   }
   createNewItem: (title: string, url: string, icon: string, ...args: any[]) => any
@@ -25,7 +25,7 @@ export function BaseNavigationForm({
   createNewItem,
   additionalArgs = []
 }: BaseNavigationFormProps) {
-  const [title, setTitle] = useState(item?.title || '')
+  const [name, setName] = useState(item?.name || '')
   const [url, setUrl] = useState(
     typeof item?.url === 'string' 
       ? item.url 
@@ -41,7 +41,7 @@ export function BaseNavigationForm({
     if (item) {
       onSave({
         ...item,
-        title,
+        name,
         url: { 
           ...(typeof item.url === 'object' ? item.url : { target: '_self' }),
           href: url 
@@ -49,19 +49,19 @@ export function BaseNavigationForm({
         icon,
       })
     } else {
-      onSave(createNewItem(title, url, icon, ...additionalArgs))
+      onSave(createNewItem(name, url, icon, ...additionalArgs))
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="title">Title</Label>
+        <Label htmlFor="name">Name</Label>
         <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={placeholder.title || "Enter title"}
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={placeholder.name || "Enter name"}
           required
         />
       </div>

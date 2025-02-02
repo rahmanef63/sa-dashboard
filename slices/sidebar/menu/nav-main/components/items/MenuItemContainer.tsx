@@ -1,10 +1,10 @@
 import React from 'react'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "shared/components/ui/collapsible"
+import { Collapsible, CollapsibleContent } from "shared/components/ui/collapsible"
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
-import { MenuItem as MenuType } from 'shared/types/navigation-types'
+import { MenuItem as MenuType, MenuContextType } from 'shared/types/navigation-types'
 import { MenuItem } from './MenuItem'
-import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
+import { useMenuContext } from '@/slices/sidebar/menu/context/menu-context'
 
 interface SidebarMenuItemComponentProps {
   item: MenuType
@@ -13,7 +13,7 @@ interface SidebarMenuItemComponentProps {
 export function SidebarMenuItemComponent({
   item,
 }: SidebarMenuItemComponentProps) {
-  const { updateMenuItem, deleteMenuItem } = useMenu()
+  const { updateMenuItem, deleteMenuItem } = useMenuContext()
 
   return (
     <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
@@ -27,11 +27,11 @@ export function SidebarMenuItemComponent({
                   key={subItem.id} 
                   item={{ 
                     ...subItem, 
-                    url: { 
-                      href: subItem.url.href,
+                    url: subItem.url ? { 
+                      href: subItem.url.href || '#',
                       target: subItem.url.target || '_self',
                       rel: subItem.url.rel
-                    },
+                    } : { href: '#', target: '_self' },
                     icon: 'chevron-right' // default icon for sub-items
                   }} 
                 />

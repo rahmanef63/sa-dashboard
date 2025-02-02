@@ -4,11 +4,9 @@ import * as React from "react"
 import { type LucideIcon } from 'lucide-react'
 import { getIconByName } from "@/shared/icon-picker/utils"
 import { useMenu } from '@/slices/sidebar/menu/hooks/use-menu'
-import { Sidebar } from "@/shared/components/ui/sidebar"
 import { useSidebar } from '@/shared/hooks/useSidebar'
 import { SidebarContentWrapper } from './sidebar-content'
 import { cn } from "@/shared/lib/utils"
-import { MenuItemWithChildren } from '@/shared/types/navigation-types'
 import { Dashboard } from '@/slices/sidebar/dashboard/types'
 
 interface IconProps {

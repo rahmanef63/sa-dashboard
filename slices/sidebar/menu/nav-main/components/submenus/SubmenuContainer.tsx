@@ -25,7 +25,7 @@ export function SidebarMenuSubComponent({
         <SidebarMenuSubItem key={subItem.id}>
           <SidebarMenuSubButton asChild>
             <Link href={subItem.url?.toString() || '#'}>
-              <span>{subItem.title}</span>
+              <span>{subItem.name}</span>
             </Link>
           </SidebarMenuSubButton>
           <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">

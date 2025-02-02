@@ -14,7 +14,7 @@ interface SidebarGroupLabelProps {
 export function SidebarGroupLabel({ label, onEdit, onDelete, children }: SidebarGroupLabelProps) {
   return (
     <div className="relative group">
-      <UISidebarGroupLabel>{label.title}</UISidebarGroupLabel>
+      <UISidebarGroupLabel>{label.name}</UISidebarGroupLabel>
       {children}
       <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
         <Button

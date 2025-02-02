@@ -15,7 +15,7 @@ export function SubMenuItemForm({
       onSave={onSave}
       onCancel={onCancel}
       placeholder={{
-        title: "Enter submenu item title",
+        name: "Enter submenu item title",
         url: "Enter submenu item URL"
       }}
       createNewItem={createNewSubMenuItem}

@@ -2,9 +2,12 @@
 // @/app/api/sidebar/menu/service.ts
 
 import { BaseService } from '@/app/api/sidebar/base-service';
-import { MenuItem } from '@/shared/types/navigation-types';
+import { MenuItemWithChildren } from '@/shared/types/navigation-types';
 
-class MenuService extends BaseService<MenuItem[]> {
+// Singleton instance to maintain cache across components
+let menuCache: Record<string, any> = {};
+
+class MenuService extends BaseService<MenuItemWithChildren[]> {
   private baseUrl: string;
 
   constructor() {
@@ -12,8 +15,14 @@ class MenuService extends BaseService<MenuItem[]> {
     this.baseUrl = '/api/sidebar/menu';
   }
 
-  async getMenuItems(dashboardId: string): Promise<MenuItem[]> {
+  async getMenuItems(dashboardId: string): Promise<MenuItemWithChildren[]> {
     try {
+      // Check cache first
+      if (menuCache[dashboardId]) {
+        console.log('[Debug] MenuService: Using cached items for dashboard:', dashboardId);
+        return menuCache[dashboardId];
+      }
+
       console.log('[MenuService] Fetching menu items for dashboard:', dashboardId);
       const response = await fetch(`${this.baseUrl}?dashboardId=${dashboardId}`, {
         method: 'GET',
@@ -23,22 +32,25 @@ class MenuService extends BaseService<MenuItem[]> {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const error = await response.json();
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('[MenuService] Raw API response:', data);
+      const { data, success } = await response.json();
+      
+      if (!success) {
+        throw new Error('Failed to fetch menu items: Server returned unsuccessful response');
+      }
 
-      if (!data || !data.data) {
-        console.warn('[MenuService] No menu items found');
+      if (!Array.isArray(data)) {
+        console.warn('[Debug] MenuService: Menu items data is not an array:', data);
         return [];
       }
 
-      // Ensure we're returning an array
-      const menuItems = Array.isArray(data.data) ? data.data : [];
-      console.log('[MenuService] Processed menu items:', menuItems);
-      
-      return menuItems;
+      // Cache the response
+      menuCache[dashboardId] = data;
+      console.log('[Debug] MenuService: Cached menu items for dashboard:', dashboardId);
+      return data;
     } catch (error) {
       console.error('[MenuService] Error fetching menu items:', error);
       throw error;
@@ -46,7 +58,11 @@ class MenuService extends BaseService<MenuItem[]> {
   }
 
   clearMenuCache(dashboardId: string): void {
-    this.clearCache(`menu_${dashboardId}`);
+    delete menuCache[dashboardId];
+  }
+
+  clearAllCache(): void {
+    menuCache = {};
   }
 }
 

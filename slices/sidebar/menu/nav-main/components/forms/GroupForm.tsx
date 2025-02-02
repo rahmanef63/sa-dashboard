@@ -6,7 +6,7 @@ import { GroupLabelFormProps } from 'shared/types/navigation-types'
 import { createNewGroupLabel } from '../../utils'
 
 export function GroupLabelForm({ label, onSave, onCancel }: GroupLabelFormProps) {
-  const [title, setTitle] = useState(label?.title || '')
+  const [name, setName] = useState(label?.name || '')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -14,21 +14,21 @@ export function GroupLabelForm({ label, onSave, onCancel }: GroupLabelFormProps)
     if (label) {
       onSave({
         ...label,
-        title
+        name
       })
     } else {
-      onSave(createNewGroupLabel(title))
+      onSave(createNewGroupLabel(name))
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-2">
       <div>
-        <Label htmlFor="title">Group Label</Label>
+        <Label htmlFor="name">Group Label</Label>
         <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Enter group label"
           required
         />

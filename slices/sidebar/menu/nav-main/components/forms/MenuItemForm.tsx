@@ -10,7 +10,7 @@ export function MenuItemForm({ item, onSave, onCancel }: MenuItemFormProps) {
       onSave={onSave}
       onCancel={onCancel}
       placeholder={{
-        title: "Enter menu item title",
+        name: "Enter menu item title",
         url: "Enter menu item URL"
       }}
       createNewItem={createNewMenuItem}

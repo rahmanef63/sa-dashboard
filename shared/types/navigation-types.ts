@@ -60,6 +60,14 @@ export interface BaseMenuItem {
   url?: NavUrl;
 }
 
+export interface NavigationItem {
+  id?: string;
+  name: string;
+  icon?: string;
+  url?: string | NavUrl;
+  isActive?: boolean;
+}
+
 // Frontend types (camelCase)
 export interface MenuItem extends BaseMenuItem {
   id: string;
@@ -100,6 +108,61 @@ export interface Menu extends BaseMenuItem {
   menuType: MenuCategory;
   isDefault?: boolean;
   isActive?: boolean;
+}
+
+// Component Props Types
+export interface CollapsibleMenuProps {
+  item: MenuItem;
+  children?: React.ReactNode;
+  onEdit?: (item: MenuItem) => void;
+  onDelete?: (item: MenuItem) => void;
+  isCollapsed?: boolean;
+  className?: string;
+  onFocus?: () => void;
+}
+
+export interface SidebarMenuItemProps {
+  item: MenuItem;
+  children?: React.ReactNode;
+  onEdit?: (item: MenuItem) => void;
+  onDelete?: (item: MenuItem) => void;
+  isCollapsible?: boolean;
+}
+
+// Menu Context Type
+export interface MenuContextType {
+  menuItems: MenuItem[];
+  menuTree: MenuItemWithChildren[];
+  loading: boolean;
+  error: string | null;
+  navData: NavMainData | null;
+  currentDashboardId: string | null;
+  setCurrentDashboardId: (id: string | null) => void;
+  fetchMenu: (dashboardId?: string) => Promise<void>;
+  updateMenuItem: (item: MenuItem) => void;
+  deleteMenuItem: (itemId: string) => void;
+  updateNavData: (data: NavMainData) => void;
+  updateSubMenuItem: (groupId: string, parentId: string, item: SubMenuItem) => void;
+  deleteSubMenuItem: (groupId: string, parentId: string, itemId: string) => void;
+}
+
+// Form Props Types
+export interface BaseFormProps {
+  onSave: (item: any) => void;
+  onCancel?: () => void;
+}
+
+export interface MenuItemFormProps extends BaseFormProps {
+  item?: MenuItem | null;
+}
+
+export interface SubMenuItemFormProps extends BaseFormProps {
+  item?: SubMenuItem | null;
+  parentId: string;
+}
+
+export interface GroupLabelFormProps extends BaseFormProps {
+  label?: GroupLabel | null;
 }
 
 // Navigation Main Data Type

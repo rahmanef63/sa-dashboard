@@ -423,3 +423,30 @@ CREATE TABLE menu_items (
 - Consider implementing server-side caching
 - Add debounce for rapid dashboard switches
 - Optimize re-renders in React components
+
+## 8. Authentication and Sidebar Design Review
+
+### What's Wrong:
+  - **Mixing Concerns:**
+    - Login logic is intertwined with sidebar/menu services.
+    - Authentication isn’t clearly separated from UI rendering.
+  - **Ambiguous File Roles:**
+    - *service.ts* under the sidebar folder suggests login is handled there, which can be confusing.
+    - *admin-db.ts* looks out of place if it's used for login-related configurations.
+  - **Missing Details:**
+    - Lacks explicit error handling, session/token management, and security measures.
+    - Doesn’t clearly show how state updates (like Redux slices) handle user data independently.
+
+### Best Approach:
+  - **Separate Authentication:**
+    - Create a dedicated authentication module (e.g., `app/api/auth`) for login API calls.
+    - Use separate Redux slices or contexts for user authentication and sidebar UI state.
+  - **Clear File Organization:**
+    - Keep API functions for login separate from menu/sidebar functions.
+    - Rename and reorganize config files (e.g., move admin DB config to a more intuitive location).
+  - **Improve State & Error Handling:**
+    - Integrate proper error handling and secure token/session management.
+    - Use middleware (like Redux-Thunk or Redux-Saga) to manage asynchronous login processes.
+  - **Refine Custom Hooks:**
+    - Let `useSidebar.ts` manage only sidebar state; don’t let it depend directly on login logic.
+    - Use dedicated hooks for fetching or managing user authentication data if needed.
