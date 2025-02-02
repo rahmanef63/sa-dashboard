@@ -1,26 +1,35 @@
 // API types and transformers
 import { Dashboard } from './index';
 
-export interface APIResponse {
+// Base types for database rows (snake_case)
+export interface BaseDashboardRow {
   id: string;
   name: string;
-  description: string | null;
-  logo: string;
-  plan: string;
-  is_public: boolean;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  user_id?: string;
+  description?: string;
+  logo?: string;
+  plan?: string;
+  is_public?: boolean;
+  is_active?: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Extended type with user data (snake_case)
+export interface UserDashboardRow extends BaseDashboardRow {
+  user_role?: string;
   user_name?: string;
   user_email?: string;
-  user_role?: string;
   is_default?: boolean;
 }
 
+// API response type (snake_case)
+export type APIResponse = UserDashboardRow;
+
+// Transform snake_case database response to camelCase frontend type
 export function transformResponse(response: APIResponse): Dashboard {
   return {
-    dashboardId: response.id,
+    id: response.id,
+    dashboardId: response.id, // Map id to dashboardId for backward compatibility
     name: response.name,
     description: response.description || '',
     logo: response.logo || 'layout-dashboard',
@@ -28,9 +37,8 @@ export function transformResponse(response: APIResponse): Dashboard {
     isPublic: response.is_public,
     isActive: response.is_active,
     isDefault: response.is_default,
-    createdAt: response.created_at,
-    updatedAt: response.updated_at,
-    userId: response.user_id,
+    createdAt: response.created_at instanceof Date ? response.created_at.toISOString() : response.created_at,
+    updatedAt: response.updated_at instanceof Date ? response.updated_at.toISOString() : response.updated_at,
     userName: response.user_name,
     userEmail: response.user_email,
     userRole: response.user_role

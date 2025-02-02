@@ -8,7 +8,7 @@ export const useDashboard = () => {
   const { user } = useAuth();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [currentDashboard, setCurrentDashboard] = useState<Dashboard | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading state
   const [error, setError] = useState<string | null>(null);
   const lastFetchRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -16,7 +16,15 @@ export const useDashboard = () => {
   const fetchDashboards = useCallback(async () => {
     const currentUserId = user?.id;
     
-    if (!currentUserId || lastFetchRef.current === currentUserId) {
+    if (!currentUserId) {
+      setError('No user ID available');
+      setIsLoading(false);
+      return;
+    }
+
+    // Skip if we've already fetched for this user
+    if (lastFetchRef.current === currentUserId && dashboards.length > 0) {
+      setIsLoading(false);
       return;
     }
 
@@ -32,7 +40,13 @@ export const useDashboard = () => {
       setIsLoading(true);
       setError(null);
       
+      console.log('[Dashboard Hook] Fetching dashboards for user:', currentUserId);
       const data = await dashboardService.getUserDashboards(currentUserId);
+      console.log('[Dashboard Hook] Received dashboards:', data);
+      
+      if (!data || !Array.isArray(data)) {
+        throw new Error('Invalid dashboard data received');
+      }
       
       lastFetchRef.current = currentUserId;
       setDashboards(data);
@@ -41,39 +55,52 @@ export const useDashboard = () => {
       if (!currentDashboard && data.length > 0) {
         setCurrentDashboard(data[0]);
       }
+
+      setIsLoading(false);
     } catch (error: unknown) {
+      console.error('[Dashboard Hook] Error:', error);
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           return;
         }
         setError(error.message);
       } else {
-        setError('An unknown error occurred');
+        setError('An unknown error occurred while fetching dashboards');
       }
-    } finally {
       setIsLoading(false);
     }
-  }, [user?.id, currentDashboard]);
+  }, [user?.id, currentDashboard, dashboards.length]);
 
+  // Select a dashboard
+  const selectDashboard = useCallback((dashboard: Dashboard) => {
+    setCurrentDashboard(dashboard);
+  }, []);
+
+  // Fetch dashboards when user changes
   useEffect(() => {
-    fetchDashboards();
-    
+    if (user?.id) {
+      fetchDashboards();
+    } else {
+      setDashboards([]);
+      setCurrentDashboard(null);
+      setError('Please log in to view dashboards');
+      setIsLoading(false);
+    }
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, [fetchDashboards]);
-
-  const selectDashboard = useCallback((dashboard: Dashboard) => {
-    setCurrentDashboard(dashboard);
-  }, []);
+  }, [user?.id, fetchDashboards]);
 
   return {
     dashboards,
     currentDashboard,
     isLoading,
     error,
+    refetch: fetchDashboards,
+    setCurrentDashboard,
     selectDashboard
   };
 };

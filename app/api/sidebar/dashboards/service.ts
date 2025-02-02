@@ -1,18 +1,15 @@
 // Modification: Updating API calls and modifying data handling.
 // /slices/dashboard/api/dashboardService.ts
 import { DashboardFormValues, Dashboard } from '@/slices/sidebar/dashboard/types';
+import { transformResponse } from '@/slices/sidebar/dashboard/types/api';
+import { BaseService } from '../base-service';
+import { API_CONFIG } from '../config';
 
-export class DashboardService {
-  static fetchDashboard(dashboardId: string) {
-    throw new Error("Method not implemented.");
-  }
+export class DashboardService extends BaseService<Dashboard[]> {
   private static instance: DashboardService;
-  private readonly API_BASE = '/api/sidebar/dashboards';
-  private cache: Map<string, { data: Dashboard[]; timestamp: number }> = new Map();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   private constructor() {
-    // Private constructor to enforce singleton
+    super(API_CONFIG.ENDPOINTS.DASHBOARDS);
   }
 
   static getInstance(): DashboardService {
@@ -22,131 +19,80 @@ export class DashboardService {
     return DashboardService.instance;
   }
 
-  private isCacheValid(key: string): boolean {
-    const cached = this.cache.get(key);
-    if (!cached) return false;
-    return Date.now() - cached.timestamp < this.CACHE_TTL;
-  }
-
   async getUserDashboards(userId: string): Promise<Dashboard[]> {
-    return this.getDashboards(userId);
+    const cacheKey = `user_${userId}`;
+    
+    // Check cache first
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    console.log('[Dashboards API] Fetching dashboards for user:', userId);
+    try {
+      const response = await fetch(`${this.endpoint}?userId=${userId}`, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const dashboards = await this.handleResponse<Dashboard[]>(response);
+      this.setCache(cacheKey, dashboards);
+      return dashboards;
+    } catch (error) {
+      console.error('[Dashboards API] Error:', error);
+      throw error;
+    }
   }
 
   async getAllDashboards(): Promise<Dashboard[]> {
-    return this.getDashboards();
-  }
-
-  private getAuthToken(): string {
-    const authToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('authToken='))
-      ?.split('=')[1];
-
-    if (!authToken) {
-      throw new Error('Unauthorized - No auth token found');
-    }
-
-    return decodeURIComponent(authToken);
-  }
-
-  private async getDashboards(userId?: string): Promise<Dashboard[]> {
-    const cacheKey = userId || 'all';
+    const cacheKey = 'all';
     
-    // Return cached data if valid
-    if (this.isCacheValid(cacheKey)) {
-      console.log('[DashboardService] Using cached data for:', cacheKey);
-      const cached = this.cache.get(cacheKey)!;
-      return cached.data;
+    // Check cache first
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const response = await fetch(this.endpoint, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const dashboards = await this.handleResponse<Dashboard[]>(response);
+      this.setCache(cacheKey, dashboards);
+      return dashboards;
+    } catch (error) {
+      console.error('[Dashboards API] Error:', error);
+      throw error;
     }
-
-    console.log('[DashboardService] Fetching fresh data for:', cacheKey);
-    const url = userId ? `${this.API_BASE}?userId=${userId}` : this.API_BASE;
-    
-    const token = this.getAuthToken();
-    
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (response.status === 401) {
-      // Clear cache on unauthorized
-      this.cache.clear();
-      throw new Error('Unauthorized - Invalid or expired token');
-    }
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch dashboards: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    // Cache the successful response
-    this.cache.set(cacheKey, { 
-      data,
-      timestamp: Date.now() 
-    });
-
-    return data;
   }
 
   async createDashboard(data: DashboardFormValues): Promise<Dashboard> {
-    const token = this.getAuthToken();
-    
-    const response = await fetch(this.API_BASE, {
+    const response = await fetch(this.endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to create dashboard: ${response.statusText}`);
-    }
-
-    return response.json();
+    const dashboard = await this.handleResponse<Dashboard>(response);
+    this.clearCache();
+    return dashboard;
   }
 
   async updateDashboard(id: string, data: DashboardFormValues): Promise<Dashboard> {
-    const token = this.getAuthToken();
-    
-    const response = await fetch(`${this.API_BASE}/${id}`, {
+    const response = await fetch(`${this.endpoint}/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to update dashboard: ${response.statusText}`);
-    }
-
-    return response.json();
+    const dashboard = await this.handleResponse<Dashboard>(response);
+    this.clearCache();
+    return dashboard;
   }
 
   async deleteDashboard(id: string): Promise<void> {
-    const token = this.getAuthToken();
-    
-    const response = await fetch(`${this.API_BASE}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+    const response = await fetch(`${this.endpoint}/${id}`, {
+      method: 'DELETE'
     });
 
-    if (!response.ok) {
-      throw new Error(`Failed to delete dashboard: ${response.statusText}`);
-    }
-  }
-
-  clearCache(): void {
-    this.cache.clear();
+    await this.handleResponse<void>(response);
+    this.clearCache();
   }
 }
 

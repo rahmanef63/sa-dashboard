@@ -43,7 +43,7 @@ export default function DashboardPage() {
         <Link href="/dashboard/analytics">
           <Button>Analytics</Button>
         </Link>
-        <Link href="/dashboard/database-management">
+        <Link href="/dashboard/database-manager">
           <Button>Database Management</Button>
         </Link>
       </div>

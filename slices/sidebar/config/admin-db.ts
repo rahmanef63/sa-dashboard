@@ -379,13 +379,13 @@ export const adminDbOperations = {
 };
 
 // Type definitions for database rows
-interface BaseRow extends QueryResultRow {
+export interface BaseRow {
   id: string;
   created_at: Date;
   updated_at: Date;
 }
 
-interface DashboardRow extends BaseRow {
+export interface DashboardRow extends BaseRow {
   name: string;
   description: string;
   logo?: string;
@@ -398,7 +398,7 @@ interface DashboardRow extends BaseRow {
   is_default?: boolean;
 }
 
-interface UserDashboardRow extends BaseRow {
+export interface UserDashboardRow extends BaseRow {
   user_id: string;
   dashboard_id: string;
   role: string;
@@ -407,7 +407,7 @@ interface UserDashboardRow extends BaseRow {
   user_email?: string;
 }
 
-interface MenuItem extends BaseRow {
+export interface MenuItem extends BaseRow {
   dashboard_id: string;
   title: string;
   icon: string;

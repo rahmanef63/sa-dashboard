@@ -6,10 +6,10 @@ import { z } from "zod";
 // Frontend types (camelCase)
 export interface Dashboard {
   id: string;
-  dashboardId: string;
+  dashboardId: string; // For backward compatibility
   name: string;
   description?: string;
-  logo: string;
+  logo?: string;
   plan?: string;
   isPublic?: boolean;
   isActive?: boolean;
@@ -20,6 +20,7 @@ export interface Dashboard {
   userName?: string;
   userEmail?: string;
   userRole?: string;
+  menuItems?: MenuItemWithChildren[];
 }
 
 // Form values interface
@@ -62,24 +63,6 @@ export const DASHBOARD_SWITCHER_SHORTCUTS = {
   BASE: '⌘'
 } as const;
 
-// Database schema types (snake_case)
-export interface DashboardSchema {
-  id: string;
-  name: string;
-  description: string | null;
-  logo: string;
-  plan: string;
-  is_public: boolean;
-  is_active: boolean;
-  created_at: Date;
-  updated_at: Date;
-  user_id?: string;
-  user_names?: string;
-  user_emails?: string;
-  user_roles?: string;
-  is_default?: boolean;
-}
-
 // Form validation schema
 export const dashboardFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -87,9 +70,7 @@ export const dashboardFormSchema = z.object({
   logo: z.string().optional(),
   plan: z.string().optional(),
   isPublic: z.boolean().optional(),
-  userId: z.string().optional(),
-  userName: z.string().optional(),
-  userEmail: z.string().email("Invalid email").optional(),
+  isActive: z.boolean().optional()
 });
 
 // Component props types
@@ -115,23 +96,21 @@ export interface DashboardSwitcherProps {
 }
 
 // Mutation types
-export interface DashboardCreateInput extends DashboardFormValues {
+export interface DashboardCreateInput extends Omit<Dashboard, 'id' | 'dashboardId' | 'createdAt' | 'updatedAt'> {
   userId?: string;
   userName?: string;
   userEmail?: string;
 }
 
-export interface DashboardUpdateInput extends Partial<DashboardFormValues> {
+export interface DashboardUpdateInput extends DashboardCreateInput {
   id: string;
-  userId?: string;
-  userName?: string;
-  userEmail?: string;
 }
 
 export interface DashboardMutationVariables {
   create: DashboardCreateInput;
   edit: DashboardUpdateInput;
   delete: { id: string };
+  id: string;
 }
 
 export interface DashboardMutationResult {
