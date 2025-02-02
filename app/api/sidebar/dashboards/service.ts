@@ -1,7 +1,11 @@
+// Modification: Updating API calls and modifying data handling.
 // /slices/dashboard/api/dashboardService.ts
-import { DashboardFormValues, Dashboard } from '../types';
+import { DashboardFormValues, Dashboard } from '@/slices/sidebar/dashboard/types';
 
 export class DashboardService {
+  static fetchDashboard(dashboardId: string) {
+    throw new Error("Method not implemented.");
+  }
   private static instance: DashboardService;
   private readonly API_BASE = '/api/sidebar/dashboards';
   private cache: Map<string, { data: Dashboard[]; timestamp: number }> = new Map();
@@ -32,6 +36,19 @@ export class DashboardService {
     return this.getDashboards();
   }
 
+  private getAuthToken(): string {
+    const authToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('authToken='))
+      ?.split('=')[1];
+
+    if (!authToken) {
+      throw new Error('Unauthorized - No auth token found');
+    }
+
+    return decodeURIComponent(authToken);
+  }
+
   private async getDashboards(userId?: string): Promise<Dashboard[]> {
     const cacheKey = userId || 'all';
     
@@ -44,86 +61,88 @@ export class DashboardService {
 
     console.log('[DashboardService] Fetching fresh data for:', cacheKey);
     const url = userId ? `${this.API_BASE}?userId=${userId}` : this.API_BASE;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const { success, data, error } = await response.json();
-    if (!success) {
-      throw new Error(error || 'Failed to fetch dashboards');
+    
+    const token = this.getAuthToken();
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.status === 401) {
+      // Clear cache on unauthorized
+      this.cache.clear();
+      throw new Error('Unauthorized - Invalid or expired token');
     }
 
-    // Cache the result
-    this.cache.set(cacheKey, {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch dashboards: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // Cache the successful response
+    this.cache.set(cacheKey, { 
       data,
-      timestamp: Date.now()
+      timestamp: Date.now() 
     });
 
     return data;
   }
 
   async createDashboard(data: DashboardFormValues): Promise<Dashboard> {
+    const token = this.getAuthToken();
+    
     const response = await fetch(this.API_BASE, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Failed to create dashboard: ${response.statusText}`);
     }
 
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to create dashboard');
-    }
-
-    // Invalidate cache after creation
-    this.cache.clear();
-    return result.data;
+    return response.json();
   }
 
-  async updateDashboard(id: string, data: Partial<DashboardFormValues>): Promise<Dashboard> {
+  async updateDashboard(id: string, data: DashboardFormValues): Promise<Dashboard> {
+    const token = this.getAuthToken();
+    
     const response = await fetch(`${this.API_BASE}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(data),
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Failed to update dashboard: ${response.statusText}`);
     }
 
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to update dashboard');
-    }
-
-    // Invalidate cache after update
-    this.cache.clear();
-    return result.data;
+    return response.json();
   }
 
   async deleteDashboard(id: string): Promise<void> {
+    const token = this.getAuthToken();
+    
     const response = await fetch(`${this.API_BASE}/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Failed to delete dashboard: ${response.statusText}`);
     }
-
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to delete dashboard');
-    }
-
-    // Invalidate cache after deletion
-    this.cache.clear();
   }
 
   clearCache(): void {

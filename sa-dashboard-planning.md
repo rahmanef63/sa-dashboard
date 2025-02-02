@@ -160,7 +160,7 @@ CREATE TABLE menu_items (
 
 ### Shared Config
 ```typescript
-// admin-db.ts
+// slices/sidebar/config/admin-db.ts
 - Add array operations
 - Update user queries
 - Modify dashboard queries
@@ -168,44 +168,44 @@ CREATE TABLE menu_items (
 
 ### API Routes
 ```typescript
-// dashboards/route.ts
+// slices/sidebar/dashboard/api/route.ts
 - Update CRUD operations
 - Modify response structure
 
-// menu/route.ts
+// slices/sidebar/menu/api/route.ts
 - Update menu operations
 - Add array handling
 ```
 
 ### Dashboard Slice
 ```typescript
-// types/index.ts
+// slices/sidebar/dashboard/types/index.ts
 - Update interfaces
 - Modify schemas
 
-// api/dashboardService.ts
+// slices/sidebar/dashboard/api/dashboardService.ts
 - Update API calls
 - Modify data handling
 ```
 
 ### Menu Slice
 ```typescript
-// nav-user/config.ts
+// slices/sidebar/menu/nav-user/config.ts
 - Update user config
 - Modify menu structure
 
-// nav-user/nav-user.tsx
+// slices/sidebar/menu/nav-user/nav-user.tsx
 - Update rendering
 - Modify interactions
 ```
 
 ### Sidebar Components
 ```typescript
-// sidebar-content.tsx
+// slices/sidebar/sidebar-content.tsx
 - Update menu fetching
 - Modify rendering
 
-// app-sidebar.tsx
+// slices/sidebar/app-sidebar.tsx
 - Update state management
 - Modify dashboard handling
 ```

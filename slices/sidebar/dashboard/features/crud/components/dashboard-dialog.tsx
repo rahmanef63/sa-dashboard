@@ -1,26 +1,28 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "shared/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "shared/components/ui/form";
 import { Input } from "shared/components/ui/input";
 import { Checkbox } from "shared/components/ui/checkbox";
-import { useDashboardMutation } from "../hooks/use-dashboard-mutation";
-import { DashboardFormValues } from "../../types";
+import { useDashboardMutation } from "../use-dashboard-mutation";
+import { DashboardFormValues } from "../../../types";
 import { IconPicker } from "shared/icon-picker/components/IconPicker";
 import { useToast } from "shared/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { useUser } from "shared/hooks/use-user";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "shared/components/ui/dialog";
+import { DashboardDialogProps } from "../../../types";
+import { useEffect } from "react";
+import { dashboardService } from '@/app/api/sidebar/dashboards/service';
+import type { Dashboard } from '@/slices/sidebar/dashboard/types';
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
+  description: z.string().default(""),
   logo: z.string().default("layout-dashboard"),
   plan: z.string().default("Personal"),
   isPublic: z.boolean().default(false),
-  userId: z.string().optional(),
-  userName: z.string().optional(),
-  userEmail: z.string().email("Invalid email address").optional(),
 });
 
 interface DashboardFormProps {
@@ -29,8 +31,18 @@ interface DashboardFormProps {
   onSuccess: () => void;
 }
 
+function adaptDashboardToForm(data: Dashboard): DashboardFormValues {
+  return {
+    name: data.name,
+    description: data.description || "",
+    logo: data.logo,
+    plan: data.plan,
+    isPublic: data.isPublic
+  };
+}
+
 export function DashboardForm({ mode, dashboardId, onSuccess }: DashboardFormProps) {
-  const { mutate, isPending } = useDashboardMutation(mode);
+  const { mutate, isPending } = useDashboardMutation();
   const { toast } = useToast();
   const { userId, userEmail, userName } = useUser();
 
@@ -42,15 +54,36 @@ export function DashboardForm({ mode, dashboardId, onSuccess }: DashboardFormPro
       logo: "layout-dashboard",
       plan: "Personal",
       isPublic: false,
-      userId: userId || "",
-      userName: userName || "",
-      userEmail: userEmail || "",
     },
   });
 
+  useEffect(() => {
+    if (mode === 'edit' && dashboardId) {
+      dashboardService.getUserDashboards(userId)
+        .then(dashboards => {
+          const dashboard = dashboards.find(d => d.id === dashboardId);
+          if (dashboard) {
+            form.reset(adaptDashboardToForm(dashboard));
+          } else {
+            throw new Error('Dashboard not found');
+          }
+        })
+        .catch((error: Error) => {
+          toast({
+            title: 'Error loading dashboard',
+            description: error.message,
+            variant: 'destructive'
+          });
+        });
+    }
+  }, [mode, dashboardId, userId, form, toast]);
+
   const onSubmit = (values: DashboardFormValues) => {
     if (mode === "delete" && dashboardId) {
-      mutate({ id: dashboardId } as const, {
+      mutate({ 
+        id: dashboardId,
+        ...values
+      }, {
         onSuccess: () => {
           toast({
             title: "Dashboard deleted successfully",
@@ -197,5 +230,24 @@ export function DashboardForm({ mode, dashboardId, onSuccess }: DashboardFormPro
         </div>
       </form>
     </Form>
+  );
+}
+
+export function DashboardDialog({ open, onOpenChange, mode = "create", dashboardId }: DashboardDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "create" ? "Create Dashboard" : mode === "edit" ? "Edit Dashboard" : "Delete Dashboard"}
+          </DialogTitle>
+        </DialogHeader>
+        <DashboardForm 
+          mode={mode} 
+          dashboardId={dashboardId} 
+          onSuccess={() => onOpenChange(false)} 
+        />
+      </DialogContent>
+    </Dialog>
   );
 }

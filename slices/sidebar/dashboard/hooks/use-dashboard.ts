@@ -1,75 +1,79 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/shared/dev-tool/auth-context';
-import { dashboardService } from '../api/dashboardService';
+import { dashboardService } from '@/app/api/sidebar/dashboards/service';
 import { Dashboard } from '../types';
+import { APIResponse } from '../types/api';
 
 export const useDashboard = () => {
   const { user } = useAuth();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+  const [currentDashboard, setCurrentDashboard] = useState<Dashboard | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastFetchRef = useRef<string | null>(null);
-  const mountedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchDashboards = useCallback(async () => {
-    const currentUserId = user?.id || 'all';
+    const currentUserId = user?.id;
     
-    // Skip if we already fetched for this user
-    if (lastFetchRef.current === currentUserId) {
-      console.log('[useDashboard] Skipping fetch - already fetched for:', currentUserId);
+    if (!currentUserId || lastFetchRef.current === currentUserId) {
       return;
     }
 
-    // Don't set loading on subsequent fetches
-    if (!mountedRef.current) {
-      setIsLoading(true);
+    // Cancel any in-flight requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
-    
-    setError(null);
-    try {
-      // Only fetch user-specific dashboards, no need for both
-      const data = user?.id 
-        ? await dashboardService.getUserDashboards(user.id)
-        : await dashboardService.getAllDashboards();
 
-      console.log('[useDashboard] Fetched dashboards:', data);
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
+    try {
+      setIsLoading(true);
+      setError(null);
       
-      if (mountedRef.current) {
-        setDashboards(data);
-        lastFetchRef.current = currentUserId;
+      const data = await dashboardService.getUserDashboards(currentUserId);
+      
+      lastFetchRef.current = currentUserId;
+      setDashboards(data);
+      
+      // Set first dashboard as current if none selected
+      if (!currentDashboard && data.length > 0) {
+        setCurrentDashboard(data[0]);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboards';
-      console.error('[useDashboard] Error:', errorMessage);
-      if (mountedRef.current) {
-        setError(errorMessage);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return;
+        }
+        setError(error.message);
+      } else {
+        setError('An unknown error occurred');
       }
     } finally {
-      if (mountedRef.current) {
-        setIsLoading(false);
-      }
+      setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, currentDashboard]);
 
   useEffect(() => {
-    mountedRef.current = true;
-    console.log('[useDashboard] Initial dashboard fetch for user:', user?.id);
     fetchDashboards();
-
+    
     return () => {
-      mountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [fetchDashboards]);
 
-  const refetch = useCallback(async () => {
-    lastFetchRef.current = null; // Reset the fetch ref to force a new fetch
-    await fetchDashboards();
-  }, [fetchDashboards]);
+  const selectDashboard = useCallback((dashboard: Dashboard) => {
+    setCurrentDashboard(dashboard);
+  }, []);
 
   return {
     dashboards,
+    currentDashboard,
     isLoading,
     error,
-    refetch
+    selectDashboard
   };
 };

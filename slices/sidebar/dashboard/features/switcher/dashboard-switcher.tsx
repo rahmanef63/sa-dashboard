@@ -12,20 +12,16 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from 'shared/components/ui/dropdown-menu';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from 'shared/components/ui/sidebar';
+import { Dashboard, DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS } from '../../types';
+import { DashboardDialog } from '../crud/components/dashboard-dialog';
+import { useDashboard } from "../../hooks/use-dashboard";
+import { useDashboardSwitcher } from './use-dashboard-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from 'shared/components/ui/avatar';
-import { Dashboard, DASHBOARD_SWITCHER_LABELS, DASHBOARD_SWITCHER_SHORTCUTS } from '../types';
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/shared/components/ui/sidebar";
-import { renderIcon } from "@/shared/icon-picker/utils";
-import { useDashboardSwitcher } from "./hooks/use-dashboard-switcher";
-import { DashboardDialog } from "../crud/components/dashboard-dialog";
-import { Providers } from "../../menu/providers";
-import { useDashboard } from "../hooks/use-dashboard";
-import { Skeleton } from "@/shared/components/ui/skeleton";
 import { useUser } from "@/shared/hooks/use-user";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { Providers } from "@/slices/sidebar/menu/providers";
+import { renderIcon } from "@/shared/icon-picker/utils";
 
 interface DashboardSwitcherProps {
   dashboards?: Dashboard[];
@@ -75,7 +71,7 @@ interface DashboardSwitcherContentProps {
   defaultDashboardId?: string;
 }
 
-function DashboardSwitcherContent({
+const DashboardSwitcherContent = React.memo(function DashboardSwitcherContent({
   dashboards: propDashboards,
   onDashboardChange,
   className,
@@ -83,15 +79,23 @@ function DashboardSwitcherContent({
   defaultDashboardId,
 }: DashboardSwitcherContentProps) {
   const { userId } = useUser();
-  const { dashboards: apiDashboards, isLoading } = useDashboard();
+  const { dashboards: apiDashboards, isLoading, error } = useDashboard();
 
-  const dashboards = React.useMemo(() => {
-    return propDashboards && propDashboards.length > 0 ? propDashboards : (apiDashboards || []);
+  // Memoize dashboard processing
+  const processedDashboards = React.useMemo(() => {
+    if (propDashboards && propDashboards.length > 0) {
+      return propDashboards;
+    }
+    return apiDashboards || [];
   }, [propDashboards, apiDashboards]);
 
+  const handleDashboardChange = React.useCallback((dashboard: Dashboard) => {
+    onDashboardChange?.(dashboard);
+  }, [onDashboardChange]);
+
   const { activeDashboard, setActiveDashboard } = useDashboardSwitcher({
-    initialDashboards: dashboards,
-    onDashboardChange,
+    initialDashboards: processedDashboards,  
+    onDashboardChange: handleDashboardChange,
     defaultDashboardId,
   });
 
@@ -111,37 +115,85 @@ function DashboardSwitcherContent({
     setDialogOpen(true);
   }, []);
 
-  if (isLoading && (!propDashboards || propDashboards.length === 0)) {
+  if (isLoading) {
     return (
-      <SidebarMenu className={className}>
-        <SidebarMenuItem>
-          <Skeleton className="h-12 w-full" />
-        </SidebarMenuItem>
-      </SidebarMenu>
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={false}
+        className={cn("w-full justify-between", className)}
+        disabled
+      >
+        <Skeleton className="h-4 w-24" />
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
     );
   }
 
-  if (!dashboards || dashboards.length === 0) {
+  if (error) {
+    return (
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={false}
+        className={cn("w-full justify-between text-destructive", className)}
+        disabled
+      >
+        {error}
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    );
+  }
+
+  if (isLoading && (!propDashboards || propDashboards.length === 0)) {
+    return (
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={false}
+        className={cn("w-full justify-between", className)}
+        disabled
+      >
+        <Skeleton className="h-4 w-24" />
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    );
+  }
+
+  if (error && (!propDashboards || propDashboards.length === 0)) {
+    return (
+      <Button
+        variant="outline"
+        role="combobox"
+        aria-expanded={false}
+        className={cn("w-full justify-between text-destructive", className)}
+        disabled
+      >
+        Error loading dashboards
+        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+      </Button>
+    );
+  }
+
+  if (!processedDashboards || processedDashboards.length === 0) {
     return (
       <SidebarMenu className={className}>
         <SidebarMenuItem>
           <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
             <DropdownMenuTrigger asChild>
-              <SidebarMenuButton size="lg" className="w-full justify-between">
-                <span className="text-muted-foreground">No Dashboards</span>
-                <ChevronsUpDown className="ml-2 h-4 w-4" />
+              <SidebarMenuButton size="lg" className="w-full justify-between text-muted-foreground">
+                <Plus className="mr-2 h-4 w-4" />
+                <span>{DASHBOARD_SWITCHER_LABELS.NEW_DASHBOARD}</span>
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuLabel>{DASHBOARD_SWITCHER_LABELS.DASHBOARDS}</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {DASHBOARD_SWITCHER_LABELS.NO_DASHBOARDS}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-muted-foreground">
-                No dashboards available
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleAddDashboard}>
+              <DropdownMenuItem onClick={() => setDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                <span>{DASHBOARD_SWITCHER_LABELS.ADD_DASHBOARD}</span>
+                {DASHBOARD_SWITCHER_LABELS.NEW_DASHBOARD}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -188,10 +240,10 @@ function DashboardSwitcherContent({
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              {DASHBOARD_SWITCHER_LABELS.DASHBOARDS}
+            <DropdownMenuLabel>
+              {DASHBOARD_SWITCHER_LABELS.NO_DASHBOARDS}
             </DropdownMenuLabel>
-            {dashboards.map((dashboard: Dashboard, index: number) => (
+            {processedDashboards.map((dashboard: Dashboard, index: number) => (
               <DropdownMenuItem
                 key={dashboard.dashboardId}
                 onClick={() => handleDashboardSelect(dashboard)}
@@ -221,7 +273,11 @@ function DashboardSwitcherContent({
         </DropdownMenu>
       </SidebarMenuItem>
 
-      <DashboardDialog open={dialogOpen} onOpenChange={setDialogOpen} mode="create" />
+      <DashboardDialog 
+        open={dialogOpen} 
+        onOpenChange={setDialogOpen} 
+        mode="create" 
+      />
     </SidebarMenu>
   );
-}
+})

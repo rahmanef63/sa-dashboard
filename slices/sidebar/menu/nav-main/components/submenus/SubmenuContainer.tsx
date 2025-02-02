@@ -24,7 +24,7 @@ export function SidebarMenuSubComponent({
       {items.map((subItem) => (
         <SidebarMenuSubItem key={subItem.id}>
           <SidebarMenuSubButton asChild>
-            <Link href={subItem.url}>
+            <Link href={subItem.url?.toString() || '#'}>
               <span>{subItem.title}</span>
             </Link>
           </SidebarMenuSubButton>
@@ -49,4 +49,3 @@ export function SidebarMenuSubComponent({
     </SidebarMenuSub>
   )
 }
-

@@ -1,3 +1,5 @@
+// Modification: Added array operations, updated user queries, and modified dashboard queries.
+
 // shared/config/admin-db.ts
 
 import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
@@ -245,13 +247,34 @@ export const adminDbOperations = {
 
     console.log('[Debug] Fetching menu items for dashboard:', dashboardId);
 
+    // First, try to fetch menu items from the dashboards table
+    const dashboardQuery = `
+      SELECT menu_items
+      FROM dashboards
+      WHERE id = $1
+      LIMIT 1;
+    `;
+    const dashboardResult = await adminQuery<{ menu_items: any }>(dashboardQuery, [dashboardId]);
+
+    if (dashboardResult.rows.length && dashboardResult.rows[0].menu_items) {
+      const menuItemsJson = dashboardResult.rows[0].menu_items;
+      if (Array.isArray(menuItemsJson)) {
+        console.log('[Debug] Found menu items in dashboards table:', menuItemsJson.length);
+        // Emulate a QueryResult shape
+        return { rows: menuItemsJson } as QueryResult<MenuItem>;
+      } else {
+        console.warn('[Debug] menu_items in dashboards is not an array.');
+      }
+    }
+
+    // Fallback: fetch menu items from the menu_items table
     const sql = `
       SELECT 
         id,
         dashboard_id,
         title,
         icon,
-        url_href,
+        url AS url_href,
         parent_id,
         order_index,
         is_active,
@@ -265,16 +288,15 @@ export const adminDbOperations = {
     `;
 
     const result = await adminQuery<MenuItem>(sql, [dashboardId]);
-    console.log('[Debug] Found menu items:', result.rows.length);
+    console.log('[Debug] Found menu items in menu_items table:', result.rows.length);
     return result;
   },
 
   getDefaultDashboard: async (): Promise<QueryResult<DashboardRow>> => {
     const sql = `
-      SELECT d.*
-      FROM dashboards d
-      JOIN user_dashboards ud ON ud.dashboard_id = d.id
-      WHERE ud.is_default = true
+      SELECT *
+      FROM dashboards
+      WHERE name = 'Main Dashboard'
       LIMIT 1;
     `;
     return adminQuery<DashboardRow>(sql);

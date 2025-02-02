@@ -1,7 +1,6 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { MenuItemWithChildren } from '@/shared/types/navigation-types'
 import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
-import { menuConfigs } from '@/slices/sidebar/menu/context/menu-configs'
 
 interface UseSidebarProps {
   initialMenuId?: string
@@ -12,10 +11,9 @@ export const useSidebar = ({
   initialMenuId = 'main',
   initialIsOpen = true
 }: UseSidebarProps = {}) => {
+  const mountedRef = useRef(false)
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(initialIsOpen)
-  const [isSecondaryOpen, setIsSecondaryOpen] = useState(false)
-  const [secondaryItems, setSecondaryItems] = useState<MenuItemWithChildren[] | null>(null)
   const [currentMenuId, setCurrentMenuId] = useState<string>(initialMenuId)
   const { setCurrentDashboardId } = useMenu()
 
@@ -23,6 +21,9 @@ export const useSidebar = ({
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
+    if (mountedRef.current) return;
+    mountedRef.current = true;
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768) // 768px is a common breakpoint for mobile
     }
@@ -32,65 +33,56 @@ export const useSidebar = ({
 
     // Add resize listener
     window.addEventListener('resize', checkMobile)
+    setMounted(true)
+    console.log('[useSidebar] Component mounted');
 
     return () => {
       window.removeEventListener('resize', checkMobile)
+      console.log('[useSidebar] Component unmounted');
     }
   }, [])
 
   const loadDashboardNavigation = useCallback((menuId: string, dashboardId?: string) => {
+    if (!mounted) {
+      console.log('[useSidebar] Not mounted, skipping navigation');
+      return;
+    }
+    
+    console.log('[useSidebar] Loading dashboard navigation:', { menuId, dashboardId });
     setCurrentMenuId(menuId);
     
-    // If a specific dashboard ID is provided, set it in the menu context
     if (dashboardId) {
+      console.log('[useSidebar] Setting current dashboard:', dashboardId);
       setCurrentDashboardId(dashboardId);
     }
-
-    // Reset secondary menu state when switching dashboards
-    setSecondaryItems(null);
-    setIsSecondaryOpen(false);
-  }, [setCurrentDashboardId])
-
-  useEffect(() => {
-    setMounted(true)
-    loadDashboardNavigation(initialMenuId)
-  }, [loadDashboardNavigation, initialMenuId])
-
-  useEffect(() => {
-    if (mounted && currentMenuId !== 'main') {
-      loadDashboardNavigation(currentMenuId)
-    }
-  }, [currentMenuId, loadDashboardNavigation, mounted])
+  }, [mounted, setCurrentDashboardId])
 
   const handleNavItemClick = useCallback((item: MenuItemWithChildren) => {
-    if (item.children) {
-      setSecondaryItems(item.children)
-      setIsSecondaryOpen(true)
-      setIsOpen(true)
+    if (!mounted) {
+      console.log('[useSidebar] Not mounted, skipping nav click');
+      return;
     }
-  }, [])
+    
+    console.log('[useSidebar] Nav item clicked:', {
+      id: item.id,
+      title: item.title,
+      path: item.url?.href
+    });
 
-  const handleSecondaryClose = useCallback(() => {
-    setIsSecondaryOpen(false)
-    setSecondaryItems(null)
-  }, [])
-
-  const toggleSidebar = useCallback(() => {
-    setIsOpen(prev => !prev)
-  }, [])
+    // Close sidebar on mobile when clicking a nav item
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  }, [isMobile, mounted])
 
   return {
     mounted,
     isOpen,
-    isSecondaryOpen,
-    secondaryItems,
-    currentMenuId,
     isMobile,
+    currentMenuId,
     handleNavItemClick,
-    handleSecondaryClose,
-    setCurrentMenuId,
-    toggleSidebar,
+    loadDashboardNavigation,
     setIsOpen,
-    loadDashboardNavigation
+    setCurrentMenuId,
   }
 }

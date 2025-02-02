@@ -3,9 +3,8 @@ import { adminDbOperations } from '@/slices/sidebar/config/admin-db';
 import { 
   DashboardCreateInput, 
   DashboardSchema,
-  transformToCamelCase, 
-  transformToSnakeCase 
 } from '@/slices/sidebar/dashboard/types';
+import { transformToCamelCase, transformToSnakeCase } from '@/slices/sidebar/dashboard/types/transforms';
 import { QueryResult } from 'pg';
 
 interface DashboardWithRole extends DashboardSchema {
@@ -23,7 +22,27 @@ const isDashboardSchema = (obj: any): obj is DashboardSchema => {
   return requiredKeys.every(key => key in obj);
 };
 
+// Added module-level cache for dashboards
+let dashboardCache: { data: any, timestamp: number } | null = null;
+const CACHE_DURATION = 5000; // 5 seconds
+
 export async function GET(request: NextRequest) {
+  // Get auth status from request headers or cookies
+  const authToken = request.headers.get('authorization') || request.cookies.get('auth-token');
+  
+  if (!authToken) {
+    return NextResponse.json(
+      { success: false, error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  // Check cache before processing the request
+  if (dashboardCache && (Date.now() - dashboardCache.timestamp < CACHE_DURATION)) {
+    console.log('[Debug] Using cached dashboards');
+    return NextResponse.json({ success: true, data: dashboardCache.data });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -59,6 +78,9 @@ export async function GET(request: NextRequest) {
         console.log('[Debug] Executing query:', query.trim());
         result = await adminDbOperations.query(query);
         console.log('[Debug] Query result:', JSON.stringify(result.rows, null, 2));
+        
+        // Update cache with fresh results
+        dashboardCache = { data: result.rows, timestamp: Date.now() };
       } catch (error) {
         console.error('[Database Error]', error);
         throw new Error('Failed to fetch dashboards');
@@ -84,6 +106,9 @@ export async function GET(request: NextRequest) {
         console.log('[Debug] Executing query:', query.trim());
         result = await adminDbOperations.query(query);
         console.log('[Debug] Query result:', JSON.stringify(result.rows, null, 2));
+        
+        // Update cache with fresh results
+        dashboardCache = { data: result.rows, timestamp: Date.now() };
       } catch (error) {
         console.error('[Database Error]', error);
         throw new Error('Failed to fetch dashboards');

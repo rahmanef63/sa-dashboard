@@ -3,10 +3,8 @@ import { ChevronRight } from "lucide-react"
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu } from "shared/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "shared/components/ui/collapsible"
 import { GroupLabel, MenuItem } from 'shared/types/navigation-types'
-import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
 import { MenuItem as MenuItemComponent } from '../items/MenuItem'
 import { cn } from '@/shared/lib/utils'
-import { sortByOrder } from '../../utils'
 
 interface SidebarGroupComponentProps {
   group: {
@@ -28,7 +26,6 @@ export function SidebarGroupComponent({
   onEditItem,
   onDeleteItem
 }: SidebarGroupComponentProps) {
-  const { updateMenuItem, deleteMenuItem } = useMenu()
   const sortedItems = React.useMemo(() => 
     [...group.items].sort((a, b) => (a.order || 0) - (b.order || 0)), 
     [group.items]

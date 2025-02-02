@@ -8,6 +8,8 @@ interface MenuContextValue {
   menuItems: MenuItem[];
   loading: boolean;
   error: string | null;
+  currentDashboardId: string;
+  setCurrentDashboardId: (id: string) => void;
   fetchMenu: (dashboardId?: string) => Promise<void>;
 }
 

@@ -1,3 +1,5 @@
+// Modification: Updating rendering and modifying interactions in the nav-user component.
+
 "use client"
 
 import { ChevronsUpDown, Keyboard, LogOut } from "lucide-react"

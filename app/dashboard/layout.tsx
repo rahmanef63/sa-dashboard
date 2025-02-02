@@ -1,24 +1,25 @@
 import type { Metadata } from 'next'
 import '../globals.css'
-import { DashboardProviders } from '@/shared/providers/dashboard-providers'
 import { Toaster } from '@/shared/components/ui/toaster'
+import { DashboardProviderGroup } from './providers'
 
 export const metadata: Metadata = {
   title: 'Main Dashboard',
   description: 'general dashboard',
 }
 
-export default function RootLayout({
+export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <>
-      <DashboardProviders>
+    // Wrap dashboard content with the combined provider group
+    <DashboardProviderGroup>
+      <div className="dashboard-layout">
         {children}
-      </DashboardProviders>
-      <Toaster />
-    </>
+        <Toaster />
+      </div>
+    </DashboardProviderGroup>
   )
 }

@@ -1,3 +1,5 @@
+// Modification: Updating user config and modifying menu structure.
+
 import { User } from 'shared/types/global'
 import { UserMenuType } from './profile/types'
 import { MOCK_ADMIN_USER } from '@/shared/dev-tool/types'

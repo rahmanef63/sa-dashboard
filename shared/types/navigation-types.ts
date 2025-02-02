@@ -72,6 +72,7 @@ export interface MenuItem extends BaseMenuItem {
   dashboardId?: string;
   menuType?: MenuCategory;
   items?: MenuItem[];
+  groupId?: string;
 }
 
 export interface SubMenuItem extends MenuItem {
