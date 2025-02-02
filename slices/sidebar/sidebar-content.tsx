@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 import { DashboardSwitcher } from "@/slices/sidebar/dashboard/features/switcher/dashboard-switcher"
 import { NavUser } from "@/slices/sidebar/menu/nav-user/nav-user"
 import { SidebarGroupComponent } from "@/slices/sidebar/menu/nav-main/components/groups/MenuGroup"
@@ -20,16 +20,17 @@ import { useSidebar } from '@/shared/hooks/useSidebar'
 import { useUser } from '@/shared/hooks/use-user'
 import { useDashboard } from './dashboard/hooks/use-dashboard'
 import { useMenuContext } from './menu/context/menu-context'
-import { MenuItemWithChildren, MenuSwitcherItem } from '@/shared/types/navigation-types'
+import { MenuItemWithChildren, MenuSwitcherItem, MenuItem } from '@/shared/types/navigation-types'
 import { Dashboard } from './dashboard/types'
 
 interface SidebarContentProps {
   type: 'default' | 'menuSwitcher'
-  menuItems: MenuSwitcherItem[] | MenuItemWithChildren[]
+  menuItems: MenuItem[]
   isOpen?: boolean
   onDashboardChange: (dashboard: Dashboard) => void
   onMenuChange: (menu: MenuItemWithChildren) => void
   onFocus?: () => void
+  renderIcon: (icon: string | undefined) => JSX.Element | null
   className?: string
   sidebarProps?: React.ComponentProps<typeof Sidebar>
 }
@@ -41,6 +42,7 @@ export function SidebarContentWrapper({
   onDashboardChange,
   onMenuChange,
   onFocus,
+  renderIcon,
   className,
   sidebarProps,
 }: SidebarContentProps) {
@@ -67,9 +69,40 @@ export function SidebarContentWrapper({
     onMenuChange(menu);
   }, [onMenuChange]);
 
-  // Use contextMenuItems instead of prop menuItems for rendering
-  const menuItemsToRender = type === 'menuSwitcher' ? menuItems : contextMenuItems;
-  console.log('[SidebarContent] Menu items to render:', menuItemsToRender);
+  // Group menu items by parent
+  const groupedMenuItems = useMemo(() => {
+    const items = type === 'menuSwitcher' ? menuItems : contextMenuItems;
+    
+    // Map items to ensure they have all required properties
+    const mappedItems = items.map(item => ({
+      id: item.id,
+      name: item.name || '',
+      icon: item.icon,
+      path: item.url?.href || '#',
+      order: item.order || 0,
+      parentId: item.parentId,
+      children: [] as MenuItem[]
+    }));
+
+    // Create a map for quick lookup
+    const itemMap = new Map(mappedItems.map(item => [item.id, item]));
+
+    // Group children under their parents
+    mappedItems.forEach(item => {
+      if (item.parentId && itemMap.has(item.parentId)) {
+        const parent = itemMap.get(item.parentId)!;
+        parent.children.push(item);
+      }
+    });
+
+    // Get root items and sort them by order
+    const rootItems = mappedItems
+      .filter(item => !item.parentId)
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    console.log('[SidebarContent] Grouped menu items:', rootItems);
+    return rootItems;
+  }, [type, menuItems, contextMenuItems]);
 
   return (
     <Sidebar
@@ -89,26 +122,35 @@ export function SidebarContentWrapper({
           <MenuSwitcher
             menuSwitcher={{
               id: 'menu-switcher',
-              title: 'Menu',
-              menus: menuItemsToRender as MenuSwitcherItem[]
+              name: 'Menu',
+              menus: menuItems as MenuSwitcherItem[]
             }}
             onMenuChange={handleMenuChange}
           />
         ) : (
           <SidebarMenu>
-            <SidebarGroup>
-              <SidebarGroupComponent
-                group={{
-                  label: {
-                    id: 'main-menu',
-                    title: 'Main Menu',
-                    icon: 'menu'
-                  },
-                  items: menuItemsToRender as MenuItemWithChildren[]
-                }}
-                onEditItem={handleMenuChange}
-              />
-            </SidebarGroup>
+            {groupedMenuItems.map(item => (
+              <SidebarGroup key={item.id}>
+                <SidebarGroupComponent
+                  group={{
+                    label: {
+                      id: item.id,
+                      name: item.name,
+                      icon: item.icon
+                    },
+                    items: item.children.map(child => ({
+                      id: child.id,
+                      name: child.name,
+                      icon: child.icon,
+                      path: child.url?.href || '#',
+                      order: child.order || 0
+                    })).sort((a, b) => a.order - b.order)
+                  }}
+                  onEditItem={handleMenuChange}
+                  renderIcon={renderIcon}
+                />
+              </SidebarGroup>
+            ))}
           </SidebarMenu>
         )}
       </SidebarContent>

@@ -65,7 +65,7 @@ export const useSidebar = ({
     
     console.log('[useSidebar] Nav item clicked:', {
       id: item.id,
-      title: item.title,
+      name: item.name,
       path: item.url?.href
     });
 

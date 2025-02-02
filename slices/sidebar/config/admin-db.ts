@@ -272,7 +272,7 @@ export const adminDbOperations = {
       SELECT 
         id,
         dashboard_id,
-        title,
+        name,
         icon,
         url AS url_href,
         parent_id,
@@ -345,16 +345,16 @@ export const adminDbOperations = {
 
   createDefaultMenuItems: async (dashboardId: string): Promise<QueryResult<MenuItem>> => {
     const sql = `
-      INSERT INTO menu_items (dashboard_id, title, icon, url_href, order_index)
+      INSERT INTO menu_items (dashboard_id, name, icon, url_href, order_index)
       SELECT 
           $1 as dashboard_id,
-          'Overview' as title,
+          'Overview' as name,
           'layout-dashboard' as icon,
           '/dashboard' as url_href,
           0 as order_index
       WHERE NOT EXISTS (
           SELECT 1 FROM menu_items mi 
-          WHERE mi.dashboard_id = $1 AND mi.title = 'Overview'
+          WHERE mi.dashboard_id = $1 AND mi.name = 'Overview'
       )
       RETURNING *;
     `;
@@ -409,7 +409,7 @@ export interface UserDashboardRow extends BaseRow {
 
 export interface MenuItem extends BaseRow {
   dashboard_id: string;
-  title: string;
+  name: string;
   icon: string;
   url_href: string;
   parent_id?: string;

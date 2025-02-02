@@ -8,7 +8,7 @@ export type TargetType = '_blank' | '_self' | '_parent' | '_top'
 // Group Label Type
 export interface GroupLabel {
   id: string;
-  title: string;
+  name: string;
   icon?: string;
   isCollapsible?: boolean;
 }
@@ -17,7 +17,7 @@ export interface GroupLabel {
 export interface MenuItemSchema {
   id: string;
   dashboard_id: string;
-  title: string;
+  name: string;
   icon: string | null;
   url_href: string | null;
   parent_id: string | null;
@@ -52,7 +52,7 @@ export type MenuCategory =
 // Base Navigation Types
 export interface BaseMenuItem {
   id?: string;
-  title: string;
+  name: string;
   order?: number;
   icon?: LucideIcon | string;
   isActive?: boolean;
@@ -63,7 +63,7 @@ export interface BaseMenuItem {
 // Frontend types (camelCase)
 export interface MenuItem extends BaseMenuItem {
   id: string;
-  title: string;
+  name: string;
   icon?: string;
   href?: string;
   isActive?: boolean;
@@ -116,7 +116,7 @@ export interface NavMainData {
 export function transformToCamelCase(item: MenuItemSchema): MenuItem {
   return {
     id: item.id,
-    title: item.title,
+    name: item.name,
     icon: item.icon || undefined,
     href: item.url_href || undefined,
     isActive: item.is_active,
@@ -129,7 +129,7 @@ export function transformToCamelCase(item: MenuItemSchema): MenuItem {
 export function transformToSnakeCase(item: MenuItem): Partial<MenuItemSchema> {
   return {
     id: item.id,
-    title: item.title,
+    name: item.name,
     icon: item.icon || null,
     url_href: item.href || null,
     parent_id: item.parentId || null,
