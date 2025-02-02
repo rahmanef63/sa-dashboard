@@ -1,7 +1,6 @@
 // Modification: Updating API calls and modifying data handling.
 // /slices/dashboard/api/dashboardService.ts
-import { DashboardFormValues, Dashboard } from '@/slices/sidebar/dashboard/types';
-import { transformResponse } from '@/slices/sidebar/dashboard/types/api';
+import { Dashboard } from '@/slices/sidebar/dashboard/types';
 import { BaseService } from '../base-service';
 import { API_CONFIG } from '../config';
 
@@ -32,9 +31,17 @@ export class DashboardService extends BaseService<Dashboard[]> {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      const dashboards = await this.handleResponse<Dashboard[]>(response);
-      this.setCache(cacheKey, dashboards);
-      return dashboards;
+      const result = await this.handleResponse<Dashboard[]>(response);
+      console.log('[Dashboards API] Raw API response:', result);
+      
+      // Ensure we're getting an array of dashboards from the data property
+      if (!result || !Array.isArray(result)) {
+        console.error('[Dashboards API] Invalid response structure:', result);
+        throw new Error('Invalid response structure from API');
+      }
+
+      this.setCache(cacheKey, result);
+      return result;
     } catch (error) {
       console.error('[Dashboards API] Error:', error);
       throw error;
@@ -62,7 +69,7 @@ export class DashboardService extends BaseService<Dashboard[]> {
     }
   }
 
-  async createDashboard(data: DashboardFormValues): Promise<Dashboard> {
+  async createDashboard(data: any): Promise<Dashboard> {
     const response = await fetch(this.endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -70,11 +77,11 @@ export class DashboardService extends BaseService<Dashboard[]> {
     });
 
     const dashboard = await this.handleResponse<Dashboard>(response);
-    this.clearCache();
+    this.clearAllCache();
     return dashboard;
   }
 
-  async updateDashboard(id: string, data: DashboardFormValues): Promise<Dashboard> {
+  async updateDashboard(id: string, data: any): Promise<Dashboard> {
     const response = await fetch(`${this.endpoint}/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -82,7 +89,7 @@ export class DashboardService extends BaseService<Dashboard[]> {
     });
 
     const dashboard = await this.handleResponse<Dashboard>(response);
-    this.clearCache();
+    this.clearAllCache();
     return dashboard;
   }
 
@@ -92,7 +99,16 @@ export class DashboardService extends BaseService<Dashboard[]> {
     });
 
     await this.handleResponse<void>(response);
-    this.clearCache();
+    this.clearAllCache();
+  }
+
+  clearUserCache(userId: string): void {
+    this.clearCache(`user_${userId}`);
+  }
+
+  clearAllCache(): void {
+    // Clear all dashboard-related caches
+    this.cache.clear();
   }
 }
 

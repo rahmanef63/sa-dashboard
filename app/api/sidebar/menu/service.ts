@@ -1,53 +1,58 @@
 // Menu Service for handling sidebar menu operations
 // @/app/api/sidebar/menu/service.ts
 
-import { MenuItemWithChildren, MenuItemSchema } from '@/shared/types/navigation-types';
+import { MenuItem } from '@/shared/types/navigation-types';
+import { BaseService } from '../base-service'; // Assuming BaseService is defined in base.service.ts
 
-class MenuService {
-  async getMenuItems(dashboardId: string): Promise<MenuItemWithChildren[]> {
+export class MenuService extends BaseService<MenuItem[]> {
+  constructor() {
+    super('/api/sidebar/menu');
+  }
+
+  async getMenuItems(dashboardId: string): Promise<MenuItem[]> {
+    const cacheKey = `menu_${dashboardId}`;
+    
+    // Check cache first
+    const cached = this.getCached(cacheKey);
+    if (cached) {
+      console.log('[MenuService] Using cached menu items for dashboard:', dashboardId);
+      return cached;
+    }
+
+    console.log('[MenuService] Fetching menu items for dashboard:', dashboardId);
     try {
-      console.log('[Debug] MenuService: Fetching items for dashboard:', dashboardId);
-      
-      // Get auth token from cookie
-      const authToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('authToken='))
-        ?.split('=')[1];
-
-      if (!authToken) {
-        throw new Error('Unauthorized - No auth token found');
-      }
-
-      const token = decodeURIComponent(authToken);
-      
-      const response = await fetch(`/api/sidebar/menu?dashboardId=${dashboardId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(`${this.endpoint}?dashboardId=${dashboardId}`, {
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       });
+
+      const result = await this.handleResponse<MenuItem[]>(response);
       
-      if (response.status === 401) {
-        throw new Error('Unauthorized - Invalid or expired token');
+      // Validate the response is an array
+      if (!Array.isArray(result)) {
+        console.error('[MenuService] Invalid response - not an array:', result);
+        return []; // Return empty array instead of throwing
       }
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch menu items: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!Array.isArray(data)) {
-        console.warn('[Debug] MenuService: Menu items data is not an array:', data);
-        return [];
-      }
-      
-      console.log('[Debug] MenuService: Received menu tree with items:', data.length);
-      return data;
+
+      // Ensure each item has a children array
+      const menuItems = result.map(item => ({
+        ...item,
+        children: item.children || []
+      }));
+
+      console.log('[MenuService] Successfully fetched menu items:', menuItems);
+      this.setCache(cacheKey, menuItems);
+      return menuItems;
     } catch (error) {
       console.error('[MenuService] Error fetching menu items:', error);
-      throw error;
+      return []; // Return empty array on error
     }
+  }
+
+  clearMenuCache(dashboardId: string): void {
+    this.clearCache(`menu_${dashboardId}`);
   }
 }
 

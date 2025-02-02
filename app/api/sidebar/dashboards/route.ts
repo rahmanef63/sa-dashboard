@@ -1,79 +1,131 @@
+// app/api/sidebar/dashboards/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { adminDbOperations as db } from '@/slices/sidebar/config/admin-db';
-import { AuthenticatedRequest, withAuth, withErrorHandler, ApiError } from '../middleware';
+import { adminDbOperations as db, UserDashboardRow } from '@/slices/sidebar/config/admin-db';
+import { withAuth, withErrorHandler, ApiError } from '../middleware';
+import { apiResponse, errorResponse } from '../utils';
 import { createApiResponse } from '../config';
-import { transformResponse, UserDashboardRow } from '@/slices/sidebar/dashboard/types/api';
+import { transformResponse} from '@/slices/sidebar/dashboard/types/api';
 import { Dashboard } from '@/slices/sidebar/dashboard/types';
 import { MenuItem } from '@/shared/types/navigation-types';
 
-// Cache for dashboard data
-let dashboardCache: { data: UserDashboardRow[]; timestamp: number } | null = null;
-const CACHE_DURATION = 5000; // 5 seconds
+// Cache settings
+const CACHE_CONTROL = 'public, s-maxage=10, stale-while-revalidate=59';
+
+// Helper to attach menu items to dashboards
+const attachMenuItems = (dashboards: Dashboard[], menuItems: MenuItem[]) => {
+  return dashboards.map(dashboard => ({
+    ...dashboard,
+    menu_items: menuItems.filter(item => item.dashboardId === dashboard.id)
+  }));
+};
 
 export async function GET(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
+  return withAuth(request, async (req) => {
     return withErrorHandler(async () => {
-      const { searchParams } = new URL(req.url);
+      const { searchParams } = new URL(request.url);
       const userId = searchParams.get('userId') || req.user.id;
 
-      // Query to get user's dashboards with roles
+      // Query for user dashboards with roles
       const query = `
-        SELECT 
-          d.*,
-          u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
-          u.name as user_name,
-          u.email as user_email,
-          CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default
-        FROM dashboards d
-        JOIN users u ON d.id = ANY(u.dashboard_ids)
-        WHERE u.id = $1 AND d.is_active = true
-        ORDER BY d.created_at DESC;
-      `;
+        WITH user_dashboards AS (
+          -- Get dashboards directly assigned to the user
+          SELECT 
+            d.*,
+            u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
+            u.name as user_name,
+            u.email as user_email,
+            CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default
+          FROM dashboards d
+          JOIN users u ON d.id = ANY(u.dashboard_ids)
+          WHERE u.id = $1 AND d.is_active = true
 
+          UNION
+
+          -- Get public dashboards not directly assigned to the user
+          SELECT 
+            d.*,
+            'viewer' as user_role,
+            u.name as user_name,
+            u.email as user_email,
+            false as is_default
+          FROM dashboards d
+          CROSS JOIN users u
+          WHERE u.id = $1 
+            AND d.is_active = true 
+            AND d.is_public = true
+            AND NOT d.id = ANY(
+              SELECT unnest(dashboard_ids) 
+              FROM users 
+              WHERE id = $1
+            )
+        )
+        SELECT * FROM user_dashboards
+        ORDER BY created_at DESC;
+      `;
       const dashboardsResult = await db.query<UserDashboardRow>(query, [userId]);
 
       if (!dashboardsResult.rows.length) {
         throw new ApiError('No dashboards found', 404);
       }
 
-      // Transform the response
-      const dashboards = dashboardsResult.rows.map(dashboard => ({
-        ...transformResponse(dashboard),
-        menu_items: [] as MenuItem[] // Explicitly type the menu_items array
-      }));
+      console.log('[Dashboards API] Query result:', {
+        userId,
+        count: dashboardsResult.rows.length,
+        dashboards: dashboardsResult.rows
+      });
 
+      // Transform each row to Dashboard type
+      const dashboards: Dashboard[] = dashboardsResult.rows.map(row => transformResponse(row));
+      console.log('[Dashboards API] Transformed dashboards:', dashboards);
+
+      // Revalidate the referer if provided
+      const referer = request.headers.get('referer') ?? '/';
+      revalidatePath(referer);
+
+      // Attempt to fetch menu items (but don't fail if unavailable)
       try {
-        // Try to fetch menu items, but don't fail if they don't exist
-        const menuItemsResult = await db.query<MenuItem>(`
-          SELECT * FROM menu_items 
-          WHERE dashboard_id IN (${dashboardsResult.rows.map((_, i) => `$${i + 1}`).join(',')})
-        `, dashboardsResult.rows.map(d => d.id));
+        const menuItemsResult = await db.getMenuItems();
+        const menuItems = menuItemsResult.rows;
+        console.log('[Dashboards API] Menu items:', menuItems);
+        
+        // Attach menu items to dashboards and wrap in API response
+        const responseData = attachMenuItems(dashboards, menuItems);
+        console.log('[Dashboards API] Final response data:', responseData);
 
-        // If menu items exist, add them to the dashboards
-        if (menuItemsResult.rows.length > 0) {
-          dashboards.forEach(dashboard => {
-            dashboard.menu_items = menuItemsResult.rows.filter(item => item.dashboard_id === dashboard.id);
-          });
-        }
+        // Return serialized JSON response
+        return new NextResponse(
+          JSON.stringify({ data: responseData }),
+          { 
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': CACHE_CONTROL
+            }
+          }
+        );
       } catch (error) {
-        console.warn('Menu items not available:', error);
-        // Continue without menu items
+        // If menu items fail, return dashboards without menu items
+        console.log('[Dashboards API] Final response data (without menu items):', dashboards);
+        
+        // Return serialized JSON response
+        return new NextResponse(
+          JSON.stringify({ data: dashboards }),
+          { 
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': CACHE_CONTROL
+            }
+          }
+        );
       }
-
-      // Revalidate the path
-      const referer = req.headers.get('referer') || '';
-      if (referer) {
-        revalidatePath(referer);
-      }
-
-      return NextResponse.json(createApiResponse(dashboards));
     });
   });
 }
 
 export async function POST(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
+  return withAuth(request, async (req) => {
     return withErrorHandler(async () => {
       const body = await req.json();
       const { userId, role, isDefault, userName, userEmail, ...dashboardData } = body;
@@ -81,33 +133,24 @@ export async function POST(request: NextRequest) {
       if (!body.name) {
         throw new ApiError('Dashboard name is required', 400);
       }
-
       if (!userEmail) {
         throw new ApiError('User email is required', 400);
       }
 
-      // Start a transaction
+      // Transaction to create dashboard and update user
       const dashboard = await db.transaction(async (client) => {
-        // Check if user exists or create a new one
         let user;
         if (userId) {
-          const userResult = await client.query(`
-            SELECT * FROM users WHERE id = $1;
-          `, [userId]);
+          const userResult = await client.query(`SELECT * FROM users WHERE id = $1;`, [userId]);
           user = userResult.rows[0];
           if (!user) {
             throw new ApiError('User not found', 404);
           }
         } else {
-          // Check if user exists by email
-          const existingUserResult = await client.query(`
-            SELECT * FROM users WHERE email = $1;
-          `, [userEmail]);
-          
+          const existingUserResult = await client.query(`SELECT * FROM users WHERE email = $1;`, [userEmail]);
           if (existingUserResult.rows.length > 0) {
             user = existingUserResult.rows[0];
           } else {
-            // Create new user
             const newUserResult = await client.query(`
               INSERT INTO users (name, email)
               VALUES ($1, $2)
@@ -117,7 +160,6 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Create dashboard
         const dashboardResult = await client.query(`
           INSERT INTO dashboards (name, description, logo, plan, is_public, is_active)
           VALUES ($1, $2, $3, $4, $5, $6)
@@ -130,10 +172,8 @@ export async function POST(request: NextRequest) {
           dashboardData.isPublic || false,
           true
         ]);
-
         const newDashboard = dashboardResult.rows[0];
 
-        // Update user's dashboard arrays
         await client.query(`
           UPDATE users 
           SET 
@@ -147,15 +187,13 @@ export async function POST(request: NextRequest) {
           WHERE id = $4;
         `, [newDashboard.id, role || 'owner', isDefault || false, user.id]);
 
-        // Create default menu items
         await client.query(`
-          INSERT INTO menu_items (dashboard_id, title, icon, url, type, order_index)
+          INSERT INTO menu_items (dashboardId, title, icon, url, type, order_index)
           VALUES 
             ($1, 'Dashboard', 'layout-dashboard', '{"href":"/"}', 'main', 1),
             ($1, 'Settings', 'settings', '{"href":"/settings"}', 'main', 2);
         `, [newDashboard.id]);
 
-        // Return the complete dashboard info
         const finalDashboardResult = await client.query(`
           SELECT 
             d.*,
@@ -171,13 +209,13 @@ export async function POST(request: NextRequest) {
         return finalDashboardResult.rows[0];
       });
 
-      return NextResponse.json(createApiResponse(transformResponse(dashboard)));
+      return apiResponse(createApiResponse(transformResponse(dashboard)));
     });
   });
 }
 
 export async function PUT(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
+  return withAuth(request, async (req) => {
     return withErrorHandler(async () => {
       const body = await req.json();
       const { id, userId, isDefault, ...updateData } = body;
@@ -185,27 +223,25 @@ export async function PUT(request: NextRequest) {
       if (!id) {
         throw new ApiError('Dashboard ID is required', 400);
       }
-
       if (!userId) {
         throw new ApiError('User ID is required', 400);
       }
-
       if (Object.keys(updateData).length === 0 && isDefault === undefined) {
         throw new ApiError('No update data provided', 400);
       }
 
       const dashboard = await db.transaction(async (client) => {
-        // Update dashboard data if provided
         if (Object.keys(updateData).length > 0) {
+          const keys = Object.keys(updateData);
+          const setClause = keys.map((key, i) => `${key} = $${i + 1}`).join(', ');
           await client.query(`
             UPDATE dashboards
-            SET ${Object.keys(updateData).map((key, i) => `${key} = $${i + 1}`).join(', ')}
-            WHERE id = $${Object.keys(updateData).length + 1}
+            SET ${setClause}
+            WHERE id = $${keys.length + 1}
             RETURNING *;
           `, [...Object.values(updateData), id]);
         }
 
-        // Update default dashboard status if specified
         if (isDefault !== undefined) {
           await client.query(`
             UPDATE users
@@ -218,7 +254,6 @@ export async function PUT(request: NextRequest) {
           `, [isDefault, id, userId]);
         }
 
-        // Return updated dashboard with user info
         const result = await client.query(`
           SELECT 
             d.*,
@@ -238,22 +273,20 @@ export async function PUT(request: NextRequest) {
         throw new ApiError('Dashboard not found', 404);
       }
 
-      return NextResponse.json(createApiResponse(transformResponse(dashboard)));
+      return apiResponse(createApiResponse(transformResponse(dashboard)));
     });
   });
 }
 
 export async function DELETE(request: NextRequest) {
-  return withAuth(request, async (req: AuthenticatedRequest) => {
+  return withAuth(request, async (req) => {
     return withErrorHandler(async () => {
-      const { id, userId } = await req.json();
-
+      const { id, userId } = await request.json();
       if (!id || !userId) {
         throw new ApiError('Both dashboard ID and user ID are required', 400);
       }
 
       await db.transaction(async (client) => {
-        // Remove dashboard from user's arrays
         await client.query(`
           UPDATE users
           SET 
@@ -266,10 +299,8 @@ export async function DELETE(request: NextRequest) {
           WHERE id = $2;
         `, [id, userId]);
 
-        // Delete menu items
-        await client.query('DELETE FROM menu_items WHERE dashboard_id = $1', [id]);
+        await client.query('DELETE FROM menu_items WHERE dashboardId = $1', [id]);
 
-        // Delete dashboard if no users have it
         await client.query(`
           DELETE FROM dashboards d
           WHERE d.id = $1
@@ -280,7 +311,7 @@ export async function DELETE(request: NextRequest) {
         `, [id]);
       });
 
-      return NextResponse.json(createApiResponse({ success: true }));
+      return apiResponse(createApiResponse({ success: true }));
     });
   });
 }

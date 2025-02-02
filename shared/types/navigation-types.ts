@@ -73,6 +73,7 @@ export interface MenuItem extends BaseMenuItem {
   menuType?: MenuCategory;
   items?: MenuItem[];
   groupId?: string;
+  children?: MenuItem[];
 }
 
 export interface SubMenuItem extends MenuItem {

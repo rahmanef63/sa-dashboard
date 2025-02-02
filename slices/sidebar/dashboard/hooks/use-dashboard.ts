@@ -8,21 +8,22 @@ export const useDashboard = () => {
   const { user } = useAuth();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [currentDashboard, setCurrentDashboard] = useState<Dashboard | null>(null);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading state
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const lastFetchRef = useRef<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
 
   const fetchDashboards = useCallback(async () => {
     const currentUserId = user?.id;
     
-    if (!currentUserId) {
-      setError('No user ID available');
+    if (!currentUserId || !isMountedRef.current) {
+      setError('User not authenticated');
       setIsLoading(false);
       return;
     }
 
-    // Skip if we've already fetched for this user
+    // Skip if we've already fetched for this user and have data
     if (lastFetchRef.current === currentUserId && dashboards.length > 0) {
       setIsLoading(false);
       return;
@@ -33,51 +34,59 @@ export const useDashboard = () => {
       abortControllerRef.current.abort();
     }
 
-    // Create new abort controller for this request
+    // Create new abort controller
     abortControllerRef.current = new AbortController();
-    
+
     try {
-      setIsLoading(true);
-      setError(null);
+      const response = await dashboardService.getUserDashboards(currentUserId);
       
-      console.log('[Dashboard Hook] Fetching dashboards for user:', currentUserId);
-      const data = await dashboardService.getUserDashboards(currentUserId);
-      console.log('[Dashboard Hook] Received dashboards:', data);
-      
-      if (!data || !Array.isArray(data)) {
+      if (!isMountedRef.current) return;
+
+      if (!response || !Array.isArray(response)) {
         throw new Error('Invalid dashboard data received');
       }
-      
+
       lastFetchRef.current = currentUserId;
-      setDashboards(data);
-      
-      // Set first dashboard as current if none selected
-      if (!currentDashboard && data.length > 0) {
-        setCurrentDashboard(data[0]);
+
+      if (response.length === 0) {
+        setDashboards([]);
+        setCurrentDashboard(null);
+      } else {
+        setDashboards(response);
+        // Set current dashboard only if none is selected or current one isn't in new list
+        if (!currentDashboard || !response.find(d => d.id === currentDashboard.id)) {
+          const defaultDashboard = response.find(d => d.isDefault) || response[0];
+          setCurrentDashboard(defaultDashboard);
+        }
       }
 
-      setIsLoading(false);
-    } catch (error: unknown) {
-      console.error('[Dashboard Hook] Error:', error);
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          return;
-        }
-        setError(error.message);
-      } else {
-        setError('An unknown error occurred while fetching dashboards');
+      setError(null);
+    } catch (err) {
+      if (!isMountedRef.current) return;
+      
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch dashboards';
+      setError(errorMessage);
+      // Only clear dashboards if we don't have any existing data
+      if (dashboards.length === 0) {
+        setDashboards([]);
+        setCurrentDashboard(null);
       }
-      setIsLoading(false);
+    } finally {
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
-  }, [user?.id, currentDashboard, dashboards.length]);
+  }, [user?.id]); // Remove unnecessary dependencies
 
   // Select a dashboard
   const selectDashboard = useCallback((dashboard: Dashboard) => {
     setCurrentDashboard(dashboard);
   }, []);
 
-  // Fetch dashboards when user changes
+  // Fetch dashboards only when user changes
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (user?.id) {
       fetchDashboards();
     } else {
@@ -88,6 +97,7 @@ export const useDashboard = () => {
     }
 
     return () => {
+      isMountedRef.current = false;
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -97,10 +107,9 @@ export const useDashboard = () => {
   return {
     dashboards,
     currentDashboard,
+    selectDashboard,
     isLoading,
     error,
-    refetch: fetchDashboards,
-    setCurrentDashboard,
-    selectDashboard
+    refetch: fetchDashboards
   };
 };

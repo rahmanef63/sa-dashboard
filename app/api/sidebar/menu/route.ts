@@ -1,27 +1,27 @@
+// app/api/sidebar/menu/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDbOperations } from '@/slices/sidebar/config/admin-db';
-import { type MenuItemSchema, type MenuItemWithChildren, transformToCamelCase } from '@/shared/types/navigation-types';
+import { withAuth, withErrorHandler, ApiError } from '../middleware';
+import { adminDbOperations as db } from '@/slices/sidebar/config/admin-db';
+import { MenuItem } from '@/shared/types/navigation-types';
 
-function buildMenuTree(items: MenuItemWithChildren[]): MenuItemWithChildren[] {
-  const itemMap = new Map<string, MenuItemWithChildren>();
-  const roots: MenuItemWithChildren[] = [];
+function buildMenuTree(items: MenuItem[]): MenuItem[] {
+  const itemMap = new Map<string, MenuItem>();
+  const roots: MenuItem[] = [];
 
-  // First pass: create map of items
+  // First pass: create map of items and ensure children arrays
   items.forEach(item => {
-    itemMap.set(item.id, { ...item, children: [] });
+    itemMap.set(item.id, {
+      ...item,
+      children: []
+    });
   });
 
   // Second pass: build tree structure
   items.forEach(item => {
-    const mappedItem = itemMap.get(item.id);
-    if (!mappedItem) return;
-
-    if (item.parentId) {
-      const parent = itemMap.get(item.parentId);
-      if (parent) {
-        parent.children = parent.children || [];
-        parent.children.push(mappedItem);
-      }
+    const mappedItem = itemMap.get(item.id)!;
+    if (item.parentId && itemMap.has(item.parentId)) {
+      const parent = itemMap.get(item.parentId)!;
+      parent.children!.push(mappedItem);
     } else {
       roots.push(mappedItem);
     }
@@ -31,55 +31,58 @@ function buildMenuTree(items: MenuItemWithChildren[]): MenuItemWithChildren[] {
 }
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  let dashboardId = searchParams.get('dashboardId');
+  return withAuth(request, async (req) => {
+    return withErrorHandler(async () => {
+      const { searchParams } = new URL(request.url);
+      const dashboardId = searchParams.get('dashboardId');
 
-  // If the dashboardId is 'main', resolve it to a valid UUID using the default dashboard
-  if (dashboardId === 'main') {
-    console.log('[Debug] Dashboard id is "main", resolving to default dashboard id');
-    const defaultDashboardResult = await adminDbOperations.getDefaultDashboard();
-    if (defaultDashboardResult.rows && defaultDashboardResult.rows.length > 0) {
-      dashboardId = defaultDashboardResult.rows[0].id;
-      console.log('[Debug] Resolved default dashboard id:', dashboardId);
-    } else {
-      console.warn('[Debug] No default dashboard found for "main"');
-      return NextResponse.json({ success: true, data: [] });
-    }
-  }
+      if (!dashboardId) {
+        throw new ApiError('Dashboard ID is required', 400);
+      }
 
-  if (!dashboardId || dashboardId === 'undefined') {
-    console.log('[Debug] Menu API: No dashboard ID provided, returning empty data');
-    return NextResponse.json({
-      success: true,
-      data: []
+      console.log('[Menu API] Fetching menu items for dashboard:', dashboardId);
+
+      // Query for menu items
+      const query = `
+        SELECT menu_items
+        FROM dashboards
+        WHERE id = $1 AND is_active = true;
+      `;
+      const result = await db.query(query, [dashboardId]);
+      
+      if (!result.rows.length) {
+        console.log('[Menu API] No menu items found for dashboard:', dashboardId);
+        // Return empty array wrapped in response
+        return new NextResponse(
+          JSON.stringify({ data: [] }),
+          { 
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59'
+            }
+          }
+        );
+      }
+
+      const menuItems = result.rows[0].menu_items || [];
+      console.log('[Menu API] Found menu items:', menuItems);
+
+      // Build menu tree
+      const menuTree = buildMenuTree(menuItems);
+      console.log('[Menu API] Built menu tree:', menuTree);
+
+      // Return menu tree wrapped in response
+      return new NextResponse(
+        JSON.stringify({ data: menuTree }),
+        { 
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=59'
+          }
+        }
+      );
     });
-  }
-
-  console.log('[Debug] Menu API: Fetching items for dashboard:', dashboardId);
-
-  try {
-    const result = await adminDbOperations.getMenuItems(dashboardId);
-    console.log('[Debug] Menu API: Found items:', result.rows.length);
-
-    // Transform the data and ensure proper typing
-    const menuItems = result.rows.map(item => ({
-      ...transformToCamelCase(item as MenuItemSchema),
-      children: []
-    })) as MenuItemWithChildren[];
-    
-    // Build the menu tree
-    const menuTree = buildMenuTree(menuItems);
-    console.log('[Debug] Menu API: Built menu tree with roots:', menuTree.length);
-
-    return NextResponse.json({
-      success: true,
-      data: menuTree
-    });
-  } catch (error: any) {
-    console.error('[Menu API] GET Error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error.message || 'Failed to fetch menu items'
-    }, { status: 500 });
-  }
+  });
 }
