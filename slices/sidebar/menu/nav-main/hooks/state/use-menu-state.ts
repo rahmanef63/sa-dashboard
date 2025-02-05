@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { NavMainData, MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types';
+import { NavMainData, MenuItem, SubMenuItem, GroupLabel } from '@/slices/sidebar/menu/types/';
 import { generateId } from '../../utils';
 
 const STORAGE_KEY = 'navMainData';
@@ -26,7 +26,7 @@ export function useMenuState(initialData?: NavMainData) {
           ...group,
           items: group.items.map(item => 
             item.id === updatedItem.id ? updatedItem : item
-          ).sort((a, b) => (a.order || 0) - (b.order || 0))
+          ).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
         };
       });
 
@@ -65,7 +65,7 @@ export function useMenuState(initialData?: NavMainData) {
 
         return {
           ...group,
-          items: [...group.items, itemWithId].sort((a, b) => (a.order || 0) - (b.order || 0))
+          items: [...group.items, itemWithId].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
         };
       });
 
@@ -88,7 +88,7 @@ export function useMenuState(initialData?: NavMainData) {
 
         const updatedParentItem = {
           ...parentItem,
-          subItems: [...(parentItem.subItems || []), subItemWithId]
+          items: [...(parentItem.items || []), subItemWithId]
         };
 
         return {
@@ -125,6 +125,56 @@ export function useMenuState(initialData?: NavMainData) {
     });
   }, []);
 
+  const toggleMenuItem = useCallback((itemId: string) => {
+    setNavData(prev => {
+      const newGroups = prev.groups.map(group => {
+        return {
+          ...group,
+          items: group.items.map(item => 
+            item.id === itemId ? { ...item, isCollapsible: !item.isCollapsible } : item
+          ).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))
+        };
+      });
+
+      const newData = { ...prev, groups: newGroups };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      return newData;
+    });
+  }, []);
+
+  const findItemById = useCallback((itemId: string): MenuItem | undefined => {
+    return navData.groups.reduce<MenuItem | undefined>((found, group) => {
+      if (found) return found;
+      return group.items.find(item => item.id === itemId);
+    }, undefined);
+  }, [navData]);
+
+  const addSubMenuItemById = useCallback((itemId: string, newSubItem: Omit<SubMenuItem, 'id'>) => {
+    setNavData(prev => {
+      const parentItem = findItemById(itemId);
+      if (!parentItem) return prev;
+
+      const newGroups = prev.groups.map(group => {
+        if (!group.items.some(item => item.id === itemId)) return group;
+
+        return {
+          ...group,
+          items: group.items.map(item => {
+            if (item.id !== itemId) return item;
+            return {
+              ...item,
+              items: [...(item.items || []), { ...newSubItem, id: generateId() }]
+            };
+          })
+        };
+      });
+
+      const newData = { ...prev, groups: newGroups };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      return newData;
+    });
+  }, [findItemById]);
+
   return {
     navData,
     saveData,
@@ -132,6 +182,8 @@ export function useMenuState(initialData?: NavMainData) {
     deleteMenuItem,
     addMenuItem,
     addSubMenuItem,
-    updateGroupLabel
+    updateGroupLabel,
+    toggleMenuItem,
+    addSubMenuItemById
   };
 }

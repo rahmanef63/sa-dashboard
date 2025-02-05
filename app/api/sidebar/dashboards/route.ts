@@ -5,9 +5,9 @@ import { adminDbOperations as db, UserDashboardRow } from '@/slices/sidebar/conf
 import { withAuth, withErrorHandler, ApiError } from '../middleware';
 import { apiResponse, errorResponse } from '../utils';
 import { createApiResponse } from '../config';
-import { transformResponse} from '@/slices/sidebar/dashboard/types/api';
+import { transformToCamelCase } from '@/slices/sidebar/dashboard/types/transforms';
 import { Dashboard } from '@/slices/sidebar/dashboard/types';
-import { MenuItem } from '@/shared/types/navigation-types';
+import { MenuItem } from '@/slices/sidebar/menu/types/';
 
 // Cache settings
 const CACHE_CONTROL = 'public, s-maxage=10, stale-while-revalidate=59';
@@ -16,9 +16,30 @@ const CACHE_CONTROL = 'public, s-maxage=10, stale-while-revalidate=59';
 const attachMenuItems = (dashboards: Dashboard[], menuItems: MenuItem[]) => {
   return dashboards.map(dashboard => ({
     ...dashboard,
-    menu_items: menuItems.filter(item => item.dashboardId === dashboard.id)
+    menu_items: menuItems.filter(item => item.groupId === dashboard.id)
   }));
 };
+
+// Transform database menu item to frontend menu item
+function transformMenuItem(dbMenuItem: any): MenuItem {
+  return {
+    id: dbMenuItem.id || generateId(),
+    name: dbMenuItem.name,
+    icon: dbMenuItem.icon,
+    groupId: dbMenuItem.dashboard_id, // Using dashboard_id as groupId
+    url: {
+      path: dbMenuItem.url_href,
+      label: dbMenuItem.name
+    },
+    parentId: dbMenuItem.parent_id,
+    orderIndex: dbMenuItem.order_index,
+    isActive: dbMenuItem.is_active
+  };
+}
+
+function generateId() {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
 
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req) => {
@@ -84,9 +105,9 @@ export async function GET(request: NextRequest) {
           ? JSON.parse(row.menu_items)
           : (row.menu_items || []);
 
-        return transformResponse({
+        return transformToCamelCase({
           ...row,
-          menu_items: menuItems
+          menu_items: menuItems.map(transformMenuItem)
         });
       });
 
@@ -99,7 +120,7 @@ export async function GET(request: NextRequest) {
       // Attempt to fetch menu items (but don't fail if unavailable)
       try {
         const menuItemsResult = await db.getMenuItems();
-        const menuItems = menuItemsResult.rows;
+        const menuItems = menuItemsResult.rows.map(transformMenuItem);
         console.log('[Dashboards API] Menu items:', menuItems);
         
         // Attach menu items to dashboards and wrap in API response
@@ -216,7 +237,7 @@ export async function POST(request: NextRequest) {
         return finalDashboardResult.rows[0];
       });
 
-      return apiResponse(createApiResponse(transformResponse(dashboard)));
+      return apiResponse(createApiResponse(transformToCamelCase(dashboard)));
     });
   });
 }
@@ -258,7 +279,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
 
       // Transform response
-      const dashboard = transformResponse(result.rows[0]);
+      const dashboard = transformToCamelCase(result.rows[0]);
       
       return new NextResponse(
         JSON.stringify({ data: dashboard }),

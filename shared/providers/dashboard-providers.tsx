@@ -2,17 +2,17 @@
 
 import * as React from "react"
 import { SidebarProvider, SidebarInset, SidebarTrigger, SidebarMenu } from "shared/components/ui/sidebar"
-import { MenuProvider } from "@/slices/sidebar/menu/context/MenuContextStore"
+import { MenuProvider } from '@/slices/sidebar/menu/nav-main/context/MenuContextStore'
 import { BreadcrumbProvider } from "@/slices/sidebar/breadcrumb-provider"
 import { getIconByName } from "@/shared/icon-picker/utils"
 import { Dashboard } from "@/slices/sidebar/dashboard/types"
-import { MenuItemWithChildren } from "@/shared/types/navigation-types"
+import { MenuItem } from "@/slices/sidebar/menu/types/"
 import { AppSidebar } from "@/slices/sidebar/app-sidebar"
 
 interface SidebarContentProps {
-  menuItems: MenuItemWithChildren[];
+  menuItems: MenuItem[];
   onDashboardChange: (dashboard: Dashboard) => void;
-  onMenuChange: (menu: MenuItemWithChildren) => void;
+  onMenuChange: (menu: MenuItem) => void;
   renderIcon: (icon: string | undefined) => React.ReactNode;
 }
 
@@ -42,7 +42,7 @@ export function DashboardProviders({
     console.log('Dashboard changed:', dashboard);
   }, []);
 
-  const handleMenuChange = React.useCallback((menu: MenuItemWithChildren) => {
+  const handleMenuChange = React.useCallback((menu: MenuItem) => {
     console.log('Menu changed:', menu);
   }, []);
 

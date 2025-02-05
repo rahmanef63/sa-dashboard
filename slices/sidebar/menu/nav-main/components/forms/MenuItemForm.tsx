@@ -1,5 +1,5 @@
 import React from 'react'
-import { MenuItemFormProps } from 'shared/types/navigation-types'
+import { MenuItemFormProps } from '@/slices/sidebar/menu/types/'
 import { createNewMenuItem } from '../../utils'
 import { BaseNavigationForm } from './BaseNavigationForm'
 

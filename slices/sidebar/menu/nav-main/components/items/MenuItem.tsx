@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { MenuItem as MenuItemType } from 'shared/types/navigation-types'
+import { MenuItem as MenuItemType } from '@/slices/sidebar/menu/types/'
 import { SidebarMenuItem, SidebarMenuButton } from "shared/components/ui/sidebar"
 import { cn } from '@/shared/lib/utils'
 

@@ -2,12 +2,12 @@
 // @/app/api/sidebar/menu/service.ts
 
 import { BaseService } from '@/app/api/sidebar/base-service';
-import { MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { MenuItem } from '@/slices/sidebar/menu/types/';
 
 // Singleton instance to maintain cache across components
 let menuCache: Record<string, any> = {};
 
-class MenuService extends BaseService<MenuItemWithChildren[]> {
+class MenuService extends BaseService<MenuItem[]> {
   private baseUrl: string;
 
   constructor() {
@@ -15,7 +15,7 @@ class MenuService extends BaseService<MenuItemWithChildren[]> {
     this.baseUrl = '/api/sidebar/menu';
   }
 
-  async getMenuItems(dashboardId: string): Promise<MenuItemWithChildren[]> {
+  async getMenuItems(dashboardId: string): Promise<MenuItem[]> {
     try {
       // Check cache first
       if (menuCache[dashboardId]) {

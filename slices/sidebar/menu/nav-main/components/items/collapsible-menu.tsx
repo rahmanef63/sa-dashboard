@@ -1,66 +1,59 @@
-"use client"
+import React from 'react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from 'shared/components/ui/collapsible'
+import { Button } from 'shared/components/ui/button'
+import { ChevronDown } from 'lucide-react'
+import { MenuItem } from '@/slices/sidebar/menu/types'
+import { MenuItemContainer } from './MenuItemContainer'
+import { cn } from '@/lib/utils'
 
-import { useState } from "react"
-import { ChevronRight } from "lucide-react"
-import { Button } from "shared/components/ui/button"
-import { cn } from "shared/lib/utils"
-import { CollapsibleMenuProps } from "shared/types/navigation-types"
-import { MenuItem } from "./MenuItem"
-import { useIconRenderer } from "@/slices/sidebar/menu/nav-main/hooks/items"
+export interface CollapsibleMenuProps {
+  item: MenuItem
+  level?: number
+  isCollapsed?: boolean
+  className?: string
+  onFocus?: () => void
+}
 
-export function CollapsibleMenu({ item, isCollapsed = false, className, onFocus }: CollapsibleMenuProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const renderIcon = useIconRenderer()
-
-  if (!item.children || !item.isCollapsible) return null
-
-  const handleClick = () => {
-    setIsExpanded(!isExpanded)
-    // Call onFocus when expanding the menu
-    if (!isExpanded && onFocus) {
-      onFocus()
-    }
-  }
-
+export function CollapsibleMenu({ 
+  item, 
+  level = 0,
+  isCollapsed = false,
+  className,
+  onFocus 
+}: CollapsibleMenuProps) {
   return (
-    <div className={cn("space-y-1", className)}>
-      <Button
-        variant="ghost"
-        className={cn(
-          "w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200",
-          isCollapsed ? "justify-center px-2" : "px-3"
-        )}
-        onClick={handleClick}
-      >
-        <div className={cn(
-          "flex items-center w-full",
-          !isCollapsed && "justify-between"
-        )}>
-          <span className="flex items-center">
-            {item.icon && (
-              <span className="h-4 w-4 shrink-0">
-                {renderIcon(item.icon)}
-              </span>
-            )}
-            {!isCollapsed && <span className="ml-2">{item.name}</span>}
-          </span>
-          {!isCollapsed && (
-            <span className={cn(
-              "transition-transform duration-200",
-              isExpanded && "rotate-90"
-            )}>
-              <ChevronRight className="h-4 w-4" />
-            </span>
-          )}
-        </div>
-      </Button>
-      {isExpanded && !isCollapsed && (
-        <div className="pl-4 space-y-1">
-          {item.children?.map((child) => (
-            <MenuItem key={child.id} item={child} />
-          ))}
-        </div>
-      )}
-    </div>
+    <Collapsible
+      defaultOpen={!isCollapsed}
+      className={cn('space-y-2', className)}
+      onFocus={onFocus}
+    >
+      <div className="flex items-center justify-between space-x-4">
+        <MenuItemContainer item={item}>
+          <div className="flex items-center space-x-2">
+            {item.icon && <span className="text-muted-foreground">{item.icon}</span>}
+            <span>{item.name}</span>
+          </div>
+        </MenuItemContainer>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="w-9 p-0">
+            <ChevronDown className="h-4 w-4" />
+            <span className="sr-only">Toggle</span>
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      <CollapsibleContent className="space-y-2">
+        {item.children?.map((child) => (
+          <MenuItemContainer key={child.id} item={child}>
+            <div 
+              style={{ paddingLeft: `${(level + 1) * 16}px` }}
+              className="flex items-center space-x-2"
+            >
+              {child.icon && <span className="text-muted-foreground">{child.icon}</span>}
+              <span>{child.name}</span>
+            </div>
+          </MenuItemContainer>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

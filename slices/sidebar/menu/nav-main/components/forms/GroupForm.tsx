@@ -1,48 +1,63 @@
-import React, { useState } from 'react'
+import React from 'react';
 import { Button } from "shared/components/ui/button"
 import { Input } from "shared/components/ui/input"
 import { Label } from "shared/components/ui/label"
-import { GroupLabelFormProps } from 'shared/types/navigation-types'
-import { createNewGroupLabel } from '../../utils'
+import { GroupLabel } from '@/slices/sidebar/menu/types';
+import { GroupLabelFormProps } from '@/slices/sidebar/menu/types/forms';
 
-export function GroupLabelForm({ label, onSave, onCancel }: GroupLabelFormProps) {
-  const [name, setName] = useState(label?.name || '')
+export function GroupForm({ label, onSave, onCancel }: GroupLabelFormProps) {
+  const [formData, setFormData] = React.useState<GroupLabel>({
+    id: label?.id || '',
+    name: label?.name || '',
+    icon: label?.icon
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (label) {
-      onSave({
-        ...label,
-        name
-      })
-    } else {
-      onSave(createNewGroupLabel(name))
-    }
-  }
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-2">
       <div>
-        <Label htmlFor="name">Group Label</Label>
+        <Label htmlFor="name">Label Name</Label>
         <Input
+          type="text"
           id="name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter group label"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
           required
         />
       </div>
-      <div className="flex gap-2 justify-end">
-        <Button type="submit" variant="default">
-          {label ? 'Update' : 'Add'} Group Label
-        </Button>
+      <div>
+        <Label htmlFor="icon">Icon (optional)</Label>
+        <Input
+          type="text"
+          id="icon"
+          name="icon"
+          value={formData.icon || ''}
+          onChange={handleChange}
+        />
+      </div>
+      <div className="flex justify-end space-x-2">
         {onCancel && (
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
         )}
+        <Button type="submit" variant="default">
+          Save
+        </Button>
       </div>
     </form>
-  )
+  );
 }

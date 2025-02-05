@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { MenuItem } from 'shared/types/navigation-types'
+import { MenuItem } from '@/slices/sidebar/menu/types/'
 
 interface UseSidebarMenuItemProps {
   item: MenuItem

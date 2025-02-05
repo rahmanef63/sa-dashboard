@@ -1,7 +1,7 @@
 "use client"
 
 import { Folder, Forward, MoreHorizontal, Trash2 } from 'lucide-react'
-import { NavProjectsProps } from 'shared/types/navigation-types'
+import { NavProjectsProps } from '@/slices/sidebar/menu/types/'
 import { getIconComponent } from '../nav-main/utils'
 
 import {

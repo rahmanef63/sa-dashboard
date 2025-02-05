@@ -11,7 +11,7 @@ import {
   SidebarMenuButton,
 } from "shared/components/ui/sidebar"
 import { Button } from "shared/components/ui/button"
-import { SidebarMenuItemProps } from 'shared/types/navigation-types'
+import { SidebarMenuItemProps } from '@/slices/sidebar/menu/types/'
 import { getIconComponent } from '../../utils'
 import { useSidebarMenuItem } from '../../hooks'
 import { cn } from '@/shared/lib/utils'

@@ -2,8 +2,8 @@ import React from 'react'
 import { Collapsible, CollapsibleContent } from "shared/components/ui/collapsible"
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
-import { MenuItem as MenuType, MenuContextType } from 'shared/types/navigation-types'
-import { MenuItem } from './MenuItem'
+import { MenuItem as MenuType, MenuContextType } from '@/slices/sidebar/menu/types/'
+import { MenuItemContainer } from './MenuItemContainer'
 import { useMenuContext } from '@/slices/sidebar/menu/context/menu-context'
 
 interface SidebarMenuItemComponentProps {
@@ -18,23 +18,21 @@ export function SidebarMenuItemComponent({
   return (
     <Collapsible asChild defaultOpen={item.isActive} className="group/collapsible">
       <div>
-        <MenuItem item={item} />
+        <MenuItemContainer item={item}>
+          <MenuItem item={item} />
+        </MenuItemContainer>
         {item.items && item.items.length > 0 && (
           <CollapsibleContent>
             <div className="pl-4 mt-2">
               {item.items.map((subItem) => (
-                <MenuItem 
-                  key={subItem.id} 
-                  item={{ 
-                    ...subItem, 
-                    url: subItem.url ? { 
-                      href: subItem.url.href || '#',
-                      target: subItem.url.target || '_self',
-                      rel: subItem.url.rel
-                    } : { href: '#', target: '_self' },
-                    icon: 'chevron-right' // default icon for sub-items
-                  }} 
-                />
+                <MenuItemContainer key={subItem.id} item={subItem}>
+                  <MenuItem 
+                    item={{ 
+                      ...subItem, 
+                      icon: 'chevron-right' // default icon for sub-items
+                    }} 
+                  />
+                </MenuItemContainer>
               ))}
             </div>
           </CollapsibleContent>

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
-import { MenuItemWithChildren } from 'shared/types/navigation-types'
+import { MenuItem } from '@/slices/sidebar/menu/types/'
 import { getIconByName } from '@/shared/icon-picker/utils'
 
 export function useAvailableMenuItems() {
-  const [availableMenuItems, setAvailableMenuItems] = useState<MenuItemWithChildren[]>([])
+  const [availableMenuItems, setAvailableMenuItems] = useState<MenuItem[]>([])
 
   useEffect(() => {
-    const items: MenuItemWithChildren[] = [
+    const items: MenuItem[] = [
       { 
         id: '1', 
         title: 'Dashboard',

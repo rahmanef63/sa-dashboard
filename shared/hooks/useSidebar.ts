@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { MenuItemWithChildren } from '@/shared/types/navigation-types'
-import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
+import { MenuItem } from '@/slices/sidebar/menu/types/'
+import { useMenu } from '@/slices/sidebar/menu/types/MenuContextStore'
 
 interface UseSidebarProps {
   initialMenuId?: string
@@ -57,7 +57,7 @@ export const useSidebar = ({
     }
   }, [mounted, setCurrentDashboardId])
 
-  const handleNavItemClick = useCallback((item: MenuItemWithChildren) => {
+  const handleNavItemClick = useCallback((item: MenuItem) => {
     if (!mounted) {
       console.log('[useSidebar] Not mounted, skipping nav click');
       return;

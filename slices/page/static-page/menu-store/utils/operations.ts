@@ -1,4 +1,4 @@
-import { MenuItem, SubMenuItem } from 'shared/types/navigation-types';
+import { MenuItem, SubMenuItem } from '@/slices/sidebar/menu/types/';
 
 // Find operations
 export const findSubMenuItem = (parentItem: MenuItem | null, subItemId: string): SubMenuItem | null => {

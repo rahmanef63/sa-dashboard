@@ -2,7 +2,6 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/shared/dev-tool/auth-context';
 import { dashboardService } from '@/app/api/sidebar/dashboards/service';
 import { Dashboard } from '../types';
-import { APIResponse } from '../types/api';
 
 export const useDashboard = () => {
   const { user } = useAuth();

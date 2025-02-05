@@ -1,43 +1,46 @@
-import { MenuItem, MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { MenuItem, SubMenuItem } from '@/slices/sidebar/menu/types/';
 
-export function buildMenuTree(items: MenuItem[]): MenuItemWithChildren[] {
-  // Create a map for O(1) lookups
-  const map = new Map<string, MenuItemWithChildren>();
-  const roots: MenuItemWithChildren[] = [];
+export function buildMenuTree(items: MenuItem[]): MenuItem[] {
+  const itemMap = new Map<string, MenuItem>();
+  const rootItems: MenuItem[] = [];
 
-  // First pass: Create all nodes
+  // First pass: Create MenuItem objects
   items.forEach(item => {
-    map.set(item.id, {
+    const menuItem: MenuItem = {
       ...item,
-      children: []
-    });
+      children: [],
+      groupId: item.groupId
+    };
+    itemMap.set(item.id, menuItem);
   });
 
-  // Second pass: Build the tree
+  // Second pass: Build the tree structure
   items.forEach(item => {
-    const node = map.get(item.id)!;
-    
     if (item.parentId) {
-      const parent = map.get(item.parentId);
+      const parent = itemMap.get(item.parentId);
       if (parent) {
-        if (!parent.children) {
-          parent.children = [];
-        }
-        parent.children.push(node);
-      } else {
-        // If parent not found, treat as root
-        roots.push(node);
+        const childItem: SubMenuItem = {
+          ...item,
+          parentId: item.parentId,
+          path: item.path || '',
+          children: []
+        };
+        parent.children = parent.children || [];
+        parent.children.push(childItem);
       }
     } else {
-      roots.push(node);
+      const rootItem = itemMap.get(item.id);
+      if (rootItem) {
+        rootItems.push(rootItem);
+      }
     }
   });
 
   // Sort children by orderIndex if available
-  const sortNodes = (nodes: MenuItemWithChildren[]) => {
+  const sortNodes = (nodes: (MenuItem | SubMenuItem)[]) => {
     nodes.sort((a, b) => {
-      const orderA = a.orderIndex ?? 0;
-      const orderB = b.orderIndex ?? 0;
+      const orderA = 'orderIndex' in a ? a.orderIndex ?? 0 : 0;
+      const orderB = 'orderIndex' in b ? b.orderIndex ?? 0 : 0;
       return orderA - orderB;
     });
 
@@ -48,26 +51,47 @@ export function buildMenuTree(items: MenuItem[]): MenuItemWithChildren[] {
     });
   };
 
-  sortNodes(roots);
-  return roots;
+  sortNodes(rootItems);
+  return rootItems;
 }
 
-export function flattenMenuTree(tree: MenuItemWithChildren[]): MenuItem[] {
-  const items: MenuItem[] = [];
-  
-  const traverse = (node: MenuItemWithChildren, parentId?: string) => {
-    const item: MenuItem = {
-      ...node,
-      parentId
-    };
-    delete (item as any).children;
-    items.push(item);
+export function flattenMenuTree(tree: MenuItem[]): MenuItem[] {
+  const flattened: MenuItem[] = [];
 
-    if (node.children) {
-      node.children.forEach(child => traverse(child, node.id));
+  function flatten(items: (MenuItem | SubMenuItem)[]) {
+    items.forEach(item => {
+      const menuItem: MenuItem = {
+        ...item,
+        groupId: 'groupId' in item ? item.groupId : item.parentId || '',
+        parentId: 'parentId' in item ? item.parentId : undefined,
+        children: item.children || []
+      };
+      flattened.push(menuItem);
+
+      if (item.children && item.children.length > 0) {
+        flatten(item.children);
+      }
+    });
+  }
+
+  flatten(tree);
+  return flattened;
+}
+
+export function findMenuItem(tree: MenuItem[], id: string): MenuItem | SubMenuItem | null {
+  for (const item of tree) {
+    if (item.id === id) {
+      return item;
     }
-  };
 
-  tree.forEach(node => traverse(node));
-  return items;
+    if (item.children) {
+      for (const child of item.children) {
+        if (child.id === id) {
+          return child;
+        }
+      }
+    }
+  }
+
+  return null;
 }

@@ -1,13 +1,13 @@
 import { useCallback, useRef, useEffect } from 'react'
 import { 
-  MenuItemWithChildren, 
+  MenuItem, 
   GroupLabel, 
   NavGroup, 
   NavUrl,
   MenuItem,
   NavigationItem 
-} from '@/shared/types/navigation-types'
-import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
+} from '@/slices/sidebar/menu/types/'
+import { useMenu } from '@/slices/sidebar/menu/types/MenuContextStore'
 import { toast } from 'sonner'
 import { 
   convertSharedToNavMain,
@@ -40,7 +40,7 @@ export function useUserMenu() {
 
   const timeStampRef = useRef<{ [key: string]: number }>({});
 
-  const handleEditItem = useCallback((item: MenuItemWithChildren, onEditItem: (item: MenuItemWithChildren) => void) => {
+  const handleEditItem = useCallback((item: MenuItem, onEditItem: (item: MenuItem) => void) => {
     try {
       const itemWithUrl: MenuItem = {
         ...item,
@@ -109,7 +109,7 @@ export function useUserMenu() {
     }
   }, [contextAddGroupLabel, contextUpdateGroupLabel, navData?.groups]);
 
-  const handleSaveMenuItem = useCallback((editedItem: MenuItemWithChildren) => {
+  const handleSaveMenuItem = useCallback((editedItem: MenuItem) => {
     try {
       const itemWithUrl: MenuItem = {
         ...editedItem,
@@ -208,7 +208,7 @@ export function useUserMenu() {
     }
   }, [navData, updateNavData]);
 
-  const findMenuItem = useCallback((itemId: string): MenuItemWithChildren | undefined => {
+  const findMenuItem = useCallback((itemId: string): MenuItem | undefined => {
     const item = navData.groups.flatMap((g: NavGroup) => g.items).find((item: MenuItem) => item.id === itemId);
     return item ? convertNavMainToShared(item) : undefined;
   }, [navData.groups]);

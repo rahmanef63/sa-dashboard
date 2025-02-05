@@ -1,4 +1,4 @@
-import { MenuItem, SubMenuItem, GroupLabel } from 'shared/types/navigation-types'
+import { MenuItem, SubMenuItem, GroupLabel } from '@/slices/sidebar/menu/types/'
 
 import { MenuItemWithStringTarget, NavGroup } from '../types/userMenu.types'
 import { toast } from 'sonner'

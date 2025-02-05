@@ -1,4 +1,4 @@
-import { MenuItem, SubMenuItem } from 'shared/types/navigation-types'
+import { MenuItem, SubMenuItem } from '@/slices/sidebar/menu/types/'
 
 
 export const convertSharedToNavMain = (item: MenuItem): MenuItem => {

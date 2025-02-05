@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { type GroupLabel, type MenuItem, type SubMenuItem } from 'shared/types/navigation-types';
+import { type GroupLabel, type MenuItem, type SubMenuItem } from '@/slices/sidebar/menu/types/';
 
 export type DialogType = 'group' | 'menuItem' | 'subMenuItem';
 

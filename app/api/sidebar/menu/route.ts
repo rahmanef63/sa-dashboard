@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, withErrorHandler, ApiError } from '../middleware';
 import { adminDbOperations as db } from '@/slices/sidebar/config/admin-db';
-import { MenuItem } from '@/shared/types/navigation-types';
+import { MenuItem } from '@/slices/sidebar/menu/types/';
 
 function buildMenuTree(items: MenuItem[]): MenuItem[] {
   const itemMap = new Map<string, MenuItem>();

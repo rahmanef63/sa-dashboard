@@ -3,14 +3,14 @@
 import { cn } from "shared/lib/utils"
 import { CollapsibleMenu } from "../items"
 import { MenuItem } from "../items"
-import { MenuItemWithChildren } from "shared/types/navigation-types"
+import { MenuItem } from "@/slices/sidebar/menu/types/"
 
 interface MenuSectionProps {
-  items: MenuItemWithChildren[];
+  items: MenuItem[];
   title?: string;
   type?: 'menu' | 'submenu';
   isCollapsed?: boolean;
-  onSecondaryItemClick?: (item: MenuItemWithChildren) => void;
+  onSecondaryItemClick?: (item: MenuItem) => void;
   onFocus?: () => void;
   renderIcon?: (icon: string | undefined) => React.ReactNode;
   className?: string;
@@ -36,7 +36,7 @@ export function MenuSection({
         </h2>
       )}
       <nav className="space-y-1">
-        {items?.map((item: MenuItemWithChildren) => {
+        {items?.map((item: MenuItem) => {
           if (item.children && item.isCollapsible) {
             return (
               <CollapsibleMenu

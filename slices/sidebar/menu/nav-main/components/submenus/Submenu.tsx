@@ -4,7 +4,7 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "shared/components/ui/sidebar"
-import { SubMenuItem, MenuItem } from 'shared/types/navigation-types'
+import { SubMenuItem, MenuItem } from '@/slices/sidebar/menu/types/'
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
 import { useSubmenuAvailability } from '../../hooks'

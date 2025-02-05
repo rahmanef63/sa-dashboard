@@ -1,5 +1,5 @@
 import { Frame, PieChart, Map, Database } from 'lucide-react'
-import { MenuItem } from 'shared/types/navigation-types'
+import { MenuItem } from '@/slices/sidebar/menu/types/'
 
 export const navProjectsConfig = {
   projects: [

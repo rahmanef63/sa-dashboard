@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { MenuItem, SubMenuItem } from 'shared/types/navigation-types';
+import { MenuItem, SubMenuItem } from '@/slices/sidebar/menu/types/';
 import { toast } from 'sonner';
 import { validateMenuItem, validateSubMenuItem } from '../../utils/validation';
 import { useUserMenu } from './useUserMenu';

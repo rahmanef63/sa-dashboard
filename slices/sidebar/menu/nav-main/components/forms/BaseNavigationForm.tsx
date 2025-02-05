@@ -3,7 +3,7 @@ import { Button } from "shared/components/ui/button"
 import { Input } from "shared/components/ui/input"
 import { Label } from "shared/components/ui/label"
 import { IconPicker } from '@/shared/icon-picker/components/IconPicker'
-import { NavigationItem, NavUrl } from 'shared/types/navigation-types'
+import { NavigationItem, NavUrl } from '@/slices/sidebar/menu/types/'
 
 interface BaseNavigationFormProps {
   item?: NavigationItem | null

@@ -2,8 +2,8 @@ import React from 'react'
 import { SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from "shared/components/ui/sidebar"
 import { Button } from "shared/components/ui/button"
 import { Edit, Trash } from 'lucide-react'
-import { SubMenuItem } from 'shared/types/navigation-types'
-import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
+import { SubMenuItem } from '@/slices/sidebar/menu/types/'
+import { useMenu } from '@/slices/sidebar/menu/types/MenuContextStore'
 import Link from 'next/link'
 
 interface SidebarMenuSubComponentProps {

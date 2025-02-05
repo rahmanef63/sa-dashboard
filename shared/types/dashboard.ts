@@ -1,5 +1,5 @@
 import { User } from './global';
-import { MenuItem } from './navigation-types';
+import { MenuItem } from '../slices/sidebar/menu/types/';
 import { BaseRow } from '@/slices/sidebar/config/admin-db';
 
 // Shared database row type for dashboards

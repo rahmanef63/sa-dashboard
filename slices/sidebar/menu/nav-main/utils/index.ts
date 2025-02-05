@@ -1,6 +1,6 @@
 import * as Icons from "lucide-react"
 import type { LucideIcon } from "lucide-react"
-import { MenuItem, SubMenuItem, GroupLabel, NavUrl } from 'shared/types/navigation-types'
+import { MenuItem, SubMenuItem, GroupLabel, NavUrl } from '@/slices/sidebar/menu/types/'
 
 export function getIconComponent(iconName: string): LucideIcon {
   if (!iconName) return Icons.HelpCircle;

@@ -1,11 +1,20 @@
-import { MenuItem, MenuItemWithChildren } from '@/shared/types/navigation-types';
+import { MenuItem } from '@/slices/sidebar/menu/types/';
+
+const MENU_CACHE_KEY = 'menu_cache';
+const TREE_CACHE_KEY = 'tree_cache';
+
+interface CacheData {
+  [key: string]: MenuItem[];
+}
 
 export class MenuCache {
   private static instance: MenuCache;
-  private cache = new Map<string, MenuItem[]>();
-  private treeCache = new Map<string, MenuItemWithChildren[]>();
+  private menuCache: CacheData = {};
+  private treeCache: CacheData = {};
 
-  private constructor() {}
+  private constructor() {
+    this.initializeCache();
+  }
 
   static getInstance(): MenuCache {
     if (!MenuCache.instance) {
@@ -14,35 +23,79 @@ export class MenuCache {
     return MenuCache.instance;
   }
 
-  getItems(dashboardId: string): MenuItem[] | undefined {
-    return this.cache.get(dashboardId);
-  }
-
-  setItems(dashboardId: string, items: MenuItem[]): void {
-    this.cache.set(dashboardId, items);
-    // Clear tree cache for this dashboard since items changed
-    this.treeCache.delete(dashboardId);
-  }
-
-  getTree(dashboardId: string): MenuItemWithChildren[] | undefined {
-    return this.treeCache.get(dashboardId);
-  }
-
-  setTree(dashboardId: string, tree: MenuItemWithChildren[]): void {
-    this.treeCache.set(dashboardId, tree);
-  }
-
-  clear(dashboardId?: string): void {
-    if (dashboardId) {
-      this.cache.delete(dashboardId);
-      this.treeCache.delete(dashboardId);
-    } else {
-      this.cache.clear();
-      this.treeCache.clear();
+  private initializeCache(): void {
+    try {
+      const menuData = localStorage.getItem(MENU_CACHE_KEY);
+      const treeData = localStorage.getItem(TREE_CACHE_KEY);
+      
+      if (menuData) {
+        this.menuCache = JSON.parse(menuData);
+      }
+      
+      if (treeData) {
+        this.treeCache = JSON.parse(treeData);
+      }
+    } catch (error) {
+      console.error('Error initializing cache:', error);
     }
   }
 
+  private saveCache(): void {
+    try {
+      localStorage.setItem(MENU_CACHE_KEY, JSON.stringify(this.menuCache));
+      localStorage.setItem(TREE_CACHE_KEY, JSON.stringify(this.treeCache));
+    } catch (error) {
+      console.error('Error saving cache:', error);
+    }
+  }
+
+  getItems(dashboardId: string): MenuItem[] | null {
+    return this.menuCache[dashboardId] || null;
+  }
+
+  setItems(dashboardId: string, items: MenuItem[]): void {
+    this.menuCache[dashboardId] = items;
+    this.saveCache();
+  }
+
+  removeItems(dashboardId: string): void {
+    delete this.menuCache[dashboardId];
+    this.saveCache();
+  }
+
+  clearMenuCache(): void {
+    this.menuCache = {};
+    this.saveCache();
+  }
+
+  getTree(dashboardId: string): MenuItem[] | null {
+    return this.treeCache[dashboardId] || null;
+  }
+
+  setTree(dashboardId: string, tree: MenuItem[]): void {
+    this.treeCache[dashboardId] = tree;
+    this.saveCache();
+  }
+
+  removeTree(dashboardId: string): void {
+    delete this.treeCache[dashboardId];
+    this.saveCache();
+  }
+
+  clearTreeCache(): void {
+    this.treeCache = {};
+    this.saveCache();
+  }
+
+  clearAllCache(): void {
+    this.menuCache = {};
+    this.treeCache = {};
+    localStorage.removeItem(MENU_CACHE_KEY);
+    localStorage.removeItem(TREE_CACHE_KEY);
+  }
+
   invalidate(dashboardId: string): void {
-    this.clear(dashboardId);
+    this.removeItems(dashboardId);
+    this.removeTree(dashboardId);
   }
 }

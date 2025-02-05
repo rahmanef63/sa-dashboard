@@ -1,13 +1,13 @@
 "use client"
 
 import React from 'react'
-import { useMenu } from '@/slices/sidebar/menu/context/MenuContextStore'
+import { useMenu } from '@/slices/sidebar/menu/types/MenuContextStore'
 import { useToast } from "shared/components/ui/use-toast"
 import { useAvailableMenuItems } from './hooks'
 import { AvailableMenuItems } from './components/AvailableMenuItems'
 import { UserMenuItems } from './components/UserMenuItems'
 import { CustomMenuItemForm } from './components/CustomMenuItemForm'
-import { MenuItem, GroupLabel, SubMenuItem } from 'shared/types/navigation-types'
+import { MenuItem, GroupLabel, SubMenuItem } from '@/slices/sidebar/menu/types/'
 import { MenuItemWithIcon } from '@/shared/icon-picker/types'
 import { getIconByName } from '@/shared/icon-picker/utils'
 import { Alert, AlertDescription } from "shared/components/ui/alert"

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "share
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "shared/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "shared/components/ui/alert"
 import { Dialog, DialogContent } from "shared/components/ui/dialog"
-import { MenuItem, SubMenuItem, GroupLabel, NavGroup } from 'shared/types/navigation-types'
+import { MenuItem, SubMenuItem, GroupLabel, NavGroup } from '@/slices/sidebar/menu/types/'
 import { UserMenuItemsProps } from '../types/userMenu.types'
 import { type LucideIcon, Edit, Trash, PlusCircle, File, AlertCircle } from 'lucide-react'
 import { renderIcon as renderIconUtil } from '@/shared/icon-picker/utils'

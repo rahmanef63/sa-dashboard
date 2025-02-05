@@ -1,4 +1,4 @@
-import adminPool from '../slices/sidebar/config/admin-db';
+import adminPool from 'slices/sidebar/config/admin-db';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
