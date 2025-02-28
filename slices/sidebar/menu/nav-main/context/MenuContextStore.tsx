@@ -19,165 +19,400 @@ export const MenuContext = createContext<MenuContextType | undefined>(undefined)
 
 export const MenuProvider = ({ children }: { children: React.ReactNode }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(false);
   const [navData, setNavData] = useState<NavMainData | null>(null);
-  const [currentDashboardId, setCurrentDashboardId] = useState<string | null>(null);
+  const [currentDashboardId, setCurrentDashboardIdState] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const menuCache = useRef<Record<string, MenuItem[]>>({});
+  
   const { currentDashboard } = useDashboard();
-
-  const updateNavData = useCallback((data: NavMainData) => {
-    setNavData(data);
-  }, []);
-
-  // Helper function to build menu tree
-  const buildMenuTree = (items: MenuItem[]): MenuItem[] => {
-    const itemMap = new Map<string, MenuItem>();
-    const roots: MenuItem[] = [];
-
-    items.forEach(item => {
-      if (item.id) {
-        itemMap.set(item.id, { ...item, children: [] });
-      }
-    });
-
-    items.forEach(item => {
-      if (!item.id) return;
-      const mappedItem = itemMap.get(item.id);
-      if (!mappedItem) return;
-
-      if (item.parentId) {
-        const parent = itemMap.get(item.parentId);
-        if (parent) {
-          parent.children = parent.children || [];
-          parent.children.push(mappedItem);
+  
+  // Mock navigation data for testing
+  const createMockNavData = useCallback((dashboardId: string) => {
+    console.log('[MenuProvider] Creating mock nav data for dashboard:', dashboardId);
+    
+    // Default mock navigation data
+    const mockNavData: NavMainData = {
+      dashboardId,
+      groups: [
+        {
+          id: 'mock-group-1',
+          name: 'Main',
+          icon: 'Home',
+          label: {
+            id: 'mock-group-1',
+            name: 'Main',
+            icon: 'Home'
+          },
+          items: [
+            {
+              id: 'mock-item-1',
+              name: 'Debug Item 1',
+              icon: 'Home',
+              url: { 
+                path: '/dashboard',
+                label: 'Dashboard'
+              },
+              order: 0,
+              groupId: 'mock-group-1'
+            },
+            {
+              id: 'mock-item-2',
+              name: 'Debug Item 2',
+              icon: 'Chart',
+              url: { 
+                path: '/dashboard/settings',
+                label: 'Settings' 
+              },
+              order: 1,
+              groupId: 'mock-group-1'
+            }
+          ]
         }
-      } else {
-        roots.push(mappedItem);
+      ],
+      items: [],
+      subItems: []
+    };
+    setNavData(mockNavData);
+  }, []);
+  
+  // Build a menu tree from a flat list of menu items
+  const buildMenuTree = useCallback((items: MenuItem[]): MenuItem[] => {
+    // Group by parent ID (null for root items)
+    const itemsByParent: Record<string, MenuItem[]> = {};
+    
+    // Initialize with root items (no parent)
+    itemsByParent[''] = [];
+    
+    items.forEach(item => {
+      const parentId = item.parentId || '';
+      if (!itemsByParent[parentId]) {
+        itemsByParent[parentId] = [];
       }
+      itemsByParent[parentId].push(item);
     });
-
-    return roots;
-  };
-
-  const loadMenuItems = useCallback(async (dashboardId: string) => {
+    
+    // Recursive function to build the tree
+    const buildTree = (parentId: string): MenuItem[] => {
+      const children = itemsByParent[parentId] || [];
+      return children.map((item: MenuItem) => ({
+        ...item,
+        children: buildTree(item.id)
+      }));
+    };
+    
+    return buildTree('');
+  }, []);
+  
+  // Fetch menu items for the current dashboard
+  const fetchMenuItems = useCallback(async (dashboardId: string) => {
     if (!dashboardId) {
-      console.log('[MenuProvider] No valid dashboard ID');
+      console.warn('[MenuProvider] No dashboard ID provided');
       return;
     }
-
-    // Don't reload if already in cache
+    
+    // Check if menu items are cached for this dashboard
     if (menuCache.current[dashboardId]) {
-      console.log('[MenuProvider] Using cached menu items');
+      console.log('[MenuProvider] Using cached menu items for dashboard:', dashboardId);
       setMenuItems(menuCache.current[dashboardId]);
       return;
     }
-
+    
+    // Debug mode for development
+    const debugMode = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_MENU === 'true';
+    if (debugMode) {
+      console.log('[MenuProvider] Debug mode enabled, using mock menu items');
+      const mockItems: MenuItem[] = [
+        {
+          id: 'mock-menu-1',
+          name: 'Dashboard',
+          icon: 'Home',
+          url: { 
+            path: '/dashboard',
+            label: 'Dashboard'
+          },
+          order: 0,
+          groupId: 'mock-group-1',
+          children: [
+            {
+              id: 'mock-submenu-1',
+              name: 'Overview',
+              icon: 'Chart',
+              url: { 
+                path: '/dashboard/overview',
+                label: 'Overview'
+              },
+              order: 0,
+              parentId: 'mock-menu-1',
+              groupId: 'mock-group-1'
+            } as MenuItem
+          ]
+        },
+        {
+          id: 'mock-menu-2',
+          name: 'Settings',
+          icon: 'Settings',
+          url: { 
+            path: '/dashboard/settings',
+            label: 'Settings'
+          },
+          order: 1,
+          groupId: 'mock-group-1',
+          children: []
+        }
+      ];
+      setMenuItems(mockItems);
+      return;
+    }
+    
+    // Fetch real menu items from API
     try {
       setLoading(true);
+      console.log('[MenuProvider] Fetching menu items for dashboard:', dashboardId);
       const items = await menuService.getMenuItems(dashboardId);
-      const menuTree = buildMenuTree(items);
+      console.log('[MenuProvider] Fetched menu items:', items);
       
-      // Update cache
+      if (!items || items.length === 0) {
+        console.warn('[MenuProvider] No menu items found for dashboard:', dashboardId);
+        console.log('[MenuProvider] Creating mock menu items for empty response');
+        const mockItems: MenuItem[] = [
+          {
+            id: 'fallback-menu-1',
+            name: 'Dashboard',
+            icon: 'Home',
+            url: { 
+              path: '/dashboard',
+              label: 'Dashboard'
+            },
+            order: 0,
+            groupId: 'fallback-group-1',
+            children: []
+          },
+          {
+            id: 'fallback-menu-2',
+            name: 'Settings',
+            icon: 'Settings',
+            url: { 
+              path: '/dashboard/settings',
+              label: 'Settings'
+            },
+            order: 1,
+            groupId: 'fallback-group-1',
+            children: []
+          }
+        ];
+        menuCache.current[dashboardId] = mockItems;
+        setMenuItems(mockItems);
+        setLoading(false);
+        return;
+      }
+      
+      const menuTree = buildMenuTree(items);
+      console.log('[MenuProvider] Built menu tree:', menuTree);
+      
       menuCache.current[dashboardId] = menuTree;
       setMenuItems(menuTree);
     } catch (error) {
       console.error('[MenuProvider] Failed to load menu:', error);
-      setMenuItems([]);
+      
+      console.log('[MenuProvider] Creating fallback menu items due to error');
+      const fallbackItems: MenuItem[] = [
+        {
+          id: 'error-menu-1',
+          name: 'Dashboard',
+          icon: 'Home',
+          url: { 
+            path: '/dashboard',
+            label: 'Dashboard'
+          },
+          order: 0,
+          groupId: 'error-group-1',
+          children: []
+        }
+      ];
+      setMenuItems(fallbackItems);
     } finally {
       setLoading(false);
     }
+  }, [buildMenuTree]);
+  
+  // Convert menu items to NavMainData structure
+  const buildNavData = useCallback((dashboardId: string, items: MenuItem[]) => {
+    try {
+      console.log('[MenuProvider] Building NavMainData from menu items:', items);
+      
+      // Organize items by group
+      const groupsMap: Record<string, {
+        id: string;
+        name: string;
+        icon?: string;
+        items: MenuItem[];
+      }> = {};
+      
+      // First pass: collect all groups
+      items.forEach(item => {
+        const groupId = item.groupId || 'default';
+        
+        if (!groupsMap[groupId]) {
+          groupsMap[groupId] = {
+            id: groupId,
+            name: groupId === 'default' ? 'Main' : groupId,
+            icon: item.icon || 'File',
+            items: []
+          };
+        }
+        
+        // Add top-level items to their groups
+        if (!item.parentId) {
+          groupsMap[groupId].items.push(item);
+        }
+      });
+      
+      // Transform to NavMainData format
+      const navData: NavMainData = {
+        dashboardId,
+        groups: Object.values(groupsMap).map(group => ({
+          id: group.id,
+          name: group.name,
+          icon: group.icon,
+          label: {
+            id: group.id,
+            name: group.name,
+            icon: group.icon
+          },
+          items: group.items.sort((a, b) => {
+            const aOrder = a.order || 0;
+            const bOrder = b.order || 0;
+            return aOrder - bOrder;
+          })
+        })),
+        items: items.filter(item => !item.parentId),
+        subItems: items.filter(item => !!item.parentId) as SubMenuItem[]
+      };
+      
+      console.log('[MenuProvider] Built NavMainData:', navData);
+      setNavData(navData);
+      
+    } catch (error) {
+      console.error('[MenuProvider] Failed to build NavMainData:', error);
+      // Fallback to mock data
+      createMockNavData(dashboardId);
+    }
+  }, [createMockNavData]);
+  
+  // Update NavMainData
+  const updateNavData = useCallback((data: NavMainData) => {
+    setNavData(data);
   }, []);
-
-  // Debounce the menu loading
-  const debouncedLoadMenu = useCallback(
-    debounce((dashboardId: string) => {
-      loadMenuItems(dashboardId);
-    }, 300),
-    [loadMenuItems]
-  );
-
-  useEffect(() => {
-    if (currentDashboardId) {
-      debouncedLoadMenu(currentDashboardId);
-    } else {
-      setMenuItems([]);
-    }
-
-    return () => {
-      debouncedLoadMenu.cancel();
-    };
-  }, [currentDashboardId, debouncedLoadMenu]);
-
-  useEffect(() => {
-    if (currentDashboard?.dashboardId) {
-      setCurrentDashboardId(currentDashboard.dashboardId);
-    }
-  }, [currentDashboard]);
-
+  
+  // Update a sub-menu item
   const updateSubMenuItem = useCallback((groupId: string, parentId: string, item: SubMenuItem) => {
     setMenuItems(prevItems => {
       const newItems = [...prevItems];
-      const groupIndex = newItems.findIndex(group => group.id === groupId);
-      if (groupIndex === -1) return prevItems;
-
-      const group = newItems[groupIndex];
-      const parentIndex = group.children?.findIndex(parent => parent.id === parentId) ?? -1;
-      if (parentIndex === -1) return prevItems;
-
-      const parent = group.children![parentIndex];
-      const itemIndex = parent.children?.findIndex(child => child.id === item.id) ?? -1;
+      const parentIndex = newItems.findIndex(i => i.id === parentId);
       
-      if (itemIndex === -1 && parent.children) {
-        parent.children.push(item);
-      } else if (parent.children) {
-        parent.children[itemIndex] = item;
+      if (parentIndex === -1) {
+        console.warn('[MenuProvider] Parent item not found:', parentId);
+        return prevItems;
       }
-
+      
+      // Clone parent to avoid mutation
+      const parent = { ...newItems[parentIndex] };
+      
+      // Initialize children array if it doesn't exist
+      if (!parent.children) {
+        parent.children = [];
+      }
+      
+      // Find existing item or add new one
+      const existingItemIndex = parent.children.findIndex(c => c.id === item.id);
+      if (existingItemIndex !== -1) {
+        // Update existing item
+        parent.children[existingItemIndex] = { ...item, groupId } as MenuItem;
+      } else {
+        // Add new item
+        parent.children.push({ ...item, groupId } as MenuItem);
+      }
+      
+      // Replace parent in the items array
+      newItems[parentIndex] = parent;
+      
       return newItems;
     });
   }, []);
-
+  
+  // Delete a sub-menu item
   const deleteSubMenuItem = useCallback((groupId: string, parentId: string, itemId: string) => {
     setMenuItems(prevItems => {
       const newItems = [...prevItems];
-      const groupIndex = newItems.findIndex(group => group.id === groupId);
-      if (groupIndex === -1) return prevItems;
-
-      const group = newItems[groupIndex];
-      const parentIndex = group.children?.findIndex(parent => parent.id === parentId) ?? -1;
-      if (parentIndex === -1) return prevItems;
-
-      const parent = group.children![parentIndex];
-      if (parent.children) {
-        parent.children = parent.children.filter(child => child.id !== itemId);
+      const parentIndex = newItems.findIndex(i => i.id === parentId);
+      
+      if (parentIndex === -1) {
+        console.warn('[MenuProvider] Parent item not found:', parentId);
+        return prevItems;
       }
-
+      
+      // Clone parent to avoid mutation
+      const parent = { ...newItems[parentIndex] };
+      
+      // Remove item from children
+      if (parent.children) {
+        parent.children = parent.children.filter(c => c.id !== itemId);
+      }
+      
+      // Replace parent in the items array
+      newItems[parentIndex] = parent;
+      
       return newItems;
     });
   }, []);
-
-  const contextValue = useMemo(() => ({
-    menuItems,
-    loading,
-    navData,
-    currentDashboardId,
-    setCurrentDashboardId: (id: string) => {
-      if (id !== currentDashboardId) {
-        setCurrentDashboardId(id);
-      }
-    },
-    updateNavData,
-    updateSubMenuItem,
-    deleteSubMenuItem,
-  }), [menuItems, loading, navData, currentDashboardId, updateNavData, updateSubMenuItem, deleteSubMenuItem]);
-
+  
+  // Set current dashboard ID
+  const setCurrentDashboardId = useCallback((id: string) => {
+    console.log('[MenuProvider] Setting current dashboard ID:', id);
+    setCurrentDashboardIdState(id);
+    
+    // For debugging only, to verify the ID was set
+    setTimeout(() => {
+      console.log('[MenuProvider] Verified current dashboard ID is now:', id);
+    }, 50);
+  }, []);
+  
+  // Effect to load menu items when dashboard changes
+  useEffect(() => {
+    if (currentDashboard?.id) {
+      console.log('[MenuProvider] Dashboard changed, loading menu items:', currentDashboard.id);
+      setCurrentDashboardId(currentDashboard.id);
+      fetchMenuItems(currentDashboard.id);
+    }
+  }, [currentDashboard, fetchMenuItems, setCurrentDashboardId]);
+  
+  // Effect to build nav data when menu items change
+  useEffect(() => {
+    if (currentDashboardId && menuItems.length > 0) {
+      console.log('[MenuProvider] Menu items changed, building nav data');
+      buildNavData(currentDashboardId, menuItems);
+    }
+  }, [currentDashboardId, menuItems, buildNavData]);
+  
   return (
-    <MenuContext.Provider value={contextValue}>
+    <MenuContext.Provider
+      value={{
+        menuItems,
+        loading,
+        navData,
+        currentDashboardId,
+        setCurrentDashboardId,
+        updateNavData,
+        updateSubMenuItem,
+        deleteSubMenuItem
+      }}
+    >
       {children}
     </MenuContext.Provider>
   );
 };
 
+// Hook to use MenuContext
 export const useMenu = () => {
   const context = useContext(MenuContext);
   if (!context) {

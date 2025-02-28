@@ -26,7 +26,7 @@ function Icon({ icon, className }: IconProps) {
 }
 
 export function AppSidebar({ className }: { className?: string }) {
-  const { menuItems, setCurrentDashboardId } = useMenu()
+  const { menuItems, setCurrentDashboardId, currentDashboardId } = useMenu()
   const {
     mounted,
     isOpen,
@@ -48,11 +48,19 @@ export function AppSidebar({ className }: { className?: string }) {
       <SidebarContentWrapper
         type="default"
         menuItems={menuItems}
-        isOpen={isOpen}
         onDashboardChange={(dashboard: Dashboard) => {
-          console.log('[AppSidebar] Dashboard change:', dashboard.dashboardId);
+          console.log('[AppSidebar] Dashboard change:', dashboard);
+          console.log('[AppSidebar] Dashboard ID:', dashboard.dashboardId);
+          console.log('[AppSidebar] Current menu context dashboardId:', currentDashboardId);
+          
           // Update the current dashboard in menu context
           setCurrentDashboardId(dashboard.dashboardId || 'main');
+          
+          // Verify the ID was set
+          setTimeout(() => {
+            console.log('[AppSidebar] After update - Current dashboardId:', currentDashboardId);
+          }, 100);
+          
           // Load dashboard navigation with default menu or first menu
           loadDashboardNavigation(
             dashboard.dashboardId || 'main'

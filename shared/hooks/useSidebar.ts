@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { MenuItem } from '@/slices/sidebar/menu/types/'
-import { useMenu } from '@/slices/sidebar/menu/types/MenuContextStore'
+import { useMenu } from '@/slices/sidebar/menu/nav-main/context/MenuContextStore'
 
 interface UseSidebarProps {
   initialMenuId?: string

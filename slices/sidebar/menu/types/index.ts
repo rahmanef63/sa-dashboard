@@ -1,11 +1,5 @@
-// Base types
+// Base types - exclude NavMainData which is re-exported from menu-items
 export * from './base';
 
 // Menu item types
 export * from './menu-items';
-
-// Form types
-export * from './forms';
-
-// Context and action types
-export * from './context';

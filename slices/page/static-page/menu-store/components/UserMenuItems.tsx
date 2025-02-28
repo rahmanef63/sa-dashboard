@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "share
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "shared/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "shared/components/ui/alert"
 import { Dialog, DialogContent } from "shared/components/ui/dialog"
-import { MenuItem, SubMenuItem, GroupLabel, NavGroup } from '@/slices/sidebar/menu/types/'
+import { MenuItem, SubMenuItem, GroupLabel, NavMainGroup } from '@/slices/sidebar/menu/types/'
 import { UserMenuItemsProps } from '../types/userMenu.types'
 import { type LucideIcon, Edit, Trash, PlusCircle, File, AlertCircle } from 'lucide-react'
 import { renderIcon as renderIconUtil } from '@/shared/icon-picker/utils'
@@ -15,7 +15,7 @@ import {
  } from '../hooks'
 import { createEmptySubMenuItem } from '../utils'
 import { MenuItemForm } from '@/slices/sidebar/menu/nav-main/components/forms/MenuItemForm'
-import { GroupLabelForm } from '@/slices/sidebar/menu/nav-main/components/forms/GroupForm'
+import { GroupForm as GroupLabelForm } from '@/slices/sidebar/menu/nav-main/components/forms/GroupForm'
 import { SubMenuItemForm } from '@/slices/sidebar/menu/nav-main/components/forms/SubMenuItemForm'
 
 // Helper function to render icon component
@@ -57,14 +57,20 @@ export function UserMenuItems({
     navData, 
     handleDeleteItem, 
     handleSaveLabel,
-    handleGroupChange,
     updateItemCollapsible,
     deleteGroupLabel,
-    findMenuItem
+    findMenuItem,
+    toggleCollapse
   } = useUserMenu();
 
   const handleToggleCollapsible = (itemId: string, isCollapsible: boolean) => {
     updateItemCollapsible(itemId, isCollapsible);
+  };
+
+  const handleItemClick = (itemId: string) => {
+    if (itemId && toggleCollapse) {
+      toggleCollapse(itemId);
+    }
   };
 
   // Create wrapper functions to match expected types
@@ -112,6 +118,13 @@ export function UserMenuItems({
     return parentItem.items.find(item => item.id === subItemId) || null;
   };
 
+  // Handle group change using onChangeGroup from props
+  const handleGroupChangeWrapper = (itemId: string, groupId: string) => {
+    if (onChangeGroup) {
+      onChangeGroup(itemId, groupId);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -119,10 +132,10 @@ export function UserMenuItems({
         <CardDescription>Current items in your navigation menu</CardDescription>
       </CardHeader>
       <CardContent>
-        {navData.groups.map((group: NavGroup) => (
+        {navData && navData.groups && navData.groups.map((group: NavMainGroup) => (
           <div key={group.label.id}>
             <div className="flex items-center justify-between">
-              <h3 className="text-md font-medium">{group.label.title}</h3>
+              <h3 className="text-md font-medium">{group.label.name}</h3>
               {group.label.id !== 'default' && (
                 <div className="flex gap-2">
                   <Button
@@ -143,12 +156,12 @@ export function UserMenuItems({
               )}
             </div>
             <div>
-              {group.items.map((item: MenuItem) => (
+              {group.items && Array.isArray(group.items) && group.items.map((item: MenuItem) => (
                 <div key={item.id} className="flex flex-col space-y-1 p-2 border rounded-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                       {renderIcon(item.icon)}
-                      <span>{item.title}</span>
+                      <span>{item.name}</span>
                     </div>
                     {iconErrors[item.id] && (
                       <Alert variant="destructive" className="mt-2">
@@ -208,16 +221,16 @@ export function UserMenuItems({
                         </Button>
                         <Select
                           defaultValue={item.groupId || group.label.id}
-                          onValueChange={(value) => handleGroupChange(item.id, value)}
+                          onValueChange={(value) => handleGroupChangeWrapper(item.id, value)}
                           value={item.groupId || group.label.id}
                         >
                           <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Select group" />
                           </SelectTrigger>
                           <SelectContent>
-                            {navData.groups.map((g: NavGroup) => (
+                            {navData && navData.groups && navData.groups.map((g: NavMainGroup) => (
                               <SelectItem key={g.label.id} value={g.label.id}>
-                                {g.label.title}
+                                {g.label.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -232,7 +245,7 @@ export function UserMenuItems({
                       <div key={subItem.id} className="flex items-center justify-between p-2 border rounded-lg bg-gray-50">
                         <div className="flex items-center gap-2">
                           {renderIcon(subItem.icon)}
-                          <span>{subItem.title}</span>
+                          <span>{subItem.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button
@@ -255,6 +268,11 @@ export function UserMenuItems({
                   </div>
                 </div>
               ))}
+              {group.items && Array.isArray(group.items) && group.items.length === 0 && (
+                <div className="text-gray-500 text-sm mt-2">
+                  No items in this group
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -277,7 +295,7 @@ export function UserMenuItems({
       <Dialog open={activeDialog === 'editLabel'} onOpenChange={(open) => !open && setActiveDialog(null)}>
         <DialogContent>
           <GroupLabelForm 
-            label={navData.groups.find(g => g.label.id === selectedLabelId)?.label || null}
+            label={navData && navData.groups && navData.groups.find(g => g.label.id === selectedLabelId)?.label || null}
             onSave={handleSaveLabelWrapper}
             onCancel={() => setActiveDialog(null)}
           />
@@ -288,7 +306,7 @@ export function UserMenuItems({
         <DialogContent>
           <MenuItemForm 
             item={findMenuItem(selectedItemId || '') || null}
-            onSave={(item) => {
+            onSave={(item: MenuItem) => {
               handleEditItem(item);
               setActiveDialog(null);
             }}

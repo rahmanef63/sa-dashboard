@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ChevronsUpDown, Plus } from "lucide-react"
-import { MenuSwitcher as MenuSwitcherType, MenuSwitcherItem } from '@/slices/sidebar/menu/types/'
+import { MenuSwitcherItem } from '@/slices/sidebar/menu/types/menu-items'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,16 +20,16 @@ import {
 import { renderIcon } from "@/shared/icon-picker/utils"
 
 type MenuSwitcherProps = {
-  menuSwitcher: MenuSwitcherType
-  onMenuChange: (menu: MenuSwitcherItem) => void
+  items: MenuSwitcherItem[]
+  onSelect: (item: MenuSwitcherItem) => void
   className?: string
   isMobile?: boolean
 }
 
-export function MenuSwitcher({ menuSwitcher, onMenuChange, className, isMobile = false }: MenuSwitcherProps) {
-  const [activeMenu, setActiveMenu] = React.useState(menuSwitcher.menus?.[0])
+export function MenuSwitcher({ items, onSelect, className, isMobile = false }: MenuSwitcherProps) {
+  const [activeItem, setActiveItem] = React.useState<MenuSwitcherItem | undefined>(items?.[0])
 
-  if (!menuSwitcher.menus?.length) {
+  if (!items?.length) {
     return null
   }
 
@@ -43,11 +43,11 @@ export function MenuSwitcher({ menuSwitcher, onMenuChange, className, isMobile =
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                {renderIcon(activeMenu?.icon)}
+                {renderIcon(activeItem?.icon)}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">
-                  {activeMenu?.title}
+                  {activeItem?.name}
                 </span>
               </div>
               <ChevronsUpDown className="ml-auto" />
@@ -62,19 +62,19 @@ export function MenuSwitcher({ menuSwitcher, onMenuChange, className, isMobile =
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               Menus
             </DropdownMenuLabel>
-            {menuSwitcher.menus?.map((menu, index) => (
+            {items.map((menu: MenuSwitcherItem, index: number) => (
               <DropdownMenuItem
                 key={menu.id}
                 onClick={() => {
-                  setActiveMenu(menu)
-                  onMenuChange(menu)
+                  setActiveItem(menu)
+                  onSelect(menu)
                 }}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
                   {renderIcon(menu.icon)}
                 </div>
-                {menu.title}
+                {menu.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
               </DropdownMenuItem>
             ))}

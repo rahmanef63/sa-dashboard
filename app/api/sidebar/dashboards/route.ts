@@ -50,41 +50,22 @@ export async function GET(request: NextRequest) {
       // Query for user dashboards with roles
       const query = `
         WITH user_dashboards AS (
-          -- Get dashboards directly assigned to the user
-          SELECT 
-            d.*,
-            u.dashboard_roles[array_position(u.dashboard_ids, d.id)] as user_role,
-            u.name as user_name,
-            u.email as user_email,
-            CASE WHEN u.default_dashboard_id = d.id THEN true ELSE false END as is_default,
-            COALESCE(d.menu_items, '[]'::jsonb) as menu_items
+          SELECT d.*
           FROM dashboards d
-          JOIN users u ON d.id = ANY(u.dashboard_ids)
-          WHERE u.id = $1 AND d.is_active = true
-
-          UNION
-
-          -- Get public dashboards not directly assigned to the user
-          SELECT 
-            d.*,
-            'viewer' as user_role,
-            u.name as user_name,
-            u.email as user_email,
-            false as is_default,
-            COALESCE(d.menu_items, '[]'::jsonb) as menu_items
-          FROM dashboards d
-          CROSS JOIN users u
-          WHERE u.id = $1 
-            AND d.is_active = true 
-            AND d.is_public = true
-            AND NOT d.id = ANY(
-              SELECT unnest(dashboard_ids) 
-              FROM users 
-              WHERE id = $1
-            )
+          WHERE d.id IN (
+            SELECT unnest(dashboard_ids) 
+            FROM users 
+            WHERE id = $1
+          )
         )
-        SELECT * FROM user_dashboards
-        ORDER BY created_at DESC;
+        SELECT ud.*, COALESCE(mi.menu_items, '[]') as menu_items
+        FROM user_dashboards ud
+        LEFT JOIN (
+          SELECT dashboard_id, json_agg(mi.*) as menu_items
+          FROM menu_items mi
+          GROUP BY dashboard_id
+        ) mi ON ud.id = mi.dashboard_id
+        ORDER BY ud.created_at DESC;
       `;
       const dashboardsResult = await db.query(query, [userId]);
 

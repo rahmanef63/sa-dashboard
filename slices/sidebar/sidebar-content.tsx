@@ -19,11 +19,11 @@ import { MenuSwitcher } from '@/slices/sidebar/menu/nav-main/menu-switcher/menu-
 import { useSidebar } from '@/shared/hooks/useSidebar'
 import { useUser } from '@/shared/hooks/use-user'
 import { useDashboard } from './dashboard/hooks/use-dashboard'
-import { useMenu } from './menu/types/MenuContextStore'
+import { useMenu } from '@/slices/sidebar/menu/nav-main/context/MenuContextStore'
 import { 
   MenuItem,
   SubMenuItem,
-  MenuSwitcherItem,
+  MenuSwitcherItem as MenuSwitcherItemType,
   GroupLabel,
   NavMainData
 } from './menu/types/menu-items'
@@ -32,7 +32,6 @@ import { NavMain } from './menu/nav-main/nav-main'
 interface SidebarContentProps {
   type: 'default' | 'menuSwitcher'
   menuItems: MenuItem[]
-  isOpen?: boolean
   onDashboardChange: (dashboard: any) => void
   onMenuChange: (menu: MenuItem) => void
   onFocus?: () => void
@@ -42,25 +41,27 @@ interface SidebarContentProps {
 }
 
 interface MenuSwitcherProps {
-  items: MenuSwitcherItem[];
-  onSelect: (item: MenuSwitcherItem) => void;
+  items: MenuSwitcherItemType[];
+  onSelect: (item: MenuSwitcherItemType) => void;
 }
 
-interface MenuTreeProps {
-  items: MenuItem[];
-  onSelect: (item: MenuItem) => void;
-}
+// Default navigation data for initial state
+const initialNavData: NavMainData = {
+  groups: [],
+  items: [],
+  subItems: [],
+  dashboardId: ''
+};
 
 export function SidebarContentWrapper({
-  type,
-  menuItems,
-  isOpen = true,
+  type = 'default',
+  menuItems = [],
   onDashboardChange,
   onMenuChange,
   onFocus,
   renderIcon,
   className,
-  sidebarProps,
+  sidebarProps = {},
 }: SidebarContentProps) {
   const { userId, userName, userEmail, avatar, role } = useUser();
   const { dashboards: availableDashboards, currentDashboard, selectDashboard } = useDashboard();
@@ -69,169 +70,152 @@ export function SidebarContentWrapper({
   useEffect(() => {
     if (currentDashboard?.id) {
       console.log('[SidebarContent] Current dashboard changed:', currentDashboard.id);
-      const newNavData: NavMainData = {
-        groups: []
-      };
+      const newNavData: NavMainData = { ...initialNavData, dashboardId: currentDashboard.id.toString() };
       updateNavData(newNavData);
     }
   }, [currentDashboard?.id, updateNavData]);
 
   const handleDashboardChange = useCallback((dashboard: any) => {
     console.log('[SidebarContent] Dashboard changed:', dashboard);
-    onDashboardChange(dashboard);
     selectDashboard(dashboard);
-  }, [onDashboardChange, selectDashboard]);
+    onDashboardChange?.(dashboard);
+  }, [selectDashboard, onDashboardChange]);
 
-  const handleMenuChange = useCallback((menu: MenuItem) => {
-    console.log('[SidebarContent] Menu changed:', menu);
-    onMenuChange(menu);
-  }, [onMenuChange]);
+  const userName2 = useMemo(() => {
+    return userName || "User";
+  }, [userName]);
 
-  const handleMenuSelect = (item: MenuItem) => {
-    console.log('[SidebarContent] Menu item selected:', item);
-  };
-
-  const handleMenuSwitcherSelect = (item: MenuSwitcherItem) => {
-    console.log('[SidebarContent] Menu switcher item selected:', item);
-  };
-
-  // Convert menu items to tree structure
-  const convertToTree = (items: MenuItem[]): MenuItem[] => {
-    const itemMap = new Map<string, MenuItem>();
-    const rootItems: MenuItem[] = [];
-
-    // First pass: Create all nodes
-    items.forEach((item: MenuItem) => {
-      itemMap.set(item.id, {
-        ...item,
-        children: [],
-        groupId: item.groupId
-      });
-    });
-
-    // Second pass: Build the tree
-    items.forEach((item: MenuItem) => {
-      if (item.parentId) {
-        const parent = itemMap.get(item.parentId);
-        if (parent && parent.children) {
-          const child: SubMenuItem = {
-            ...item,
-            parentId: item.parentId,
-            path: item.path || '',
-            children: []
-          };
-          parent.children.push(child);
-        }
-      } else {
-        const rootItem = itemMap.get(item.id);
-        if (rootItem) {
-          rootItems.push(rootItem);
-        }
-      }
-    });
-
-    return rootItems;
-  };
-
-  // Sort menu items by order
-  const sortMenuItems = (a: MenuItem, b: MenuItem): number => {
-    const orderA = a.orderIndex ?? 0;
-    const orderB = b.orderIndex ?? 0;
-    return orderA - orderB;
-  };
-
-  // Group menu items
-  const groupMenuItems = (items: MenuItem[]): { [key: string]: MenuItem[] } => {
-    return items.reduce((groups: { [key: string]: MenuItem[] }, item: MenuItem) => {
-      const groupId = item.groupId || 'default';
-      if (!groups[groupId]) {
-        groups[groupId] = [];
-      }
-      groups[groupId].push(item);
-      return groups;
-    }, {});
-  };
-
-  // Convert flat menu items to hierarchical structure
-  const menuTree = useMemo(() => {
-    if (!navData?.groups) return [];
-    const allItems = navData.groups.flatMap(group => group.items);
-    return convertToTree(allItems.sort(sortMenuItems));
-  }, [navData?.groups]);
-
-  // Group menu items by parent
-  const groupedMenuItems = useMemo(() => {
-    const items = type === 'menuSwitcher' ? menuItems : 
-      navData?.groups ? navData.groups.flatMap(group => group.items) : [];
-    
-    // Map items to ensure they have all required properties
-    const mappedItems: MenuItem[] = items.map((item: MenuItem) => ({
-      ...item,
+  // Map menu items to switcher items
+  const switcherItems = useMemo(() => {
+    return menuItems.map((item) => ({
       id: item.id,
-      name: item.name || '',
-      icon: item.icon,
-      path: item.url?.href || '#',
-      orderIndex: item.orderIndex || 0,
-      parentId: item.parentId,
-      groupId: item.groupId,
-      children: []
-    }));
+      name: item.name,
+      icon: item.icon
+    }))
+  }, [menuItems]);
 
-    // Create a map for quick lookup
-    const itemMap = new Map(mappedItems.map(item => [item.id, { ...item, children: [] as MenuItem[] }]));
-
-    // Group children under their parents
-    mappedItems.forEach((item: MenuItem) => {
-      if (item.parentId && itemMap.has(item.parentId)) {
-        const parent = itemMap.get(item.parentId);
-        if (parent && parent.children) {
-          parent.children.push(item);
-        }
-      }
-    });
-
-    // Get root items and sort them by order
-    const rootItems = mappedItems
-      .filter((item: MenuItem) => !item.parentId)
-      .sort((a: MenuItem, b: MenuItem) => (a.orderIndex || 0) - (b.orderIndex || 0));
-
-    console.log('[SidebarContent] Grouped menu items:', rootItems);
-    return rootItems;
-  }, [type, menuItems, navData?.groups]);
+  const handleMenuChange = useCallback((item: MenuSwitcherItemType) => {
+    // Find the original menu item with this ID
+    const menuItem = menuItems.find(mi => mi.id === item.id);
+    if (menuItem) {
+      onMenuChange?.(menuItem);
+    }
+  }, [menuItems, onMenuChange]);
 
   return (
-    <Sidebar
-      {...sidebarProps}
-      className={className}
-    >
+    <Sidebar className={className} onFocus={onFocus} {...sidebarProps}>
       <SidebarHeader>
         <DashboardSwitcher
           dashboards={availableDashboards}
-          defaultDashboardId={currentDashboard?.id}
+          defaultDashboardId={currentDashboard?.id || ''}
           onDashboardChange={handleDashboardChange}
         />
       </SidebarHeader>
-
       <SidebarContent>
-        {type === 'menuSwitcher' ? (
-          <MenuSwitcher
-            items={groupedMenuItems}
-            onSelect={handleMenuSwitcherSelect}
-          />
-        ) : (
+        {type === 'default' ? (
           <NavMain />
+        ) : (
+          <MenuSwitcher
+            items={switcherItems}
+            onSelect={handleMenuChange} 
+          />
         )}
       </SidebarContent>
-
       <SidebarFooter>
         <NavUser
-          userId={userId}
-          userName={userName}
-          userEmail={userEmail}
-          avatar={avatar}
-          role={role}
+          user={{
+            id: userId,
+            name: userName,
+            email: userEmail,
+            avatar: avatar,
+            role: role
+          }}
         />
       </SidebarFooter>
     </Sidebar>
   );
+}
+
+// Helper function to convert flat menu items to a tree structure
+export function buildMenuTree(items: MenuItem[]): MenuItem[] {
+  if (!items || items.length === 0) {
+    return [];
+  }
+
+  // Map items by their ID for easy lookup
+  const itemMap = new Map<string, MenuItem & { children: MenuItem[] }>();
+  const rootItems: MenuItem[] = [];
+
+  // First pass: Create map entries for all items
+  items.forEach(item => {
+    itemMap.set(item.id, { ...item, children: [] });
+  });
+
+  // Second pass: Build the tree
+  items.forEach(item => {
+    const mappedItem = itemMap.get(item.id);
+    if (mappedItem) {
+      if (item.parentId && itemMap.has(item.parentId)) {
+        // This is a child item, add it to its parent's children
+        const parent = itemMap.get(item.parentId);
+        if (parent) {
+          parent.children.push(mappedItem);
+        }
+      } else {
+        // This is a root item
+        rootItems.push(mappedItem);
+      }
+    }
+  });
+
+  return rootItems;
+}
+
+// Helper function to group items by their groupId
+export function groupItemsByGroupId(groups: any[], items: MenuItem[]) {
+  if (!groups || !items) return groups;
+
+  // Create a map of groups by ID for efficiency
+  const groupMap = new Map(groups.map(group => [group.id, { ...group, items: [] }]));
+
+  // Assign items to their respective groups
+  items.forEach(item => {
+    if (item.groupId && groupMap.has(item.groupId)) {
+      const group = groupMap.get(item.groupId);
+      if (group) {
+        group.items.push(item);
+      }
+    }
+  });
+
+  // Convert map back to array and sort groups if needed
+  return Array.from(groupMap.values());
+}
+
+// Helper function to create a menu tree from flat items
+export function createMenuTree(items: MenuItem[]): MenuItem[] {
+  // If there are no items, return an empty array
+  if (!items || items.length === 0) return [];
+
+  // Map items for quick lookup
+  const mappedItems = items.map(item => ({
+    ...item,
+    children: [] as MenuItem[]
+  }));
+
+  // Create a map for quick lookup
+  const itemMap = new Map(mappedItems.map(item => [item.id, { ...item, children: [] as MenuItem[] }]));
+
+  // Group children under their parents
+  mappedItems.forEach((item: MenuItem) => {
+    if (item.parentId && itemMap.has(item.parentId)) {
+      const parent = itemMap.get(item.parentId);
+      if (parent && parent.children) {
+        parent.children.push(item);
+      }
+    }
+  });
+
+  // Return only root items (those without a parent or with a non-existent parent)
+  return mappedItems.filter(item => !item.parentId || !itemMap.has(item.parentId));
 }

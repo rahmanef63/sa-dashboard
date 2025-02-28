@@ -9,7 +9,11 @@ export * from './base';
 export * from './forms';
 
 // Mutation related types
-export * from './mutations';
+// Export specific types to avoid name conflicts with './base'
+export type { 
+  DashboardMutationVariables,
+  DashboardMutationResult
+} from './mutations';
 
 // Constants
 export * from './constants';
