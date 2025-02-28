@@ -53,7 +53,11 @@ export const useSidebar = ({
     
     if (dashboardId) {
       console.log('[useSidebar] Setting current dashboard:', dashboardId);
-      setCurrentDashboardId(dashboardId);
+      // Set dashboard ID with a slight delay to ensure state synchronization
+      // This ensures we don't have race conditions in state updates
+      setTimeout(() => {
+        setCurrentDashboardId(dashboardId);
+      }, 0);
     }
   }, [mounted, setCurrentDashboardId])
 

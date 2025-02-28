@@ -369,13 +369,27 @@ export const MenuProvider = ({ children }: { children: React.ReactNode }) => {
   // Set current dashboard ID
   const setCurrentDashboardId = useCallback((id: string) => {
     console.log('[MenuProvider] Setting current dashboard ID:', id);
+    
+    // Update the dashboard ID state
     setCurrentDashboardIdState(id);
+    
+    // Proactively fetch menu items for this dashboard if they aren't already cached
+    if (id && !menuCache.current[id]) {
+      console.log('[MenuProvider] Proactively fetching menu items for new dashboard:', id);
+      fetchMenuItems(id);
+    } else if (id && menuCache.current[id]) {
+      console.log('[MenuProvider] Using cached menu items for dashboard:', id);
+      setMenuItems(menuCache.current[id]);
+      
+      // Still build the nav data for the dashboard
+      buildNavData(id, menuCache.current[id]);
+    }
     
     // For debugging only, to verify the ID was set
     setTimeout(() => {
       console.log('[MenuProvider] Verified current dashboard ID is now:', id);
     }, 50);
-  }, []);
+  }, [fetchMenuItems, buildNavData]);
   
   // Effect to load menu items when dashboard changes
   useEffect(() => {

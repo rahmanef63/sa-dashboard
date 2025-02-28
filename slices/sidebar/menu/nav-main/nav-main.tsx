@@ -55,6 +55,21 @@ export function NavMain() {
     }
   }, [contextNavData, currentDashboardId, menuItems])
 
+  // Listen for dashboard changes
+  React.useEffect(() => {
+    if (currentDashboardId) {
+      console.log('[NavMain] Dashboard ID changed:', currentDashboardId);
+      
+      // Force refresh nav data if needed
+      if (contextNavData?.dashboardId !== currentDashboardId) {
+        console.log('[NavMain] Dashboard ID mismatch, forcing refresh', {
+          contextDataId: contextNavData?.dashboardId,
+          currentId: currentDashboardId
+        });
+      }
+    }
+  }, [currentDashboardId, contextNavData]);
+
   // Debug placeholder to make missing content visible
   if (!mounted || !navData.groups || (navData.groups && navData.groups.length === 0)) {
     console.log('[NavMain] Rendering placeholder - No navigation data', { 

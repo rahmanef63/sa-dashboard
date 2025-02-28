@@ -6,7 +6,13 @@ import { MenuItem, BaseMenuItem } from '@/slices/sidebar/menu/types/';
 
 const CACHE_CONTROL = 'public, s-maxage=10, stale-while-revalidate=59';
 
+/**
+ * Builds a hierarchical menu tree from flat menu items
+ * @param items - Array of menu items to build tree from
+ * @returns Hierarchical menu tree
+ */
 function buildMenuTree(items: MenuItem[]): MenuItem[] {
+  console.log('[Menu API] Building menu tree from', items.length, 'items');
   const itemMap = new Map<string, MenuItem>();
   const roots: MenuItem[] = [];
 
@@ -52,6 +58,7 @@ function buildMenuTree(items: MenuItem[]): MenuItem[] {
     }
   });
 
+  console.log('[Menu API] Built tree with', roots.length, 'root items');
   return roots;
 }
 
@@ -63,6 +70,7 @@ interface DbMenuItem {
   icon?: string;
   url?: {
     path?: string;
+    href?: string;
   };
   url_href?: string;
   path?: string;
@@ -72,86 +80,87 @@ interface DbMenuItem {
   order?: number;
 }
 
+/**
+ * GET handler for menu items
+ * Fetches menu items for a dashboard with multiple fallback mechanisms
+ */
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req) => {
     return withErrorHandler(async () => {
+      const startTime = Date.now();
       const { searchParams } = new URL(request.url);
       const dashboardId = searchParams.get('dashboardId');
 
       if (!dashboardId) {
+        console.error('[Menu API] Missing dashboard ID in request');
         throw new ApiError('Dashboard ID is required', 400);
       }
 
-      console.log('[Menu API] Fetching menu items for dashboard:', dashboardId);
+      console.log(`[Menu API] Fetching menu items for dashboard: ${dashboardId}`);
 
       try {
-        // Try to get menu items from dashboards.menu_items column first
-        const dashboardQuery = `
-          SELECT menu_items
-          FROM dashboards
-          WHERE id = $1
-          LIMIT 1;
+        // Try to get menu items from menu_items table
+        const menuItemsQuery = `
+          SELECT 
+            id,
+            title as name,
+            icon,
+            url,
+            parent_id as "parentId",
+            order_index as "order",
+            is_active as "isActive"
+          FROM menu_items
+          WHERE dashboard_id = $1
+          ORDER BY 
+            COALESCE(parent_id, id),
+            order_index;
         `;
         
         let menuItems = [];
+        let fetchSource = 'unknown';
         
         try {
-          const dashboardResult = await db.query(dashboardQuery, [dashboardId]);
+          console.log(`[Menu API] Querying menu_items table for dashboard: ${dashboardId}`);
           
-          if (dashboardResult.rows.length && dashboardResult.rows[0].menu_items) {
-            console.log('[Menu API] Found menu items in dashboards table');
-            const menuItemsJson = dashboardResult.rows[0].menu_items;
+          // Add a timeout for the database query to prevent hanging
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Database query timeout')), 5000);
+          });
+          
+          // Race between the actual query and the timeout
+          const menuItemsResult = await Promise.race([
+            db.query(menuItemsQuery, [dashboardId]),
+            timeoutPromise
+          ]) as any;
+          
+          if (menuItemsResult && menuItemsResult.rows) {
+            const rowCount = menuItemsResult.rows.length;
+            console.log(`[Menu API] Found ${rowCount} items in menu_items table for dashboard: ${dashboardId}`);
+            fetchSource = 'menu_items_table';
             
-            if (Array.isArray(menuItemsJson)) {
-              menuItems = menuItemsJson;
-            } else if (typeof menuItemsJson === 'string') {
-              menuItems = JSON.parse(menuItemsJson);
+            if (rowCount > 0) {
+              menuItems = menuItemsResult.rows.map((item: any) => ({
+                ...item,
+                url: item.url || { path: '/' }
+              }));
+            } else {
+              console.log(`[Menu API] No items found in menu_items table for dashboard: ${dashboardId}`);
             }
-          } else {
-            console.log('[Menu API] No menu items found in dashboards table');
           }
-        } catch (dashboardError) {
-          console.error('[Menu API] Error fetching from dashboards table:', dashboardError);
+        } catch (menuItemsError) {
+          console.error('[Menu API] Error fetching from menu_items table:', 
+            menuItemsError instanceof Error ? menuItemsError.message : 'Unknown error');
           
-          // If dashboards.menu_items doesn't exist, try the separate menu_items table
-          if (dashboardError instanceof Error && 
-              'code' in dashboardError && 
-              dashboardError.code === '42703') { // Column does not exist
-            console.log('[Menu API] Trying menu_items table instead');
-            
-            // Query the separate menu_items table as fallback
-            const menuItemsQuery = `
-              SELECT 
-                id,
-                dashboard_id,
-                title as name,
-                icon,
-                url,
-                parent_id,
-                order_index as "order",
-                is_active
-              FROM menu_items
-              WHERE dashboard_id = $1
-              ORDER BY 
-                COALESCE(parent_id, id),
-                order_index;
-            `;
-            
-            try {
-              const menuItemsResult = await db.query(menuItemsQuery, [dashboardId]);
-              if (menuItemsResult.rows.length) {
-                console.log('[Menu API] Found items in menu_items table:', menuItemsResult.rows.length);
-                menuItems = menuItemsResult.rows;
-              }
-            } catch (menuItemsError) {
-              console.error('[Menu API] Error fetching from menu_items table:', menuItemsError);
-            }
+          // Log additional details for debugging
+          if (menuItemsError instanceof Error && menuItemsError.stack) {
+            console.debug('[Menu API] Error stack:', menuItemsError.stack);
           }
         }
         
         // If no menu items were found, use mock data
         if (!menuItems || menuItems.length === 0) {
           console.log('[Menu API] No menu items found, using mock data');
+          fetchSource = 'mock_data';
           menuItems = [
             {
               id: 'menu1',
@@ -199,7 +208,7 @@ export async function GET(request: NextRequest) {
           icon: item.icon,
           groupId: dashboardId,
           url: {
-            path: item.url?.path || item.url_href || item.path || '',
+            path: item.url?.path || item.url?.href || item.url_href || item.path || '',
             label: item.name || item.title || ''
           },
           parentId: item.parent_id,
@@ -207,15 +216,23 @@ export async function GET(request: NextRequest) {
           isActive: item.is_active || true
         }));
         
-        console.log('[Menu API] Transformed menu items:', transformedItems);
+        console.log(`[Menu API] Transformed ${transformedItems.length} menu items from ${fetchSource}`);
         
         // Build menu tree
         const menuTree = buildMenuTree(transformedItems);
-        console.log('[Menu API] Built menu tree:', menuTree);
+        
+        const elapsedTime = Date.now() - startTime;
+        console.log(`[Menu API] Menu processing complete in ${elapsedTime}ms for dashboard: ${dashboardId}`);
         
         // Return menu tree wrapped in response
         return new NextResponse(
-          JSON.stringify({ data: menuTree }),
+          JSON.stringify({ 
+            data: menuTree,
+            success: true,
+            source: fetchSource,
+            timestamp: new Date().toISOString(),
+            processingTime: elapsedTime
+          }),
           { 
             status: 200,
             headers: {
@@ -225,19 +242,28 @@ export async function GET(request: NextRequest) {
           }
         );
       } catch (error) {
-        console.error('[Menu API] Error processing menu items:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack = error instanceof Error ? error.stack : '';
         
-        // Return empty array on error
+        console.error('[Menu API] Error processing menu items:', errorMessage);
+        if (errorStack) {
+          console.debug('[Menu API] Error stack:', errorStack);
+        }
+        
+        // Return empty array on error with detailed error info
         return new NextResponse(
           JSON.stringify({ 
             data: [],
-            error: 'Failed to process menu items'
+            success: false,
+            error: errorMessage,
+            timestamp: new Date().toISOString(),
+            dashboardId
           }),
           { 
             status: 500,
             headers: {
               'Content-Type': 'application/json',
-              'Cache-Control': CACHE_CONTROL
+              'Cache-Control': 'no-cache, no-store, must-revalidate' // Don't cache errors
             }
           }
         );

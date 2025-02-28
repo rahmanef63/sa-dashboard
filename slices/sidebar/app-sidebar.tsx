@@ -27,6 +27,7 @@ function Icon({ icon, className }: IconProps) {
 
 export function AppSidebar({ className }: { className?: string }) {
   const { menuItems, setCurrentDashboardId, currentDashboardId } = useMenu()
+  const latestDashboardIdRef = React.useRef<string | null>(currentDashboardId);
   const {
     mounted,
     isOpen,
@@ -37,6 +38,11 @@ export function AppSidebar({ className }: { className?: string }) {
     initialMenuId: 'main',
     initialIsOpen: true
   })
+
+  // Update ref whenever currentDashboardId changes
+  React.useEffect(() => {
+    latestDashboardIdRef.current = currentDashboardId;
+  }, [currentDashboardId]);
 
   // Move the render logic to a separate component to avoid hook issues
   const renderContent = () => {
@@ -51,20 +57,19 @@ export function AppSidebar({ className }: { className?: string }) {
         onDashboardChange={(dashboard: Dashboard) => {
           console.log('[AppSidebar] Dashboard change:', dashboard);
           console.log('[AppSidebar] Dashboard ID:', dashboard.dashboardId);
-          console.log('[AppSidebar] Current menu context dashboardId:', currentDashboardId);
+          console.log('[AppSidebar] Current menu context dashboardId:', latestDashboardIdRef.current);
           
           // Update the current dashboard in menu context
-          setCurrentDashboardId(dashboard.dashboardId || 'main');
-          
-          // Verify the ID was set
-          setTimeout(() => {
-            console.log('[AppSidebar] After update - Current dashboardId:', currentDashboardId);
-          }, 100);
-          
-          // Load dashboard navigation with default menu or first menu
-          loadDashboardNavigation(
-            dashboard.dashboardId || 'main'
-          )
+          if (dashboard.dashboardId && dashboard.dashboardId !== latestDashboardIdRef.current) {
+            setCurrentDashboardId(dashboard.dashboardId);
+            
+            // Load dashboard navigation with the new dashboard ID
+            // Using a setTimeout to ensure state updates have time to propagate
+            setTimeout(() => {
+              loadDashboardNavigation(dashboard.dashboardId || 'main', dashboard.dashboardId);
+              console.log('[AppSidebar] After update - Current dashboardId:', latestDashboardIdRef.current);
+            }, 10);
+          }
         }}
         onMenuChange={handleNavItemClick}
         renderIcon={(icon: string | undefined) => icon ? <Icon icon={icon} className={cn(!isOpen && "w-6 h-6")} /> : null}

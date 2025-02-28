@@ -75,6 +75,11 @@ export function SidebarContentWrapper({
     }
   }, [currentDashboard?.id, updateNavData]);
 
+  // Force refresh of navigation data when dashboard changes
+  const forceRefreshKey = useMemo(() => {
+    return currentDashboard?.id || 'default';
+  }, [currentDashboard?.id]);
+
   const handleDashboardChange = useCallback((dashboard: any) => {
     console.log('[SidebarContent] Dashboard changed:', dashboard);
     selectDashboard(dashboard);
@@ -113,7 +118,7 @@ export function SidebarContentWrapper({
       </SidebarHeader>
       <SidebarContent>
         {type === 'default' ? (
-          <NavMain />
+          <NavMain key={forceRefreshKey} />
         ) : (
           <MenuSwitcher
             items={switcherItems}
